@@ -1,0 +1,77 @@
+{
+  "common": {
+    "appName": "BERea",
+    "loading": "Loading...",
+    "error": "Something went wrong.",
+    "retry": "Try again",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back"
+  },
+  "auth": {
+    "login": "Sign in",
+    "register": "Create account",
+    "logout": "Sign out",
+    "email": "Email address",
+    "password": "Password",
+    "fullName": "Full name",
+    "forgotPassword": "Forgot password?",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "study": "Study",
+    "materials": "Materials",
+    "analytics": "Analytics",
+    "personas": "My Persona",
+    "settings": "Settings"
+  },
+  "dashboard": {
+    "greeting": "Welcome back, {name}!",
+    "streak": "{count} day streak",
+    "startSession": "Start studying",
+    "recentSessions": "Recent sessions",
+    "weeklyGoal": "Weekly goal"
+  },
+  "study": {
+    "pomodoro": "Pomodoro",
+    "flashcards": "Flashcards",
+    "practiceTest": "Practice test",
+    "youtube": "YouTube lesson",
+    "startTimer": "Start timer",
+    "pauseTimer": "Pause",
+    "endSession": "End session",
+    "focusScore": "Focus score",
+    "methodSelect": "Choose a study method"
+  },
+  "personas": {
+    "kind": "Kind Coach",
+    "tough": "Tough Mentor",
+    "intense": "Intense Trainer",
+    "chatPlaceholder": "Ask your coach anything..."
+  },
+  "analytics": {
+    "weekly": "This week",
+    "monthly": "This month",
+    "bestMethod": "Best method",
+    "totalTime": "Total study time",
+    "avgFocus": "Avg focus score",
+    "sessionsCount": "Sessions"
+  },
+  "landing": {
+    "hero": "Discover how YOU learn best",
+    "subhero": "Stop guessing. Start testing. BERea helps you find the study methods that actually work for your brain.",
+    "cta": "Start for free",
+    "features": {
+      "methods": "Test every method",
+      "methodsDesc": "Pomodoro, flashcards, spaced repetition — try them all and see what sticks.",
+      "personas": "AI coaching personas",
+      "personasDesc": "Choose a coach that matches your style — from gentle encouragement to tough love.",
+      "analytics": "Weekly insights",
+      "analyticsDesc": "Find out which conditions help you focus most. Music or silence? Morning or night?"
+    }
+  }
+}

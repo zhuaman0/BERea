@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+/* ─── BERea Design Tokens ─────────────────────────────────────────────────── */
+@theme inline {
+  /* Typography */
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  /* Brand — deep indigo with energetic orange accent */
+  --color-brand-50:  #eef2ff;
+  --color-brand-100: #e0e7ff;
+  --color-brand-200: #c7d2fe;
+  --color-brand-300: #a5b4fc;
+  --color-brand-400: #818cf8;
+  --color-brand-500: #6366f1;
+  --color-brand-600: #4f46e5;
+  --color-brand-700: #4338ca;
+  --color-brand-800: #3730a3;
+  --color-brand-900: #312e81;
+
+  /* Accent — Pomodoro fire / energy */
+  --color-accent-400: #fb923c;
+  --color-accent-500: #f97316;
+  --color-accent-600: #ea6c0a;
+
+  /* Focus state — calm green "in the zone" */
+  --color-focus-400: #4ade80;
+  --color-focus-500: #22c55e;
+  --color-focus-600: #16a34a;
+
+  /* Surfaces */
+  --color-surface:      #ffffff;
+  --color-surface-alt:  #f8fafc;
+  --color-surface-dark: #0f172a;
+
+  /* Text */
+  --color-text-primary:   #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted:     #94a3b8;
+  --color-text-inverse:   #f8fafc;
+
+  /* Semantic */
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-danger:  #ef4444;
+  --color-info:    #3b82f6;
+
+  /* AI persona tone colours */
+  --color-persona-kind:    #22c55e;
+  --color-persona-tough:   #f59e0b;
+  --color-persona-intense: #ef4444;
+
+  /* Layout */
+  --spacing-sidebar: 16rem;
+
+  /* Radius */
+  --radius-card: 0.75rem;
+  --radius-pill: 9999px;
+
+  /* Shadows */
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-focus-ring: 0 0 0 3px rgb(99 102 241 / 0.4);
+
+  /* Motion */
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+}
+
+/* ─── Dark mode token overrides ─────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  @theme inline {
+    --color-surface:        #0f172a;
+    --color-surface-alt:    #1e293b;
+    --color-text-primary:   #f1f5f9;
+    --color-text-secondary: #94a3b8;
+    --color-text-muted:     #64748b;
+  }
+}
+
+/* ─── Base ──────────────────────────────────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 2px;
+}
+
+::-webkit-scrollbar       { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-text-muted); border-radius: 9999px; }
