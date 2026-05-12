@@ -1,0 +1,91 @@
+# ─── Networks ───────────────────────────────────────────────────────────────
+networks:
+  berea_net:
+    driver: bridge
+
+# ─── Services ───────────────────────────────────────────────────────────────
+services:
+
+  # ── PostgreSQL ─────────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: berea_db
+    networks:
+      - berea_net
+    env_file: ../.env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      # $$ → becomes $POSTGRES_USER inside the container (env_file provides it)
+      test:     ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout:  5s
+      retries:  5
+
+  # ── FastAPI backend ────────────────────────────────────────────────────────
+  backend:
+    build:
+      context:    ..
+      dockerfile: docker/Dockerfile.backend
+    container_name: berea_backend
+    networks:
+      - berea_net
+    env_file: ../.env
+    volumes:
+      - ../backend:/app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:     ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout:  5s
+      retries:  5
+
+  # ── Next.js frontend ───────────────────────────────────────────────────────
+  frontend:
+    build:
+      context:    ..
+      dockerfile: docker/Dockerfile.frontend
+      target:     development
+    container_name: berea_frontend
+    networks:
+      - berea_net
+    env_file: ../.env
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost/api
+      NEXT_TELEMETRY_DISABLED:  "1"
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+      - frontend_next_cache:/app/.next
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  # ── Nginx reverse proxy ────────────────────────────────────────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: berea_nginx
+    networks:
+      - berea_net
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../nginx/conf.d:/etc/nginx/conf.d:ro
+      - ../nginx/ssl:/etc/nginx/ssl:ro
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+
+# ─── Volumes ────────────────────────────────────────────────────────────────
+volumes:
+  postgres_data:
+  frontend_next_cache:

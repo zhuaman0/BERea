@@ -1,0 +1,19 @@
+{
+  "name": "@berea/ui-kit",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "import":  "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "peerDependencies": {
+    "clsx": "^2",
+    "react": "^19",
+    "react-dom": "^19",
+    "tailwind-merge": "^3"
+  }
+}

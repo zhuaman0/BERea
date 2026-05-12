@@ -1,0 +1,152 @@
+# nginx/conf.d/default.ssl.conf.template
+#
+# SSL/TLS configuration template for BERea production deployment.
+#
+# HOW TO USE
+# ──────────────────────────────────────────────────────────────────────────────
+# 1. Obtain TLS certificates (Let's Encrypt recommended):
+#      certbot certonly --standalone -d yourdomain.com
+#
+# 2. Copy this template and substitute placeholders:
+#      export DOMAIN=yourdomain.com
+#      export SSL_CERT=/etc/nginx/ssl/fullchain.pem
+#      export SSL_KEY=/etc/nginx/ssl/privkey.pem
+#      envsubst '${DOMAIN} ${SSL_CERT} ${SSL_KEY}' \
+#        < nginx/conf.d/default.ssl.conf.template \
+#        > nginx/conf.d/default.ssl.conf
+#
+# 3. Place certificates in nginx/ssl/ (mounted as /etc/nginx/ssl/ in the container).
+#
+# 4. In docker/docker-compose.yml the nginx service already mounts:
+#      - ../nginx/conf.d:/etc/nginx/conf.d:ro
+#      - ../nginx/ssl:/etc/nginx/ssl:ro
+#    nginx.conf includes all *.conf files in conf.d/, so the new file is
+#    picked up automatically on container restart.
+#
+# 5. Reload nginx without downtime:
+#      docker compose -f docker/docker-compose.yml exec nginx nginx -s reload
+#
+# PLACEHOLDERS
+# ──────────────────────────────────────────────────────────────────────────────
+# ${DOMAIN}    – your public domain, e.g. berea.app
+# ${SSL_CERT}  – path to fullchain certificate inside the container
+# ${SSL_KEY}   – path to private key inside the container
+# ──────────────────────────────────────────────────────────────────────────────
+
+# ── Upstream definitions (copy from default.conf if using this file alone) ────
+upstream berea_backend {
+    server    berea_backend:8000;
+    keepalive 32;
+}
+
+upstream berea_frontend {
+    server    berea_frontend:3000;
+    keepalive 32;
+}
+
+# ── HTTP → HTTPS permanent redirect ──────────────────────────────────────────
+server {
+    listen      80;
+    listen      [::]:80;
+    server_name ${DOMAIN} www.${DOMAIN};
+
+    location /.well-known/acme-challenge/ {
+        # Allow Let's Encrypt HTTP-01 challenges to pass through
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# ── HTTPS server ──────────────────────────────────────────────────────────────
+server {
+    listen      443 ssl;
+    listen      [::]:443 ssl;
+    http2       on;
+    server_name ${DOMAIN} www.${DOMAIN};
+
+    # ── TLS certificates ───────────────────────────────────────────────────────
+    ssl_certificate     ${SSL_CERT};
+    ssl_certificate_key ${SSL_KEY};
+
+    # ── TLS hardening ──────────────────────────────────────────────────────────
+    ssl_protocols             TLSv1.2 TLSv1.3;
+    ssl_ciphers               ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache         shared:SSL:10m;
+    ssl_session_timeout       1d;
+    ssl_session_tickets       off;
+    ssl_stapling              on;
+    ssl_stapling_verify       on;
+    resolver                  1.1.1.1 8.8.8.8 valid=300s;
+    resolver_timeout          5s;
+
+    # ── Security headers (HTTPS-only additions) ───────────────────────────────
+    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
+    add_header X-Frame-Options           "DENY"                                         always;
+    add_header X-Content-Type-Options    "nosniff"                                      always;
+    add_header Referrer-Policy           "strict-origin-when-cross-origin"              always;
+    add_header Permissions-Policy        "camera=(), microphone=(), geolocation=()"     always;
+    add_header Content-Security-Policy
+        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:;"
+        always;
+
+    # ── Proxy headers ─────────────────────────────────────────────────────────
+    proxy_set_header Host               $host;
+    proxy_set_header X-Real-IP          $remote_addr;
+    proxy_set_header X-Forwarded-For    $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto  https;
+    proxy_set_header X-Forwarded-Host   $host;
+    proxy_set_header X-Forwarded-Port   443;
+
+    # ── Auth endpoints: rate-limit ─────────────────────────────────────────────
+    location ~ ^/api/v1/auth/(login|register)$ {
+        limit_req        zone=auth_zone burst=5 nodelay;
+        limit_req_status 429;
+        proxy_pass       http://berea_backend;
+        proxy_set_header Connection "";
+    }
+
+    # ── FastAPI: all other API routes ──────────────────────────────────────────
+    location /api/ {
+        limit_req        zone=api_zone burst=60 nodelay;
+        limit_conn       conn_zone 20;
+        proxy_pass       http://berea_backend;
+        proxy_set_header Connection "";
+    }
+
+    # ── FastAPI: health check ──────────────────────────────────────────────────
+    location = /health {
+        proxy_pass http://berea_backend;
+        access_log off;
+    }
+
+    # ── FastAPI docs — DISABLED in production (comment back in to re-enable) ───
+    # location ~ ^/(docs|redoc|openapi\.json)$ {
+    #     allow 10.0.0.0/8;   # internal only
+    #     deny  all;
+    #     proxy_pass http://berea_backend;
+    # }
+
+    # ── Next.js: immutable static assets ─────────────────────────────────────
+    location ^~ /_next/static/ {
+        proxy_pass  http://berea_frontend;
+        add_header  Cache-Control "public, max-age=31536000, immutable";
+        access_log  off;
+    }
+
+    # ── Next.js: public assets ────────────────────────────────────────────────
+    location ^~ /static/ {
+        proxy_pass  http://berea_frontend;
+        add_header  Cache-Control "public, max-age=86400";
+        access_log  off;
+    }
+
+    # ── Everything else → Next.js ─────────────────────────────────────────────
+    location / {
+        proxy_pass       http://berea_frontend;
+        proxy_set_header Connection "";
+    }
+}
