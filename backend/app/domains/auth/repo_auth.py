@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -29,7 +29,7 @@ async def save_refresh_token(user_id: str, token_hash: str, expires_at: datetime
         user_id=uuid.UUID(user_id),
         token_hash=token_hash,
         expires_at=expires_at,
-        created_at=datetime.now(),
+        created_at=datetime.now(timezone.utc),
     )
     db.add(record)
     await db.commit()

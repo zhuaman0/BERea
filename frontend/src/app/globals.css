@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* ─── BERea Design Tokens ─────────────────────────────────────────────────── */
+/* ─── BERea Design Tokens (dark-first) ────────────────────────────────────── */
 @theme inline {
   /* Typography */
   --font-sans: var(--font-geist-sans);
@@ -23,21 +23,21 @@
   --color-accent-500: #f97316;
   --color-accent-600: #ea6c0a;
 
-  /* Focus state — calm green "in the zone" */
+  /* Focus state — calm green */
   --color-focus-400: #4ade80;
   --color-focus-500: #22c55e;
   --color-focus-600: #16a34a;
 
-  /* Surfaces */
-  --color-surface:      #ffffff;
-  --color-surface-alt:  #f8fafc;
-  --color-surface-dark: #0f172a;
+  /* Surfaces — dark by default */
+  --color-surface:      #0b1121;
+  --color-surface-alt:  #0d1526;
+  --color-surface-dark: #060d18;
 
-  /* Text */
-  --color-text-primary:   #0f172a;
-  --color-text-secondary: #475569;
-  --color-text-muted:     #94a3b8;
-  --color-text-inverse:   #f8fafc;
+  /* Text — light by default */
+  --color-text-primary:   #f8fafc;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted:     #64748b;
+  --color-text-inverse:   #0f172a;
 
   /* Semantic */
   --color-success: #22c55e;
@@ -58,28 +58,39 @@
   --radius-pill: 9999px;
 
   /* Shadows */
-  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-card:       0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4);
   --shadow-focus-ring: 0 0 0 3px rgb(99 102 241 / 0.4);
 
   /* Motion */
   --duration-fast: 150ms;
   --duration-base: 250ms;
+
+  /* Custom animations */
+  --animate-float:       float 3s ease-in-out infinite;
+  --animate-fade-in-up:  fade-in-up 0.6s ease-out both;
 }
 
-/* ─── Dark mode token overrides ─────────────────────────────────────────────── */
-@media (prefers-color-scheme: dark) {
+/* ─── Light mode override — toggled by html.light class or system preference ─ */
+@media (prefers-color-scheme: light) {
   @theme inline {
-    --color-surface:        #0f172a;
-    --color-surface-alt:    #1e293b;
-    --color-text-primary:   #f1f5f9;
-    --color-text-secondary: #94a3b8;
-    --color-text-muted:     #64748b;
+    --color-surface:        #ffffff;
+    --color-surface-alt:    #f8fafc;
+    --color-text-primary:   #0f172a;
+    --color-text-secondary: #475569;
+    --color-text-muted:     #94a3b8;
   }
+}
+
+html.light {
+  --color-surface:        #ffffff;
+  --color-surface-alt:    #f8fafc;
+  --color-text-primary:   #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted:     #94a3b8;
 }
 
 /* ─── Base ──────────────────────────────────────────────────────────────────── */
 html {
-  scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
 }
 
@@ -99,3 +110,29 @@ body {
 ::-webkit-scrollbar       { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--color-text-muted); border-radius: 9999px; }
+
+/* ─── Keyframes ─────────────────────────────────────────────────────────────── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-10px); }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes score-pulse {
+  0%, 100% { transform: scale(1);    box-shadow: 0 0 0 0 rgb(30 64 175 / 0); }
+  50%       { transform: scale(1.08); box-shadow: 0 0 0 6px rgb(30 64 175 / 0.18); }
+}
+
+@keyframes line-draw {
+  from { stroke-dashoffset: 1; }
+  to   { stroke-dashoffset: 0; }
+}
+
+@keyframes dot-pop {
+  from { opacity: 0; transform: scale(0); }
+  to   { opacity: 1; transform: scale(1); }
+}
