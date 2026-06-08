@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     # ─── OAuth ───────────────────────────────────────────────────────────────
     google_client_id: str = ""
     google_client_secret: str = ""
+    google_redirect_uri: str = "http://localhost/api/v1/auth/google/callback"
+    frontend_url: str = "http://localhost"
 
     # ─── AI ──────────────────────────────────────────────────────────────────
     openai_api_key: str = ""

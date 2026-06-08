@@ -41,7 +41,7 @@ export function AdminSidebar() {
             <button
               key={href}
               type="button"
-              onClick={() => router.push(href)}
+              onClick={() => { window.location.href = href; }}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium w-full text-left",
                 "transition-colors duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500",

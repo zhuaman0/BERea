@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "BERea",
+    "appName": "Мебель Studio",
     "loading": "Загрузка...",
     "error": "Что-то пошло не так.",
     "retry": "Повторить",
@@ -8,7 +8,8 @@
     "cancel": "Отмена",
     "delete": "Удалить",
     "edit": "Изменить",
-    "back": "Назад"
+    "back": "Назад",
+    "copyright": "© {year} Мебель Studio. Все права защищены."
   },
   "auth": {
     "login": "Войти",
@@ -19,59 +20,100 @@
     "fullName": "Полное имя",
     "forgotPassword": "Забыли пароль?",
     "noAccount": "Нет аккаунта?",
-    "hasAccount": "Уже есть аккаунт?"
+    "hasAccount": "Уже есть аккаунт?",
+    "signUp": "Зарегистрироваться",
+    "continueWithGoogle": "Войти через Google",
+    "orContinueWithEmail": "ИЛИ ВОЙТИ С ПОМОЩЬЮ ПОЧТЫ",
+    "welcomeBack": "С возвращением",
+    "enterDetails": "Войдите чтобы сохранять дизайны и заказы",
+    "createYourAccount": "Создать аккаунт",
+    "joinBerea": "Присоединяйтесь и создайте мебель своей мечты",
+    "emailPlaceholder": "you@example.com",
+    "passwordPlaceholder": "••••••••",
+    "fullNamePlaceholder": "Иван Иванов",
+    "passwordHint": "Не менее 8 символов",
+    "showPassword": "Показать пароль",
+    "hidePassword": "Скрыть пароль",
+    "invalidEmail": "Введите корректный адрес почты",
+    "passwordRequired": "Введите пароль",
+    "passwordMinLength": "Пароль должен содержать не менее 8 символов",
+    "nameMinLength": "Имя должно содержать не менее 2 символов",
+    "signingIn": "Выполняется вход",
+    "completingAuth": "Завершение авторизации, пожалуйста подождите…",
+    "somethingWentWrong": "Что-то пошло не так. Попробуйте ещё раз."
   },
   "nav": {
     "dashboard": "Главная",
-    "study": "Учёба",
-    "materials": "Материалы",
-    "analytics": "Аналитика",
-    "personas": "Мой тренер",
-    "settings": "Настройки"
+    "catalog": "Каталог",
+    "configurator": "Конфигуратор",
+    "myDesigns": "Мои дизайны",
+    "profile": "Профиль",
+    "signOut": "Выйти"
   },
   "dashboard": {
-    "greeting": "С возвращением, {name}!",
-    "streak": "Серия {count} дней",
-    "startSession": "Начать учёбу",
-    "recentSessions": "Недавние сессии",
-    "weeklyGoal": "Цель на неделю"
+    "greeting": "Добро пожаловать, {name} 👋",
+    "subtitle": "Создайте мебель вашей мечты",
+    "myDesigns": "Мои дизайны",
+    "noDesigns": "Нет сохранённых дизайнов",
+    "openConfigurator": "Открыть конфигуратор",
+    "recentOrders": "Последние заявки",
+    "noOrders": "Нет заявок",
+    "goToCatalog": "Смотреть каталог",
+    "viewAll": "Смотреть все"
   },
-  "study": {
-    "pomodoro": "Помодоро",
-    "flashcards": "Флэш-карточки",
-    "practiceTest": "Практический тест",
-    "youtube": "Урок на YouTube",
-    "startTimer": "Запустить таймер",
-    "pauseTimer": "Пауза",
-    "endSession": "Завершить сессию",
-    "focusScore": "Оценка концентрации",
-    "methodSelect": "Выберите метод учёбы"
+  "catalog": {
+    "title": "Каталог мебели",
+    "subtitle": "Выберите мебель для вашего интерьера",
+    "allCategories": "Все",
+    "from": "от",
+    "details": "Подробнее",
+    "configure": "Настроить",
+    "addToCart": "В корзину"
   },
-  "personas": {
-    "kind": "Добрый тренер",
-    "tough": "Строгий наставник",
-    "intense": "Интенсивный тренер",
-    "chatPlaceholder": "Задайте вопрос тренеру..."
+  "configurator": {
+    "title": "Конфигуратор мебели",
+    "subtitle": "Создайте мебель под ваш интерьер",
+    "saveDesign": "Сохранить дизайн",
+    "placeOrder": "Оставить заявку",
+    "category": "Категория",
+    "template": "Шаблон",
+    "facadeColor": "Цвет фасада",
+    "handles": "Ручки / фурнитура",
+    "summary": "Итого",
+    "total": "Итого",
+    "configure": "Настроить мебель"
   },
-  "analytics": {
-    "weekly": "На этой неделе",
-    "monthly": "В этом месяце",
-    "bestMethod": "Лучший метод",
-    "totalTime": "Общее время учёбы",
-    "avgFocus": "Средняя концентрация",
-    "sessionsCount": "Сессии"
+  "myDesigns": {
+    "title": "Мои дизайны",
+    "subtitle": "Сохранённые конфигурации мебели",
+    "newDesign": "+ Новый дизайн",
+    "emptyTitle": "Нет сохранённых дизайнов",
+    "emptyDesc": "Создайте свою первую конфигурацию мебели в конфигураторе",
+    "openConfigurator": "Открыть конфигуратор",
+    "share": "Поделиться",
+    "edit": "Редактировать",
+    "delete": "Удалить"
   },
-  "landing": {
-    "hero": "Откройте свой способ учиться",
-    "subhero": "Перестаньте угадывать. Начните тестировать. BERea помогает найти методы, которые работают именно для вас.",
-    "cta": "Начать бесплатно",
-    "features": {
-      "methods": "Тестируйте все методы",
-      "methodsDesc": "Помодоро, флэш-карточки, интервальное повторение — пробуйте всё и измеряйте результат.",
-      "personas": "AI-персонажи-тренеры",
-      "personasDesc": "Выберите тренера под свой стиль — от мягкой поддержки до жёсткой дисциплины.",
-      "analytics": "Еженедельные инсайты",
-      "analyticsDesc": "Узнайте, в каких условиях вы лучше концентрируетесь. С музыкой или без? Утром или вечером?"
+  "profile": {
+    "welcomeBack": "Добро пожаловать, {name} 👋",
+    "editProfile": "Редактировать профиль",
+    "myOrders": "Мои заявки",
+    "emailNotVerified": "Email не подтверждён"
+  },
+  "orders": {
+    "title": "Заявки",
+    "status": {
+      "new": "Новая",
+      "contacted": "Связались",
+      "measuring": "На замере",
+      "confirmed": "Подтверждён",
+      "in_production": "В производстве",
+      "delivered": "Доставлен",
+      "cancelled": "Отменён"
     }
+  },
+  "callback": {
+    "signingIn": "Выполняется вход",
+    "pleaseWait": "Завершение авторизации, пожалуйста подождите…"
   }
 }

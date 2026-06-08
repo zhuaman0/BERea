@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "BERea",
+    "appName": "Furniture Studio",
     "loading": "Loading...",
     "error": "Something went wrong.",
     "retry": "Try again",
@@ -8,7 +8,8 @@
     "cancel": "Cancel",
     "delete": "Delete",
     "edit": "Edit",
-    "back": "Back"
+    "back": "Back",
+    "copyright": "© {year} Furniture Studio. All rights reserved."
   },
   "auth": {
     "login": "Sign in",
@@ -19,59 +20,100 @@
     "fullName": "Full name",
     "forgotPassword": "Forgot password?",
     "noAccount": "Don't have an account?",
-    "hasAccount": "Already have an account?"
+    "hasAccount": "Already have an account?",
+    "signUp": "Sign up",
+    "continueWithGoogle": "Continue with Google",
+    "orContinueWithEmail": "OR CONTINUE WITH EMAIL",
+    "welcomeBack": "Welcome back",
+    "enterDetails": "Sign in to save your designs and orders",
+    "createYourAccount": "Create your account",
+    "joinBerea": "Join us and create your dream furniture",
+    "emailPlaceholder": "you@example.com",
+    "passwordPlaceholder": "••••••••",
+    "fullNamePlaceholder": "Alex Johnson",
+    "passwordHint": "At least 8 characters",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "invalidEmail": "Enter a valid email address",
+    "passwordRequired": "Password is required",
+    "passwordMinLength": "Password must be at least 8 characters",
+    "nameMinLength": "Name must be at least 2 characters",
+    "signingIn": "Signing you in",
+    "completingAuth": "Completing authentication, please wait…",
+    "somethingWentWrong": "Something went wrong. Please try again."
   },
   "nav": {
     "dashboard": "Dashboard",
-    "study": "Study",
-    "materials": "Materials",
-    "analytics": "Analytics",
-    "personas": "My Persona",
-    "settings": "Settings"
+    "catalog": "Catalog",
+    "configurator": "Configurator",
+    "myDesigns": "My Designs",
+    "profile": "Profile",
+    "signOut": "Sign out"
   },
   "dashboard": {
-    "greeting": "Welcome back, {name}!",
-    "streak": "{count} day streak",
-    "startSession": "Start studying",
-    "recentSessions": "Recent sessions",
-    "weeklyGoal": "Weekly goal"
+    "greeting": "Welcome, {name} 👋",
+    "subtitle": "Create your dream furniture",
+    "myDesigns": "My Designs",
+    "noDesigns": "No saved designs yet",
+    "openConfigurator": "Open configurator",
+    "recentOrders": "Recent orders",
+    "noOrders": "No orders yet",
+    "goToCatalog": "Browse catalog",
+    "viewAll": "View all"
   },
-  "study": {
-    "pomodoro": "Pomodoro",
-    "flashcards": "Flashcards",
-    "practiceTest": "Practice test",
-    "youtube": "YouTube lesson",
-    "startTimer": "Start timer",
-    "pauseTimer": "Pause",
-    "endSession": "End session",
-    "focusScore": "Focus score",
-    "methodSelect": "Choose a study method"
+  "catalog": {
+    "title": "Furniture Catalog",
+    "subtitle": "Choose furniture for your interior",
+    "allCategories": "All",
+    "from": "from",
+    "details": "Details",
+    "configure": "Configure",
+    "addToCart": "Add to cart"
   },
-  "personas": {
-    "kind": "Kind Coach",
-    "tough": "Tough Mentor",
-    "intense": "Intense Trainer",
-    "chatPlaceholder": "Ask your coach anything..."
+  "configurator": {
+    "title": "Furniture Configurator",
+    "subtitle": "Build furniture tailored to your space",
+    "saveDesign": "Save design",
+    "placeOrder": "Place order",
+    "category": "Category",
+    "template": "Template",
+    "facadeColor": "Facade color",
+    "handles": "Handles / hardware",
+    "summary": "Summary",
+    "total": "Total",
+    "configure": "Configure furniture"
   },
-  "analytics": {
-    "weekly": "This week",
-    "monthly": "This month",
-    "bestMethod": "Best method",
-    "totalTime": "Total study time",
-    "avgFocus": "Avg focus score",
-    "sessionsCount": "Sessions"
+  "myDesigns": {
+    "title": "My Designs",
+    "subtitle": "Your saved furniture configurations",
+    "newDesign": "+ New design",
+    "emptyTitle": "No saved designs",
+    "emptyDesc": "Create your first furniture configuration in the configurator",
+    "openConfigurator": "Open configurator",
+    "share": "Share",
+    "edit": "Edit",
+    "delete": "Delete"
   },
-  "landing": {
-    "hero": "Discover how YOU learn best",
-    "subhero": "Stop guessing. Start testing. BERea helps you find the study methods that actually work for your brain.",
-    "cta": "Start for free",
-    "features": {
-      "methods": "Test every method",
-      "methodsDesc": "Pomodoro, flashcards, spaced repetition — try them all and see what sticks.",
-      "personas": "AI coaching personas",
-      "personasDesc": "Choose a coach that matches your style — from gentle encouragement to tough love.",
-      "analytics": "Weekly insights",
-      "analyticsDesc": "Find out which conditions help you focus most. Music or silence? Morning or night?"
+  "profile": {
+    "welcomeBack": "Welcome back, {name} 👋",
+    "editProfile": "Edit Profile",
+    "myOrders": "My Orders",
+    "emailNotVerified": "Email not verified"
+  },
+  "orders": {
+    "title": "Orders",
+    "status": {
+      "new": "New",
+      "contacted": "Contacted",
+      "measuring": "Measuring",
+      "confirmed": "Confirmed",
+      "in_production": "In production",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled"
     }
+  },
+  "callback": {
+    "signingIn": "Signing you in",
+    "pleaseWait": "Completing authentication, please wait…"
   }
 }

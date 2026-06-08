@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Script from "next/script";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -35,24 +36,30 @@ export const viewport: Viewport = {
   colorScheme: "light dark",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
     <html
-      lang="en"
+      lang={locale}
       suppressHydrationWarning
       data-scroll-behavior="smooth"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
-        {/* Dark-first: add .light class only when user explicitly chose light */}
-        <Script
+      <head>
+        {/* Runs before hydration — reads localStorage and applies .light class to avoid flash */}
+        <script
           id="theme-init"
-          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=localStorage.getItem('berea-theme'),l=window.matchMedia('(prefers-color-scheme:light)').matches;if(t==='light'||(t===null&&l)){document.documentElement.classList.add('light');}}catch(e){}})();`,
           }}
         />
-        <Providers>{children}</Providers>
+      </head>
+      <body className="min-h-full flex flex-col">
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <Providers>{children}</Providers>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

@@ -1,16 +1,19 @@
-# BERea — AI Coding Guidelines
+# Furniture Studio — AI Coding Guidelines
 
 ## Project Vision
-BERea is a personalized study lab that helps students discover *how* they learn best. Core pillars:
-- **Method Testing**: Pomodoro, spaced repetition, flashcards, practice tests
-- **AI Personas**: Distinct characters (kind, tough, intense) that coach users differently
-- **Analytics Engine**: Weekly/monthly insight reports on what study conditions work best
-- **Content Processing**: YouTube subtitle extraction + simplification
-- **Streak & Planning**: Duolingo-style accountability for goals like IELTS prep
+An AI-powered furniture configurator and room visualizer for a Kazakhstan furniture business.
+The goal: become the #1 furniture company in Kazakhstan through superior digital tools.
+
+Core pillars:
+- **3D Furniture Configurator**: Modular builder — pick category, template, customize colors/handles/materials
+- **AI Room Visualizer**: Upload wall photos → AI generates a beautiful room → place your furniture in it
+- **Furniture Catalog**: Full product catalog with 3D preview, filtering, pricing
+- **Saved Designs**: Users save and share their configured rooms
+- **Orders & Quotes**: Request a quote or book a measurement visit directly
 
 ## Repository Layout
 ```
-frontend/   React + Vite + Tailwind (user-facing SPA)
+frontend/   Next.js 16 + Tailwind + Three.js (user-facing app)
 backend/    FastAPI + SQLAlchemy + PostgreSQL
 docker/     Per-service Dockerfiles
 nginx/      Reverse proxy config
@@ -38,21 +41,20 @@ scripts/    Dev automation (seed, migrate, reset)
 - Error handling: raise `HTTPException` with explicit status codes and `detail` strings.
 - Environment config via `pydantic-settings` (`BaseSettings`). Never read `os.environ` directly.
 
-### TypeScript / React
+### TypeScript / React (Next.js)
 - TypeScript strict mode everywhere (`"strict": true` in tsconfig).
 - Functional components only. No class components.
 - Props interfaces defined above the component they belong to.
 - `useState` for local UI state. `zustand` for cross-component or persisted state.
-- API calls live in `src/services/`. Components never call `fetch` directly.
+- API calls live in `src/features/<domain>/api.ts`. Components never call `fetch` directly.
 - Forms use `react-hook-form` + `zod` schemas. No uncontrolled inputs.
-- No inline styles. Tailwind utility classes only. Custom design tokens in `tailwind.config.ts`.
-- `React.memo` only when profiling proves it necessary. No premature optimization.
+- No inline styles. Tailwind utility classes only.
 - Named exports for components. Default exports only for page-level route components.
 
 ### Commit Messages
 - Format: `<type>(<scope>): <short description>` (max 72 chars)
 - Types: `feat`, `fix`, `refactor`, `chore`, `docs`, `test`
-- Examples: `feat(auth): add JWT refresh token rotation`, `fix(pomodoro): correct timer drift on tab blur`
+- Examples: `feat(configurator): add modular template selector`, `fix(catalog): correct price filter range`
 
 ### Docker & Infrastructure
 - Each service has its own Dockerfile in `docker/`.
@@ -63,19 +65,20 @@ scripts/    Dev automation (seed, migrate, reset)
 ## Module Naming Conventions
 | Layer | Pattern | Example |
 |---|---|---|
-| API Router | `router_<domain>.py` | `router_auth.py` |
-| Pydantic Schema | `schema_<domain>.py` | `schema_users.py` |
-| SQLAlchemy Model | `model_<domain>.py` | `model_users.py` |
-| Service | `service_<domain>.py` | `service_study_sessions.py` |
-| Repository | `repo_<domain>.py` | `repo_materials.py` |
-| React Page | `<Name>Page.tsx` | `DashboardPage.tsx` |
-| React Component | `<Name>.tsx` | `PomodoroTimer.tsx` |
-| Zustand Store | `use<Name>Store.ts` | `useStudySessionStore.ts` |
-| API Service | `<domain>Api.ts` | `authApi.ts` |
+| API Router | `router_<domain>.py` | `router_catalog.py` |
+| Pydantic Schema | `schema_<domain>.py` | `schema_catalog.py` |
+| SQLAlchemy Model | `model_<domain>.py` | `model_catalog.py` |
+| Service | `service_<domain>.py` | `service_orders.py` |
+| Repository | `repo_<domain>.py` | `repo_catalog.py` |
+| React Page | `page.tsx` (Next.js app router) | `app/(app)/catalog/page.tsx` |
+| React Component | `<Name>.tsx` | `FurnitureCard.tsx` |
+| Zustand Store | `use<Name>Store.ts` | `useConfiguratorStore.ts` |
+| API Service | `<domain>Api.ts` | `catalogApi.ts` |
 
 ## Domain Glossary
-- **StudySession**: One timed work block (e.g., a Pomodoro round) with method, duration, material, focus score
-- **Material**: A learning object — flashcard deck, test, or YouTube-sourced summary
-- **Persona**: An AI coaching character with a defined tone, escalation rules, and prompt template
-- **Streak**: Consecutive days meeting a study goal threshold
-- **AnalyticReport**: Aggregated insight snapshot (weekly/monthly) comparing methods and conditions
+- **FurnitureItem**: A product in the catalog with name, category, price, materials, 3D model ref
+- **Category**: Furniture category (kitchen, living room, bedroom, office, etc.)
+- **ConfiguratorTemplate**: A modular furniture structure (e.g. "4 bottom doors + 2 top doors")
+- **SavedDesign**: A user's saved furniture configuration with selected materials/colors
+- **RoomGeneration**: An AI-generated room image based on uploaded wall photos
+- **Order**: A customer quote request or confirmed order with contact details

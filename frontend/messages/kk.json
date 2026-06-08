@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "BERea",
+    "appName": "Жиһаз Studio",
     "loading": "Жүктелуде...",
     "error": "Қате орын алды.",
     "retry": "Қайталап көру",
@@ -8,7 +8,8 @@
     "cancel": "Болдырмау",
     "delete": "Жою",
     "edit": "Өңдеу",
-    "back": "Артқа"
+    "back": "Артқа",
+    "copyright": "© {year} Жиһаз Studio. Барлық құқықтар қорғалған."
   },
   "auth": {
     "login": "Кіру",
@@ -16,62 +17,103 @@
     "logout": "Шығу",
     "email": "Электрондық пошта",
     "password": "Құпия сөз",
-    "fullName": "Толық аты",
+    "fullName": "Толық аты-жөні",
     "forgotPassword": "Құпия сөзді ұмыттыңыз ба?",
     "noAccount": "Аккаунтыңыз жоқ па?",
-    "hasAccount": "Аккаунтыңыз бар ма?"
+    "hasAccount": "Аккаунтыңыз бар ма?",
+    "signUp": "Тіркелу",
+    "continueWithGoogle": "Google арқылы кіру",
+    "orContinueWithEmail": "НЕМЕСЕ ПОШТАМЕН КІРУ",
+    "welcomeBack": "Қайта келдіңіз",
+    "enterDetails": "Дизайндарыңызды сақтау үшін кіріңіз",
+    "createYourAccount": "Аккаунт жасаңыз",
+    "joinBerea": "Арман жиһазыңызды жасаңыз",
+    "emailPlaceholder": "you@example.com",
+    "passwordPlaceholder": "••••••••",
+    "fullNamePlaceholder": "Айдар Сейітов",
+    "passwordHint": "Кемінде 8 таңба",
+    "showPassword": "Құпия сөзді көрсету",
+    "hidePassword": "Құпия сөзді жасыру",
+    "invalidEmail": "Дұрыс электрондық пошта мекенжайын енгізіңіз",
+    "passwordRequired": "Құпия сөзді енгізіңіз",
+    "passwordMinLength": "Құпия сөз кемінде 8 таңбадан тұруы керек",
+    "nameMinLength": "Аты кемінде 2 таңбадан тұруы керек",
+    "signingIn": "Жүйеге кіру жүргізілуде",
+    "completingAuth": "Авторизация аяқталуда, күте тұрыңыз…",
+    "somethingWentWrong": "Бірдеңе дұрыс болмады. Қайталап көріңіз."
   },
   "nav": {
-    "dashboard": "Басқару тақтасы",
-    "study": "Оқу",
-    "materials": "Материалдар",
-    "analytics": "Аналитика",
-    "personas": "Менің тренерім",
-    "settings": "Параметрлер"
+    "dashboard": "Басты бет",
+    "catalog": "Каталог",
+    "configurator": "Конфигуратор",
+    "myDesigns": "Менің дизайндарым",
+    "profile": "Профиль",
+    "signOut": "Шығу"
   },
   "dashboard": {
-    "greeting": "Қайта оралдыңыз, {name}!",
-    "streak": "{count} күндік серия",
-    "startSession": "Оқуды бастау",
-    "recentSessions": "Соңғы сессиялар",
-    "weeklyGoal": "Апталық мақсат"
+    "greeting": "Қош келдіңіз, {name} 👋",
+    "subtitle": "Арман жиһазыңызды жасаңыз",
+    "myDesigns": "Менің дизайндарым",
+    "noDesigns": "Сақталған дизайн жоқ",
+    "openConfigurator": "Конфигураторды ашу",
+    "recentOrders": "Соңғы өтінімдер",
+    "noOrders": "Өтінім жоқ",
+    "goToCatalog": "Каталогты қарау",
+    "viewAll": "Барлығын көру"
   },
-  "study": {
-    "pomodoro": "Помодоро",
-    "flashcards": "Флэш-карталар",
-    "practiceTest": "Жаттығу тесті",
-    "youtube": "YouTube сабағы",
-    "startTimer": "Таймерді іске қосу",
-    "pauseTimer": "Кідірту",
-    "endSession": "Сессияны аяқтау",
-    "focusScore": "Зейін бағасы",
-    "methodSelect": "Оқу әдісін таңдаңыз"
+  "catalog": {
+    "title": "Жиһаз каталогы",
+    "subtitle": "Интерьеріңізге жиһаз таңдаңыз",
+    "allCategories": "Барлығы",
+    "from": "бастап",
+    "details": "Толығырақ",
+    "configure": "Баптау",
+    "addToCart": "Себетке қосу"
   },
-  "personas": {
-    "kind": "Мейірімді тренер",
-    "tough": "Қатаң ментор",
-    "intense": "Интенсивті жаттықтырушы",
-    "chatPlaceholder": "Тренеріңізге сұрақ қойыңыз..."
+  "configurator": {
+    "title": "Жиһаз конфигураторы",
+    "subtitle": "Интерьеріңізге сай жиһаз жасаңыз",
+    "saveDesign": "Дизайнды сақтау",
+    "placeOrder": "Өтінім қалдыру",
+    "category": "Санат",
+    "template": "Үлгі",
+    "facadeColor": "Фасад түсі",
+    "handles": "Тұтқалар / фурнитура",
+    "summary": "Қорытынды",
+    "total": "Барлығы",
+    "configure": "Жиһазды баптау"
   },
-  "analytics": {
-    "weekly": "Осы аптада",
-    "monthly": "Осы айда",
-    "bestMethod": "Үздік әдіс",
-    "totalTime": "Жалпы оқу уақыты",
-    "avgFocus": "Орташа зейін",
-    "sessionsCount": "Сессиялар"
+  "myDesigns": {
+    "title": "Менің дизайндарым",
+    "subtitle": "Сақталған жиһаз конфигурациялары",
+    "newDesign": "+ Жаңа дизайн",
+    "emptyTitle": "Сақталған дизайн жоқ",
+    "emptyDesc": "Конфигураторда алғашқы жиһаз конфигурациясын жасаңыз",
+    "openConfigurator": "Конфигураторды ашу",
+    "share": "Бөлісу",
+    "edit": "Өңдеу",
+    "delete": "Жою"
   },
-  "landing": {
-    "hero": "ӨЗІҢіздің оқу стиліңізді табыңыз",
-    "subhero": "Болжамаңыз. Сынаңыз. BERea сіздің миыңызға сай оқу әдістерін табуға көмектеседі.",
-    "cta": "Тегін бастау",
-    "features": {
-      "methods": "Барлық әдісті сынап көріңіз",
-      "methodsDesc": "Помодоро, флэш-карталар, кеңістіктегі қайталау — барлығын қолданып, нәтижесін өлшеңіз.",
-      "personas": "AI жаттықтыру персонажлары",
-      "personasDesc": "Стиліңізге сай тренер таңдаңыз — жылы мейірімнен қатаң тәртіпке дейін.",
-      "analytics": "Апталық түсініктер",
-      "analyticsDesc": "Қандай жағдайда жақсырақ зейін қоясыз? Музыкамен ба? Таңертең бе?"
+  "profile": {
+    "welcomeBack": "Қайта оралдыңыз, {name} 👋",
+    "editProfile": "Профильді өңдеу",
+    "myOrders": "Менің өтінімдерім",
+    "emailNotVerified": "Email расталмаған"
+  },
+  "orders": {
+    "title": "Өтінімдер",
+    "status": {
+      "new": "Жаңа",
+      "contacted": "Байланысты",
+      "measuring": "Өлшемде",
+      "confirmed": "Расталды",
+      "in_production": "Өндірісте",
+      "delivered": "Жеткізілді",
+      "cancelled": "Болдырылмады"
     }
+  },
+  "callback": {
+    "signingIn": "Жүйеге кіру жүргізілуде",
+    "pleaseWait": "Авторизация аяқталуда, күте тұрыңыз…"
   }
 }

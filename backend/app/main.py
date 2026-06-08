@@ -11,15 +11,12 @@ from app.api.v1.router import api_v1_router
 from app.config import settings
 from app.database import engine
 
-# Eagerly import all ORM models so SQLAlchemy's mapper registry is fully
-# populated before any query runs.  Cross-domain relationships (e.g.
-# User → StudySession) fail with "failed to locate name" when the routers
-# use lazy imports and only some models have been loaded.
 import app.domains.auth.model_auth  # noqa: F401
 import app.domains.users.model_users  # noqa: F401
-import app.domains.study_sessions.model_study_sessions  # noqa: F401
-import app.domains.materials.model_materials  # noqa: F401
-import app.domains.ai_personas.model_ai_personas  # noqa: F401
+import app.domains.catalog.model_catalog  # noqa: F401
+import app.domains.categories.model_categories  # noqa: F401
+import app.domains.orders.model_orders  # noqa: F401
+import app.domains.configurator.model_configurator  # noqa: F401
 
 
 @asynccontextmanager
@@ -31,9 +28,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(
-    title="BERea API",
-    description="Personalized study lab — discover how you learn best.",
-    version="0.1.0",
+    title="Furniture Studio API",
+    description="AI-powered furniture configurator and room visualizer.",
+    version="1.0.0",
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",

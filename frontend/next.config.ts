@@ -33,10 +33,7 @@ const config: NextConfig = {
     ];
   },
 
-  experimental: {
-    // Catch bad <Link href> values at build time
-    typedRoutes: true,
-  },
+  typedRoutes: true,
 };
 
 export default withNextIntl(config);

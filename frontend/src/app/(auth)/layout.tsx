@@ -1,6 +1,10 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
-export default function AuthLayout({ children }: { children: React.ReactNode }) {
+export default async function AuthLayout({ children }: { children: React.ReactNode }) {
+  const t = await getTranslations("common");
+  const year = new Date().getFullYear();
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 px-4 py-16">
 
@@ -16,9 +20,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         {children}
       </div>
 
-      {/* Subtle bottom credit */}
       <p className="mt-10 text-xs text-slate-400">
-        © {new Date().getFullYear()} BERea. Built for students.
+        {t("copyright", { year })}
       </p>
     </div>
   );

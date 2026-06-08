@@ -24,6 +24,32 @@ async def create_user_record(email: str, hashed_password: str, full_name: str, d
     return user
 
 
+async def get_user_by_google_id(google_id: str, db: AsyncSession) -> User | None:
+    result = await db.execute(select(User).where(User.google_id == google_id))
+    return result.scalar_one_or_none()
+
+
+async def create_oauth_user(
+    email: str, full_name: str, google_id: str, avatar_url: str | None, db: AsyncSession
+) -> User:
+    user = User(
+        email=email,
+        full_name=full_name,
+        google_id=google_id,
+        avatar_url=avatar_url,
+        is_verified=True,
+    )
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
+async def link_google_to_user(user: User, google_id: str, db: AsyncSession) -> None:
+    user.google_id = google_id
+    await db.commit()
+
+
 async def save_refresh_token(user_id: str, token_hash: str, expires_at: datetime, db: AsyncSession) -> None:
     record = RefreshToken(
         user_id=uuid.UUID(user_id),

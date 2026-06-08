@@ -1,23 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { Globe, Moon, Sun, Menu, X, ChevronDown } from "lucide-react";
+import { setLocale } from "@/i18n/actions";
 
-const NAV_LINKS = [
-  { label: "How it works",  href: "#how-it-works" },
-  { label: "Study methods", href: "#tools"        },
-  { label: "About",         href: "#about"        },
+const LOCALES = [
+  { code: "en", label: "EN" },
+  { code: "kk", label: "KK" },
+  { code: "ru", label: "RU" },
 ] as const;
 
-const LANGS = ["EN", "KK", "RU"] as const;
-type Lang = (typeof LANGS)[number];
-
 export function LandingNavLight() {
-  const [menuOpen, setMenuOpen]   = useState(false);
-  const [langOpen, setLangOpen]   = useState(false);
-  const [isDark, setIsDark]       = useState(false);
-  const [lang, setLang]           = useState<Lang>("EN");
+  const t      = useTranslations("landing");
+  const locale = useLocale();
+  const router = useRouter();
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
+  const [isDark,   setIsDark]   = useState(false);
+  const [isPending, startTransition] = useTransition();
+
+  const NAV_LINKS = [
+    { label: t("howItWorks"),   href: "#how-it-works" },
+    { label: t("studyMethods"), href: "#tools"        },
+    { label: t("about"),        href: "#about"        },
+  ];
 
   function toggleTheme() {
     const next = !isDark;
@@ -25,9 +35,12 @@ export function LandingNavLight() {
     document.documentElement.classList.toggle("light", !next);
   }
 
-  function pickLang(l: Lang) {
-    setLang(l);
+  function pickLang(code: string) {
     setLangOpen(false);
+    startTransition(async () => {
+      await setLocale(code);
+      router.refresh();
+    });
   }
 
   return (
@@ -47,7 +60,7 @@ export function LandingNavLight() {
           <div className="hidden md:flex items-center gap-8 flex-1">
             {NAV_LINKS.map(({ label, href }) => (
               <a
-                key={label}
+                key={href}
                 href={href}
                 className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
               >
@@ -63,26 +76,27 @@ export function LandingNavLight() {
             <div className="relative">
               <button
                 onClick={() => setLangOpen((o) => !o)}
-                className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 px-2.5 py-2 rounded-xl hover:bg-slate-100 transition-colors"
+                disabled={isPending}
+                className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 px-2.5 py-2 rounded-xl hover:bg-slate-100 transition-colors disabled:opacity-50"
               >
                 <Globe size={15} />
-                {lang}
+                {locale.toUpperCase()}
                 <ChevronDown size={13} className={`transition-transform duration-150 ${langOpen ? "rotate-180" : ""}`} />
               </button>
 
               {langOpen && (
                 <div className="absolute right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-lg shadow-slate-200/60 py-1 min-w-[80px] z-50">
-                  {LANGS.map((l) => (
+                  {LOCALES.map(({ code, label }) => (
                     <button
-                      key={l}
-                      onClick={() => pickLang(l)}
+                      key={code}
+                      onClick={() => pickLang(code)}
                       className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                        lang === l
+                        locale === code
                           ? "text-blue-800 font-semibold bg-blue-50"
                           : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                       }`}
                     >
-                      {l}
+                      {label}
                     </button>
                   ))}
                 </div>
@@ -92,7 +106,7 @@ export function LandingNavLight() {
             {/* Theme toggle */}
             <button
               onClick={toggleTheme}
-              aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+              aria-label={isDark ? t("lightMode") : t("darkMode")}
               className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
             >
               {isDark ? <Sun size={17} /> : <Moon size={17} />}
@@ -104,13 +118,13 @@ export function LandingNavLight() {
               href="/login"
               className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors px-3 py-2"
             >
-              Sign in
+              {t("signIn")}
             </Link>
             <Link
               href="/register"
               className="text-sm font-semibold bg-blue-800 text-white px-4 py-2 rounded-xl hover:bg-blue-900 transition-colors"
             >
-              Get started
+              {t("getStarted")}
             </Link>
           </div>
 
@@ -132,7 +146,7 @@ export function LandingNavLight() {
           <div className="flex flex-col gap-1">
             {NAV_LINKS.map(({ label, href }) => (
               <a
-                key={label}
+                key={href}
                 href={href}
                 className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors py-2"
                 onClick={() => setMenuOpen(false)}
@@ -148,28 +162,29 @@ export function LandingNavLight() {
               onClick={() => setMenuOpen(false)}
               className="text-sm font-semibold text-center py-3 rounded-2xl border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
             >
-              Sign in
+              {t("signIn")}
             </Link>
             <Link
               href="/register"
               onClick={() => setMenuOpen(false)}
               className="text-sm font-semibold text-center py-3 rounded-2xl bg-blue-800 text-white hover:bg-blue-900 transition-colors"
             >
-              Get started free
+              {t("getStartedFree")}
             </Link>
           </div>
 
           <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-            <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-0.5">
-              {LANGS.map((l) => (
+            <div className="flex items-center gap-0.5 bg-slate-100 rounded-lg p-0.5">
+              {LOCALES.map(({ code, label }) => (
                 <button
-                  key={l}
-                  onClick={() => setLang(l)}
-                  className={`text-xs font-medium px-3 py-1.5 rounded-md transition-colors ${
-                    lang === l ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
+                  key={code}
+                  onClick={() => pickLang(code)}
+                  disabled={isPending}
+                  className={`text-xs font-medium px-3 py-1.5 rounded-md transition-colors disabled:opacity-50 ${
+                    locale === code ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
                   }`}
                 >
-                  {l}
+                  {label}
                 </button>
               ))}
             </div>
@@ -178,7 +193,7 @@ export function LandingNavLight() {
               className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 transition-colors"
             >
               {isDark ? <Sun size={15} /> : <Moon size={15} />}
-              <span>{isDark ? "Light mode" : "Dark mode"}</span>
+              <span>{isDark ? t("lightMode") : t("darkMode")}</span>
             </button>
           </div>
         </div>

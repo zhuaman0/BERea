@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import secrets
 from datetime import datetime, timedelta, timezone
+from urllib.parse import urlencode
 
+import httpx
 from fastapi import HTTPException, status
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -99,3 +102,70 @@ async def _store_refresh_token(user_id: str, token: str, db: AsyncSession) -> No
     token_hash = hashlib.sha256(token.encode()).hexdigest()
     expires_at = datetime.now(timezone.utc) + timedelta(days=settings.refresh_token_expire_days)
     await save_refresh_token(user_id, token_hash, expires_at, db)
+
+
+def get_google_authorize_url() -> str:
+    params = {
+        "client_id": settings.google_client_id,
+        "redirect_uri": settings.google_redirect_uri,
+        "response_type": "code",
+        "scope": "openid email profile",
+        "access_type": "offline",
+        "state": secrets.token_urlsafe(16),
+    }
+    return "https://accounts.google.com/o/oauth2/v2/auth?" + urlencode(params)
+
+
+async def google_oauth_callback(code: str, db: AsyncSession) -> tuple[str, str]:
+    from app.domains.auth.repo_auth import (
+        create_oauth_user,
+        get_user_by_email,
+        get_user_by_google_id,
+        link_google_to_user,
+    )
+
+    async with httpx.AsyncClient() as client:
+        token_res = await client.post(
+            "https://oauth2.googleapis.com/token",
+            data={
+                "code": code,
+                "client_id": settings.google_client_id,
+                "client_secret": settings.google_client_secret,
+                "redirect_uri": settings.google_redirect_uri,
+                "grant_type": "authorization_code",
+            },
+        )
+        if token_res.status_code != 200:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Google token exchange failed")
+
+        google_access_token = token_res.json().get("access_token")
+
+        userinfo_res = await client.get(
+            "https://www.googleapis.com/oauth2/v3/userinfo",
+            headers={"Authorization": f"Bearer {google_access_token}"},
+        )
+        if userinfo_res.status_code != 200:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to fetch Google user info")
+
+        google_user = userinfo_res.json()
+
+    google_id: str = google_user["sub"]
+    email: str = google_user.get("email", "")
+    full_name: str = google_user.get("name") or email
+    avatar_url: str | None = google_user.get("picture")
+
+    user = await get_user_by_google_id(google_id, db)
+    if not user:
+        user = await get_user_by_email(email, db)
+        if user:
+            await link_google_to_user(user, google_id, db)
+        else:
+            user = await create_oauth_user(email, full_name, google_id, avatar_url, db)
+
+    if not user.is_active:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is deactivated")
+
+    access = create_access_token(str(user.id))
+    refresh = create_refresh_token(str(user.id))
+    await _store_refresh_token(str(user.id), refresh, db)
+    return access, refresh

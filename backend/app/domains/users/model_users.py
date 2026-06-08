@@ -23,6 +23,7 @@ class User(TimestampMixin, Base):
     hashed_password: Mapped[str | None] = mapped_column(String(255), nullable=True)
     full_name: Mapped[str] = mapped_column(String(255), nullable=False)
     avatar_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    google_id: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True, index=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 

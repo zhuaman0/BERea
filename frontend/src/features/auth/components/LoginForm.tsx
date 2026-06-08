@@ -4,6 +4,7 @@ import { useState } from "react";
 import { z } from "zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Eye, EyeOff } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { authApi } from "@/features/auth/api";
@@ -12,23 +13,20 @@ import { usersApi } from "@/features/users/api";
 import { useAuthStore } from "@/features/auth/store/useAuthStore";
 import type { User } from "@/types/auth";
 
-// ─── Schema ───────────────────────────────────────────────────────────────────
-
-const loginSchema = z.object({
-  email:    z.string().email("Enter a valid email address"),
-  password: z.string().min(1, "Password is required"),
-});
-
-type LoginValues = z.infer<typeof loginSchema>;
-type FieldErrors = Partial<Record<keyof LoginValues, string>>;
-
-// ─── Component ────────────────────────────────────────────────────────────────
-
 export function LoginForm() {
+  const t      = useTranslations("auth");
   const router = useRouter();
   const { setSession, updateUser } = useAuthStore();
 
-  const [values, setValues]         = useState<LoginValues>({ email: "", password: "" });
+  const loginSchema = z.object({
+    email:    z.string().email(t("invalidEmail")),
+    password: z.string().min(1, t("passwordRequired")),
+  });
+
+  type LoginValues = z.infer<typeof loginSchema>;
+  type FieldErrors = Partial<Record<keyof LoginValues, string>>;
+
+  const [values, setValues]           = useState<LoginValues>({ email: "", password: "" });
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [serverError, setServerError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -58,29 +56,25 @@ export function LoginForm() {
     try {
       const { access_token, refresh_token } = await authApi.login(result.data);
 
-      // Seed a placeholder user so api-client can authenticate the /me call
       const placeholder: User = {
         id: "", email: result.data.email, full_name: "", avatar_url: null,
         is_active: true, is_verified: false, current_streak: 0,
         longest_streak: 0, last_study_date: null, created_at: new Date().toISOString(),
       };
       setSession(placeholder, access_token, refresh_token);
-
-      // Set a session cookie so the middleware auth guard can protect app routes
       document.cookie = "berea-session=1; path=/; SameSite=Lax";
 
-      // Fetch and store full profile (token is now in sessionStorage)
       try {
         const profile = await usersApi.me();
         updateUser(profile);
       } catch {
-        // Continue with placeholder — profile page will show available data
+        // Continue with placeholder
       }
 
       router.push("/profile");
     } catch (err: unknown) {
       setServerError(
-        isApiError(err) ? err.detail : "Something went wrong. Please try again."
+        isApiError(err) ? err.detail : t("somethingWentWrong")
       );
     } finally {
       setIsSubmitting(false);
@@ -93,7 +87,6 @@ export function LoginForm() {
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
 
-      {/* Server error banner */}
       {serverError && (
         <div className="flex items-start gap-2.5 rounded-xl bg-red-50 border border-red-100 px-4 py-3">
           <span className="text-red-400 mt-px shrink-0">⚠</span>
@@ -104,14 +97,14 @@ export function LoginForm() {
       {/* Email */}
       <div className="flex flex-col gap-1.5">
         <label htmlFor="login-email" className="text-sm font-medium text-slate-700">
-          Email address
+          {t("email")}
         </label>
         <input
           id="login-email"
           type="email"
           value={values.email}
           onChange={(e) => set("email", e.target.value)}
-          placeholder="you@example.com"
+          placeholder={t("emailPlaceholder")}
           autoComplete="email"
           aria-invalid={fieldErrors.email ? "true" : undefined}
           aria-describedby={fieldErrors.email ? "login-email-err" : undefined}
@@ -128,13 +121,13 @@ export function LoginForm() {
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
           <label htmlFor="login-password" className="text-sm font-medium text-slate-700">
-            Password
+            {t("password")}
           </label>
           <Link
             href="/forgot-password"
             className="text-xs font-medium text-blue-700 hover:text-blue-900 hover:underline transition-colors"
           >
-            Forgot password?
+            {t("forgotPassword")}
           </Link>
         </div>
         <div className="relative">
@@ -143,7 +136,7 @@ export function LoginForm() {
             type={showPassword ? "text" : "password"}
             value={values.password}
             onChange={(e) => set("password", e.target.value)}
-            placeholder="••••••••"
+            placeholder={t("passwordPlaceholder")}
             autoComplete="current-password"
             aria-invalid={fieldErrors.password ? "true" : undefined}
             aria-describedby={fieldErrors.password ? "login-password-err" : undefined}
@@ -155,7 +148,7 @@ export function LoginForm() {
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
-            aria-label={showPassword ? "Hide password" : "Show password"}
+            aria-label={showPassword ? t("hidePassword") : t("showPassword")}
             className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
           >
             {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -177,7 +170,7 @@ export function LoginForm() {
         {isSubmitting && (
           <span className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
         )}
-        Sign in
+        {t("login")}
       </button>
     </form>
   );

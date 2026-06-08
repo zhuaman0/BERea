@@ -1,20 +1,40 @@
 "use client";
 
+import { useState } from "react";
+import { useTranslations } from "next-intl";
+import { authApi } from "@/features/auth/api";
+
 interface GoogleButtonProps {
-  onClick?: () => void;
   disabled?: boolean;
 }
 
-export function GoogleButton({ onClick, disabled }: GoogleButtonProps) {
+export function GoogleButton({ disabled }: GoogleButtonProps) {
+  const t = useTranslations("auth");
+  const [loading, setLoading] = useState(false);
+
+  async function handleClick() {
+    setLoading(true);
+    try {
+      const { url } = await authApi.googleAuthorize();
+      window.location.href = url;
+    } catch {
+      setLoading(false);
+    }
+  }
+
   return (
     <button
       type="button"
-      onClick={onClick}
-      disabled={disabled}
+      onClick={handleClick}
+      disabled={disabled || loading}
       className="w-full flex items-center justify-center gap-3 h-11 px-4 rounded-xl bg-white border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50 active:bg-slate-100 transition-colors duration-150 disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
     >
-      <GoogleIcon />
-      Continue with Google
+      {loading ? (
+        <span className="size-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
+      ) : (
+        <GoogleIcon />
+      )}
+      {t("continueWithGoogle")}
     </button>
   );
 }

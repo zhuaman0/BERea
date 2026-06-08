@@ -13,4 +13,7 @@ export const authApi = {
 
   logout: (refreshToken: string) =>
     apiClient.post<void>("/v1/auth/logout", { refresh_token: refreshToken }),
+
+  googleAuthorize: () =>
+    apiClient.get<{ url: string }>("/v1/auth/google/authorize"),
 };

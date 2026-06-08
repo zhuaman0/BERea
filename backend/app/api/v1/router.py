@@ -2,18 +2,18 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from app.domains.ai_personas.router_ai_personas import router as ai_personas_router
 from app.domains.auth.router_auth import router as auth_router
-from app.domains.integrations.router_integrations import router as integrations_router
-from app.domains.materials.router_materials import router as materials_router
-from app.domains.study_sessions.router_study_sessions import router as study_sessions_router
 from app.domains.users.router_users import router as users_router
+from app.domains.catalog.router_catalog import router as catalog_router
+from app.domains.categories.router_categories import router as categories_router
+from app.domains.orders.router_orders import router as orders_router
+from app.domains.configurator.router_configurator import router as configurator_router
 
 api_v1_router = APIRouter()
 
 api_v1_router.include_router(auth_router, prefix="/auth", tags=["auth"])
 api_v1_router.include_router(users_router, prefix="/users", tags=["users"])
-api_v1_router.include_router(study_sessions_router, prefix="/study-sessions", tags=["study_sessions"])
-api_v1_router.include_router(materials_router, prefix="/materials", tags=["materials"])
-api_v1_router.include_router(ai_personas_router, prefix="/personas", tags=["ai_personas"])
-api_v1_router.include_router(integrations_router, prefix="/integrations", tags=["integrations"])
+api_v1_router.include_router(categories_router, prefix="/categories", tags=["categories"])
+api_v1_router.include_router(catalog_router, prefix="/catalog", tags=["catalog"])
+api_v1_router.include_router(configurator_router, prefix="/configurator", tags=["configurator"])
+api_v1_router.include_router(orders_router, prefix="/orders", tags=["orders"])

@@ -1,14 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { TrendingUp, Pencil, Plus, Clock } from "lucide-react";
+import { TrendingUp, Pencil, Plus, Clock, Dna, Sparkles } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/shared/lib/utils";
 import { useAuthStore } from "@/features/auth/store/useAuthStore";
 
-// ─── Placeholder data (wire to studySessionsApi when analytics is ready) ─────
+// ─── Placeholder data ─────────────────────────────────────────────────────────
 
-const FOCUS_SCORE      = 87;
-const FOCUS_DELTA_PCT  = 5;
+const FOCUS_SCORE     = 87;
+const FOCUS_DELTA_PCT = 5;
 
 const STUDY_METHODS = [
   { name: "Pomodoro",       emoji: "🍅", minutes: 720, color: "bg-blue-500"    },
@@ -18,7 +19,26 @@ const STUDY_METHODS = [
 
 const TOTAL_MINUTES = STUDY_METHODS.reduce((sum, m) => sum + m.minutes, 0);
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+const LEARNING_DNA = {
+  absorptionModes: [
+    { id: "watching",    emoji: "📺", label: "Watching"     },
+    { id: "kinesthetic", emoji: "✍️", label: "Kinesthetic"  },
+    { id: "interactive", emoji: "🗣️", label: "Interactive"  },
+  ],
+  audioPreference: { emoji: "🎧", label: "Lo-Fi Beats" },
+};
+
+const AI_COACH = {
+  id:      "sergeant",
+  emoji:   "😤",
+  name:    "The Drill Sergeant",
+  tagline: "Strict & tough love",
+  quote:   "Stop staring at your stats and start your Pomodoro. You're burning daylight, soldier.",
+  ringBg:  "bg-red-50",
+  dot:     "bg-red-400",
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function nextStreakMilestone(streak: number): number {
   for (const m of [7, 14, 30, 60, 100, 365]) {
@@ -45,6 +65,7 @@ function Card({ children, className }: { children: React.ReactNode; className?: 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
+  const t       = useTranslations("profile");
   const { user } = useAuthStore();
 
   const firstName = user?.full_name?.split(" ")[0] ?? "there";
@@ -52,10 +73,10 @@ export default function ProfilePage() {
     ? user.full_name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
     : "?";
 
-  const streak      = user?.current_streak ?? 0;
-  const milestone   = nextStreakMilestone(streak);
-  const streakPct   = Math.min((streak / milestone) * 100, 100);
-  const daysLeft    = milestone - streak;
+  const streak    = user?.current_streak ?? 0;
+  const milestone = nextStreakMilestone(streak);
+  const streakPct = Math.min((streak / milestone) * 100, 100);
+  const daysLeft  = milestone - streak;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 md:p-8">
@@ -63,17 +84,16 @@ export default function ProfilePage() {
       {/* ── Welcome Header ──────────────────────────────────────────────── */}
       <header className="md:col-span-3">
         <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">
-          Welcome back, {firstName} 👋
+          {t("welcomeBack", { name: firstName })}
         </h1>
         <p className="mt-1.5 text-sm text-slate-500">
-          Ready to find your focus today?
+          {t("readyToFocus")}
         </p>
       </header>
 
       {/* ── User Identity Card ──────────────────────────────────────────── */}
       <Card className="items-center text-center gap-5">
 
-        {/* Avatar */}
         {user?.avatar_url ? (
           <img
             src={user.avatar_url}
@@ -94,21 +114,21 @@ export default function ProfilePage() {
 
           {user && !user.is_verified && (
             <span className="inline-flex mt-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-600 border border-amber-100">
-              Email not verified
+              {t("emailNotVerified")}
             </span>
           )}
         </div>
 
         <button className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-colors duration-150 mt-auto">
           <Pencil size={13} strokeWidth={2.5} />
-          Edit Profile
+          {t("editProfile")}
         </button>
       </Card>
 
       {/* ── Streak Card ─────────────────────────────────────────────────── */}
       <Card className="gap-4">
         <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
-          Day Study Streak
+          {t("dayStudyStreak")}
         </p>
 
         <div className="flex items-end gap-2.5">
@@ -118,13 +138,10 @@ export default function ProfilePage() {
           <span className="text-3xl mb-1.5" aria-hidden>🔥</span>
         </div>
 
-        {/* Progress toward next milestone */}
         <div className="space-y-2 mt-auto">
           <div className="flex items-center justify-between">
             <span className="text-xs text-slate-400">{streak} days</span>
-            <span className="text-xs font-medium text-slate-500">
-              Goal: {milestone} days
-            </span>
+            <span className="text-xs font-medium text-slate-500">{t("goal", { count: milestone })}</span>
           </div>
           <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
             <div
@@ -133,9 +150,7 @@ export default function ProfilePage() {
             />
           </div>
           <p className="text-xs text-slate-400">
-            {streak === 0
-              ? "Complete a session today to start your streak!"
-              : `${daysLeft} more day${daysLeft !== 1 ? "s" : ""} to your next milestone`}
+            {streak === 0 ? t("streakEmpty") : t("streakProgress", { count: daysLeft })}
           </p>
         </div>
       </Card>
@@ -143,7 +158,7 @@ export default function ProfilePage() {
       {/* ── Focus Score Card ────────────────────────────────────────────── */}
       <Card className="gap-4">
         <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
-          BERea Focus Score
+          {t("focusScore")}
         </p>
 
         <div className="flex items-end gap-1.5">
@@ -155,10 +170,9 @@ export default function ProfilePage() {
 
         <div className="flex items-center gap-1.5 text-sm font-medium text-emerald-600">
           <TrendingUp size={16} strokeWidth={2.5} aria-hidden />
-          <span>+{FOCUS_DELTA_PCT}% improvement this week</span>
+          <span>{t("improvementThisWeek", { pct: FOCUS_DELTA_PCT })}</span>
         </div>
 
-        {/* Score bar */}
         <div className="space-y-1.5 mt-auto">
           <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
             <div
@@ -167,7 +181,104 @@ export default function ProfilePage() {
             />
           </div>
           <p className="text-xs text-slate-400">
-            Based on session completion rate and self-reported focus
+            {t("focusBasis")}
+          </p>
+        </div>
+      </Card>
+
+      {/* ── Learning DNA Card ───────────────────────────────────────────── */}
+      <Card className="md:col-span-2 gap-6">
+
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+              <Dna size={18} className="text-blue-500" strokeWidth={2} />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-slate-900">{t("learningDna")}</h2>
+              <p className="text-xs text-slate-400 mt-0.5">{t("brainPrefers")}</p>
+            </div>
+          </div>
+
+          <Link
+            href="/onboarding"
+            className="shrink-0 text-xs font-medium text-slate-400 hover:text-blue-500 transition-colors mt-1"
+          >
+            Edit
+          </Link>
+        </div>
+
+        {/* Absorption modes */}
+        <div className="flex flex-col gap-3">
+          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
+            {t("howYouAbsorb")}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {LEARNING_DNA.absorptionModes.map((mode) => (
+              <span
+                key={mode.id}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-sm font-semibold text-blue-700"
+              >
+                <span className="text-base leading-none">{mode.emoji}</span>
+                {mode.label}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Audio vibe */}
+        <div className="flex flex-col gap-3">
+          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
+            {t("studyVibe")}
+          </p>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-sm font-semibold text-slate-600 self-start">
+            <span className="text-base leading-none">{LEARNING_DNA.audioPreference.emoji}</span>
+            {LEARNING_DNA.audioPreference.label}
+          </span>
+        </div>
+      </Card>
+
+      {/* ── AI Coach Card ────────────────────────────────────────────────── */}
+      <Card className="md:col-span-1 gap-5">
+
+        {/* Header */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center shrink-0">
+              <Sparkles size={17} className="text-slate-500" strokeWidth={2} />
+            </div>
+            <h2 className="text-base font-bold text-slate-900">{t("aiCoach")}</h2>
+          </div>
+
+          <Link
+            href="/onboarding"
+            className="shrink-0 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-700 hover:border-slate-300 transition-colors"
+          >
+            {t("change")}
+          </Link>
+        </div>
+
+        {/* Coach identity */}
+        <div className="flex items-center gap-3">
+          <div className={cn(
+            "w-14 h-14 rounded-2xl flex items-center justify-center text-3xl select-none shrink-0",
+            AI_COACH.ringBg
+          )}>
+            {AI_COACH.emoji}
+          </div>
+          <div className="flex flex-col gap-0.5 min-w-0">
+            <p className="text-sm font-bold text-slate-900 leading-snug">{AI_COACH.name}</p>
+            <div className="flex items-center gap-1.5">
+              <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", AI_COACH.dot)} />
+              <p className="text-xs text-slate-400">{AI_COACH.tagline}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Quote block */}
+        <div className="bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3.5 mt-auto">
+          <p className="text-xs text-slate-500 italic leading-relaxed">
+            "{AI_COACH.quote}"
           </p>
         </div>
       </Card>
@@ -175,41 +286,35 @@ export default function ProfilePage() {
       {/* ── Preferred Methods Card (full-width) ─────────────────────────── */}
       <Card className="md:col-span-3 gap-6">
 
-        {/* Header row */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-base font-bold text-slate-900">
-              Preferred Study Methods
-            </h2>
+            <h2 className="text-base font-bold text-slate-900">{t("preferredMethods")}</h2>
             <p className="text-sm text-slate-400 mt-0.5 flex items-center gap-1.5">
               <Clock size={13} aria-hidden />
-              {fmtHours(TOTAL_MINUTES)} total this month
+              {t("totalThisMonth", { hours: fmtHours(TOTAL_MINUTES) })}
             </p>
           </div>
 
           <Link
-            href="/study"
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-blue-500 text-white text-sm font-semibold hover:bg-blue-600 active:bg-blue-700 transition-colors shadow-md shadow-blue-200/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 shrink-0"
+            href="/configurator"
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 active:bg-slate-950 transition-colors shadow-md shrink-0"
           >
             <Plus size={16} strokeWidth={2.5} />
-            Start New Session
+            {t("startNewSession")}
           </Link>
         </div>
 
-        {/* Method rows */}
         <div className="flex flex-col gap-5">
           {STUDY_METHODS.map(({ name, emoji, minutes, color }) => {
             const pct      = Math.round((minutes / TOTAL_MINUTES) * 100);
             const barWidth = (minutes / TOTAL_MINUTES) * 100;
             return (
               <div key={name} className="flex items-center gap-4">
-                {/* Label */}
                 <div className="flex items-center gap-2.5 w-44 shrink-0">
                   <span className="text-xl leading-none" aria-hidden>{emoji}</span>
                   <span className="text-sm font-medium text-slate-700">{name}</span>
                 </div>
 
-                {/* Bar */}
                 <div className="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
                   <div
                     className={cn("h-full rounded-full transition-all duration-700", color)}
@@ -217,7 +322,6 @@ export default function ProfilePage() {
                   />
                 </div>
 
-                {/* Stats */}
                 <div className="flex items-center gap-2 w-20 justify-end shrink-0">
                   <span className="text-sm font-semibold text-slate-900 tabular-nums">
                     {fmtHours(minutes)}

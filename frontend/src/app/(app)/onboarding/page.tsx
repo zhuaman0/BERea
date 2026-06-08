@@ -2,44 +2,41 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, Check } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { useAuthStore } from "@/features/auth/store/useAuthStore";
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
+// ─── Static data (non-translated fields only) ─────────────────────────────────
 
-const ROLES = [
-  { id: "high_school",  emoji: "🎓", label: "High School Student"  },
-  { id: "university",   emoji: "🏫", label: "University Student"    },
-  { id: "professional", emoji: "💼", label: "Working Professional"  },
-  { id: "teacher",      emoji: "👨‍🏫", label: "Teacher / Educator"   },
-  { id: "lifelong",     emoji: "🌱", label: "Lifelong Learner"      },
+const ABSORPTION_IDS = [
+  { id: "reading",     emoji: "📖" },
+  { id: "listening",   emoji: "🎧" },
+  { id: "watching",    emoji: "📺" },
+  { id: "interactive", emoji: "🗣️" },
+  { id: "kinesthetic", emoji: "✍️" },
 ] as const;
 
-const GOALS = [
-  { id: "deep_focus", emoji: "🎯", label: "Deep Focus",            sub: "Pomodoro technique"             },
-  { id: "memory",     emoji: "🧠", label: "Memory Retention",      sub: "Flashcards & spaced repetition" },
-  { id: "exam_prep",  emoji: "📝", label: "Exam Prep",             sub: "Quizzes & practice tests"       },
-  { id: "reading",    emoji: "📖", label: "Reading Comprehension", sub: "Active reading strategies"      },
-  { id: "burnout",    emoji: "🌿", label: "Burnout Recovery",      sub: "Sustainable study habits"       },
+const AUDIO_IDS = [
+  { id: "lofi",      emoji: "🎧" },
+  { id: "ambient",   emoji: "🌧️" },
+  { id: "classical", emoji: "🎻" },
+  { id: "silence",   emoji: "🤫" },
 ] as const;
 
-const DURATIONS = [25, 45, 60, 90] as const;
-
-const AUDIO_OPTIONS = [
-  { id: "lofi",    emoji: "🎧", label: "Lo-Fi Beats"     },
-  { id: "ambient", emoji: "🌧️", label: "Ambient / Nature" },
-  { id: "silence", emoji: "🤫", label: "Pure Silence"    },
+const COACH_STATIC = [
+  { id: "gentle",   emoji: "😇", dot: "bg-emerald-400", ring: "bg-emerald-50" },
+  { id: "analyst",  emoji: "🤖", dot: "bg-violet-400",  ring: "bg-violet-50"  },
+  { id: "sergeant", emoji: "😤", dot: "bg-red-400",     ring: "bg-red-50"     },
 ] as const;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface FormData {
-  role:             string | null;
-  goals:            string[];
-  focusDuration:    number;
-  audioPreference:  string | null;
+  absorptionModes: string[];
+  audioPreference: string | null;
+  coachPersona:    string | null;
 }
 
 // ─── Animation variants ───────────────────────────────────────────────────────
@@ -61,11 +58,11 @@ const stepTransition = {
 // ─── Selectable card ──────────────────────────────────────────────────────────
 
 interface CardProps {
-  emoji:       string;
-  label:       string;
-  sub?:        string;
-  selected:    boolean;
-  onClick:     () => void;
+  emoji:        string;
+  label:        string;
+  sub?:         string;
+  selected:     boolean;
+  onClick:      () => void;
   multiSelect?: boolean;
 }
 
@@ -111,69 +108,114 @@ function SelectableCard({ emoji, label, sub, selected, onClick, multiSelect }: C
   );
 }
 
-// ─── Steps ────────────────────────────────────────────────────────────────────
+// ─── Coach card ───────────────────────────────────────────────────────────────
 
-function StepRole({ formData, setFormData }: {
-  formData: FormData;
-  setFormData: React.Dispatch<React.SetStateAction<FormData>>;
-}) {
+interface CoachCardProps {
+  persona:  {
+    id: string;
+    emoji: string;
+    dot: string;
+    ring: string;
+    name: string;
+    tagline: string;
+    quote: string;
+  };
+  selected: boolean;
+  onClick:  () => void;
+}
+
+function CoachCard({ persona, selected, onClick }: CoachCardProps) {
   return (
-    <div className="flex flex-col gap-7">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight leading-snug">
-          Welcome to BERea.
-        </h1>
-        <p className="mt-1.5 text-slate-500 text-base">
-          Tell us a bit about yourself.
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "flex items-start gap-4 p-5 rounded-2xl border-2 text-left w-full",
+        "transition-all duration-150 focus-visible:outline-none focus-visible:ring-2",
+        "focus-visible:ring-blue-500 focus-visible:ring-offset-2",
+        selected
+          ? "border-blue-500 bg-blue-50 shadow-sm shadow-blue-100/60"
+          : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/80"
+      )}
+    >
+      <div className={cn(
+        "shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center text-2xl select-none",
+        selected ? "bg-blue-100" : persona.ring
+      )}>
+        {persona.emoji}
+      </div>
+
+      <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <p className={cn(
+              "text-sm font-bold leading-snug",
+              selected ? "text-blue-700" : "text-slate-800"
+            )}>
+              {persona.name}
+            </p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", persona.dot)} />
+              <p className="text-xs text-slate-400">{persona.tagline}</p>
+            </div>
+          </div>
+
+          {selected && (
+            <span className="shrink-0 w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center mt-0.5">
+              <Check size={10} strokeWidth={4} className="text-white" />
+            </span>
+          )}
+        </div>
+
+        <p className="text-xs text-slate-500 italic leading-relaxed">
+          "{persona.quote}"
         </p>
       </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {ROLES.map((role) => (
-          <SelectableCard
-            key={role.id}
-            emoji={role.emoji}
-            label={role.label}
-            selected={formData.role === role.id}
-            onClick={() => setFormData((d) => ({ ...d, role: role.id }))}
-          />
-        ))}
-      </div>
-    </div>
+    </button>
   );
 }
 
-function StepGoals({ formData, setFormData }: {
+// ─── Steps ────────────────────────────────────────────────────────────────────
+
+function StepAbsorption({ formData, setFormData }: {
   formData: FormData;
   setFormData: React.Dispatch<React.SetStateAction<FormData>>;
 }) {
-  function toggleGoal(id: string) {
+  const t = useTranslations("onboarding");
+
+  const modes = ABSORPTION_IDS.map((m) => ({
+    ...m,
+    label: t(m.id as "reading" | "listening" | "watching" | "interactive" | "kinesthetic"),
+    sub:   t(`${m.id}Sub` as "readingSub" | "listeningSub" | "watchingSub" | "interactiveSub" | "kinestheticSub"),
+  }));
+
+  function toggle(id: string) {
     setFormData((d) => ({
       ...d,
-      goals: d.goals.includes(id)
-        ? d.goals.filter((g) => g !== id)
-        : [...d.goals, id],
+      absorptionModes: d.absorptionModes.includes(id)
+        ? d.absorptionModes.filter((m) => m !== id)
+        : [...d.absorptionModes, id],
     }));
   }
 
   return (
     <div className="flex flex-col gap-7">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-          What are you trying to improve?
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight leading-snug">
+          {t("absorptionTitle")}
         </h1>
-        <p className="mt-1.5 text-sm text-slate-500">Choose all that apply.</p>
+        <p className="mt-1.5 text-sm text-slate-500">{t("absorptionSubtitle")}</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {GOALS.map((goal) => (
+        {modes.map((mode) => (
           <SelectableCard
-            key={goal.id}
-            emoji={goal.emoji}
-            label={goal.label}
-            sub={goal.sub}
-            selected={formData.goals.includes(goal.id)}
-            onClick={() => toggleGoal(goal.id)}
+            key={mode.id}
+            emoji={mode.emoji}
+            label={mode.label}
+            sub={mode.sub}
+            selected={formData.absorptionModes.includes(mode.id)}
+            onClick={() => toggle(mode.id)}
             multiSelect
           />
         ))}
@@ -182,60 +224,75 @@ function StepGoals({ formData, setFormData }: {
   );
 }
 
-function StepEnvironment({ formData, setFormData }: {
+function StepAudio({ formData, setFormData }: {
   formData: FormData;
   setFormData: React.Dispatch<React.SetStateAction<FormData>>;
 }) {
+  const t = useTranslations("onboarding");
+
+  const options = AUDIO_IDS.map((o) => ({
+    ...o,
+    label: t(o.id as "lofi" | "ambient" | "classical" | "silence"),
+  }));
+
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-7">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-          Set your default study environment.
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight leading-snug">
+          {t("audioTitle")}
         </h1>
+        <p className="mt-1.5 text-sm text-slate-500">{t("audioSubtitle")}</p>
       </div>
 
-      {/* Focus duration */}
-      <div className="flex flex-col gap-3">
-        <p className="text-sm font-semibold text-slate-700">
-          How long is your ideal focus block?
-        </p>
-        <div className="flex flex-wrap gap-2.5">
-          {DURATIONS.map((mins) => (
-            <button
-              key={mins}
-              type="button"
-              onClick={() => setFormData((d) => ({ ...d, focusDuration: mins }))}
-              className={cn(
-                "px-5 py-2.5 rounded-xl border-2 text-sm font-semibold",
-                "transition-all duration-150 focus-visible:outline-none",
-                "focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2",
-                formData.focusDuration === mins
-                  ? "border-blue-500 bg-blue-50 text-blue-700 shadow-sm shadow-blue-100/60"
-                  : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
-              )}
-            >
-              {mins} min
-            </button>
-          ))}
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {options.map((opt) => (
+          <SelectableCard
+            key={opt.id}
+            emoji={opt.emoji}
+            label={opt.label}
+            selected={formData.audioPreference === opt.id}
+            onClick={() => setFormData((d) => ({
+              ...d,
+              audioPreference: d.audioPreference === opt.id ? null : opt.id,
+            }))}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function StepCoach({ formData, setFormData }: {
+  formData: FormData;
+  setFormData: React.Dispatch<React.SetStateAction<FormData>>;
+}) {
+  const t = useTranslations("onboarding");
+
+  const personas = COACH_STATIC.map((p) => ({
+    ...p,
+    name:    t(`${p.id}Name`    as "gentleName"    | "analystName"    | "sergeantName"),
+    tagline: t(`${p.id}Tagline` as "gentleTagline" | "analystTagline" | "sergeantTagline"),
+    quote:   t(`${p.id}Quote`   as "gentleQuote"   | "analystQuote"   | "sergeantQuote"),
+  }));
+
+  return (
+    <div className="flex flex-col gap-7">
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight leading-snug">
+          {t("coachTitle")}
+        </h1>
+        <p className="mt-1.5 text-sm text-slate-500">{t("coachSubtitle")}</p>
       </div>
 
-      {/* Audio preference */}
       <div className="flex flex-col gap-3">
-        <p className="text-sm font-semibold text-slate-700">
-          What helps you focus?
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {AUDIO_OPTIONS.map((opt) => (
-            <SelectableCard
-              key={opt.id}
-              emoji={opt.emoji}
-              label={opt.label}
-              selected={formData.audioPreference === opt.id}
-              onClick={() => setFormData((d) => ({ ...d, audioPreference: opt.id }))}
-            />
-          ))}
-        </div>
+        {personas.map((persona) => (
+          <CoachCard
+            key={persona.id}
+            persona={persona}
+            selected={formData.coachPersona === persona.id}
+            onClick={() => setFormData((d) => ({ ...d, coachPersona: persona.id }))}
+          />
+        ))}
       </div>
     </div>
   );
@@ -244,26 +301,29 @@ function StepEnvironment({ formData, setFormData }: {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const TOTAL_STEPS = 3;
-
-const STEPS = [StepRole, StepGoals, StepEnvironment];
+const STEPS = [StepAbsorption, StepAudio, StepCoach];
 
 export default function OnboardingPage() {
-  const router = useRouter();
-  const { user } = useAuthStore();
+  const router    = useRouter();
+  const t         = useTranslations("onboarding");
+  const { user }  = useAuthStore();
 
   const [step, setStep]           = useState(0);
   const [direction, setDirection] = useState(1);
   const [formData, setFormData]   = useState<FormData>({
-    role:            null,
-    goals:           [],
-    focusDuration:   25,
+    absorptionModes: [],
     audioPreference: null,
+    coachPersona:    null,
   });
 
   const firstName   = user?.full_name?.split(" ")[0] ?? "there";
   const progressPct = ((step + 1) / TOTAL_STEPS) * 100;
   const isLastStep  = step === TOTAL_STEPS - 1;
-  const canContinue = step === 0 ? formData.role !== null : true;
+
+  const canContinue =
+    step === 0 ? formData.absorptionModes.length > 0 :
+    step === 1 ? true :
+    formData.coachPersona !== null;
 
   function goTo(next: number) {
     setDirection(next > step ? 1 : -1);
@@ -281,7 +341,6 @@ export default function OnboardingPage() {
   const StepComponent = STEPS[step];
 
   return (
-    // Fixed overlay — renders above the app shell sidebar
     <div className="fixed inset-0 z-50 bg-slate-50 flex items-center justify-center p-4 sm:p-8 overflow-y-auto">
       <div className="relative bg-white rounded-3xl shadow-xl shadow-slate-200/50 max-w-2xl w-full px-7 sm:px-10 py-9 sm:py-10 my-auto">
 
@@ -300,13 +359,13 @@ export default function OnboardingPage() {
             onClick={() => router.push("/profile")}
             className="shrink-0 text-xs font-medium text-slate-400 hover:text-slate-600 transition-colors whitespace-nowrap"
           >
-            Skip for now
+            {t("skipForNow")}
           </button>
         </div>
 
         {/* ── Step label ───────────────────────────────────────────────── */}
         <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-8">
-          Step {step + 1} of {TOTAL_STEPS}
+          {t("stepOf", { step: step + 1, total: TOTAL_STEPS })}
         </p>
 
         {/* ── Animated step content ────────────────────────────────────── */}
@@ -323,10 +382,9 @@ export default function OnboardingPage() {
             >
               <StepComponent formData={formData} setFormData={setFormData} />
 
-              {/* Personalised greeting on first step */}
               {step === 0 && user?.full_name && (
                 <p className="mt-5 text-sm text-slate-400">
-                  Signed in as <span className="font-medium text-slate-600">{firstName}</span>
+                  {t("settingUpFor", { name: firstName })}
                 </p>
               )}
             </motion.div>
@@ -348,7 +406,7 @@ export default function OnboardingPage() {
               )}
             >
               <ChevronLeft size={16} strokeWidth={2.5} />
-              Back
+              {t("back")}
             </button>
           ) : (
             <div aria-hidden />
@@ -367,7 +425,7 @@ export default function OnboardingPage() {
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
             )}
           >
-            {isLastStep ? "Go to my Dashboard" : "Continue"}
+            {isLastStep ? t("letsStart") : t("continue")}
           </button>
         </div>
       </div>
