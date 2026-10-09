@@ -1,6 +1,18 @@
-# Furniture Studio — AI Coding Guidelines
+# BERea — AI Coding Guidelines
 
-## Project Vision
+This repository hosts **two independent products** sharing one Next.js + FastAPI stack. Check
+which one a request targets before writing code — don't assume furniture just because this file
+used to be furniture-only.
+
+| Product | Entry points | Audience |
+|---|---|---|
+| **Furniture Studio** | `frontend/src/app/(app)/*`, `frontend/src/app/furniture/page.tsx`, `backend/app/domains/{catalog,categories,orders,configurator}` | Kazakhstan furniture business |
+| **451° / NATS Spirea** (reading league) | `frontend/src/app/page.tsx` (public landing), `frontend/src/app/reading/**`, `backend/app/domains/reading` | Student reading competition |
+
+Both share the same **Code Style Rules**, **Module Naming Conventions**, and **Git Workflow**
+below — those are repo-wide, not per-product.
+
+## Furniture Studio — Project Vision
 An AI-powered furniture configurator and room visualizer for a Kazakhstan furniture business.
 The goal: become the #1 furniture company in Kazakhstan through superior digital tools.
 
@@ -11,10 +23,21 @@ Core pillars:
 - **Saved Designs**: Users save and share their configured rooms
 - **Orders & Quotes**: Request a quote or book a measurement visit directly
 
+## 451° / NATS Spirea — Project Vision
+A gamified reading league for students: teams of 2–3 read one book a month, vote on what they
+read next, compete in live quiz nights, and climb a semester-long leaderboard.
+
+Core pillars:
+- **Team Registration**: Public landing page lets a team captain register the team + 3 players and upload a bank-transfer receipt for the season fee
+- **Book Selection Vote**: Sequential `language → genre → book` rounds, admin-run with a time limit, winner decided automatically by majority vote once a round closes
+- **Dashboard**: Per-student home with reading progress, team rank, streaks, and the semester map (shown as a bookshelf, not a generic stepper)
+- **Quiz Nights & Bonus Tasks**: Live monthly quiz tied to that month's book, plus small bonus challenges worth extra points
+- **Admin Panel**: Run quizzes, manage the book catalog, start vote rounds, review team registrations
+
 ## Repository Layout
 ```
-frontend/   Next.js 16 + Tailwind + Three.js (user-facing app)
-backend/    FastAPI + SQLAlchemy + PostgreSQL
+frontend/   Next.js 16 + Tailwind + Three.js — both products' UI
+backend/    FastAPI + SQLAlchemy + PostgreSQL — both products' domains
 docker/     Per-service Dockerfiles
 nginx/      Reverse proxy config
 scripts/    Dev automation (seed, migrate, reset)
@@ -62,6 +85,21 @@ scripts/    Dev automation (seed, migrate, reset)
 - `docker-compose.yml` at root is the single source of truth for local dev.
 - Healthchecks on every container that other services depend on.
 
+## Git Workflow
+- **One branch per task.** Never commit a new task's work directly to `main`.
+- **Branch name**: `<type>/<kebab-slug>`, same `<type>` list as commit messages above.
+  - `feat/team-registration-form`, `fix/leaderboard-session-guard`, `chore/project-governance`,
+    `refactor/vote-round-service`, `docs/reading-domain-glossary`, `test/vote-round-winner-calc`
+  - Scope the slug to the task, not the whole feature area — `feat/dashboard-gamification` beats
+    `feat/dashboard-stuff`.
+- **Commit as you go**, in logically separate commits where the diff naturally splits (e.g.
+  backend migration/model/service/router as one commit, the matching frontend UI as another) —
+  not one giant commit at the end of the task.
+- **Before opening a PR**: run `/simplify` then `/code-review` (built-in) and `/cleanup-review`
+  (project-specific — checks this file's conventions specifically: typing, Pydantic v2 at API
+  boundaries, module naming, dead code, Tailwind-only styling). Fix what they find, then push.
+- **Merge into `main`** only after review. `main` should always be in a deployable state.
+
 ## Module Naming Conventions
 | Layer | Pattern | Example |
 |---|---|---|
@@ -76,9 +114,20 @@ scripts/    Dev automation (seed, migrate, reset)
 | API Service | `<domain>Api.ts` | `catalogApi.ts` |
 
 ## Domain Glossary
+
+### Furniture Studio
 - **FurnitureItem**: A product in the catalog with name, category, price, materials, 3D model ref
 - **Category**: Furniture category (kitchen, living room, bedroom, office, etc.)
 - **ConfiguratorTemplate**: A modular furniture structure (e.g. "4 bottom doors + 2 top doors")
 - **SavedDesign**: A user's saved furniture configuration with selected materials/colors
 - **RoomGeneration**: An AI-generated room image based on uploaded wall photos
 - **Order**: A customer quote request or confirmed order with contact details
+
+### 451° / NATS Spirea
+- **ReadingTeam**: A team of 2–3 students competing together; `token_balance` tracks quiz-night credit
+- **ReadingTeamRegistration**: A public pre-registration (team name + 3 players + payment receipt PDF), reviewed by an admin, separate from account creation
+- **VoteRound**: One stage (`language` | `genre` | `book`) of the monthly book-selection vote, with a `closes_at` deadline; the winner is computed from vote counts once it closes — no manual admin step
+- **VoteOption**: One choice within a `VoteRound` (e.g. a language, a genre, a book title)
+- **SemesterMonth**: One month of the 4-month season (`done` | `in_progress` | `locked`), shown on the dashboard as a bookshelf, not a stepper
+- **BonusTask**: An optional extra-credit challenge (e.g. a TikTok review) worth bonus points
+- **QuizNight**: The live monthly Kahoot-style quiz on that month's book
