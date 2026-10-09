@@ -50,6 +50,11 @@ export interface ReadingTeamSummary {
   member_count: number;
 }
 
+export interface ReadingTeamMemberAddRequest {
+  full_name: string;
+  email:     string;
+}
+
 export interface ReadingTeamMemberProfile {
   id:              string;
   full_name:       string;
