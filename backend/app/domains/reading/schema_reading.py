@@ -60,6 +60,8 @@ class ReadingTeamResponse(BaseModel):
     name: str
     members: list[ReadingTeamMemberResponse]
     max_members: int = TEAM_MAX_MEMBERS
+    place: int
+    teams_total: int
 
 
 class ReadingTeamSummaryResponse(BaseModel):

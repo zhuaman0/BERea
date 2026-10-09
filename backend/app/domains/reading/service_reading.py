@@ -146,7 +146,8 @@ async def get_my_team(user_id: str, db: AsyncSession) -> ReadingTeamResponse:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="You haven't joined a team yet")
 
     members = await get_team_members(user.team_id, db)
-    return _to_team_response(user.team, members)
+    place, teams_total = await _compute_team_rank(user.team_id, db)
+    return _to_team_response(user.team, members, place, teams_total)
 
 
 async def rename_my_team(user_id: str, payload: ReadingTeamJoinRequest, db: AsyncSession) -> ReadingTeamResponse:
@@ -167,7 +168,8 @@ async def rename_my_team(user_id: str, payload: ReadingTeamJoinRequest, db: Asyn
 
     team = await rename_team(user.team, payload.team_name, db)
     members = await get_team_members(team.id, db)
-    return _to_team_response(team, members)
+    place, teams_total = await _compute_team_rank(team.id, db)
+    return _to_team_response(team, members, place, teams_total)
 
 
 async def list_teams(db: AsyncSession) -> list[ReadingTeamSummaryResponse]:
@@ -180,13 +182,27 @@ async def list_teams(db: AsyncSession) -> list[ReadingTeamSummaryResponse]:
     ]
 
 
-def _to_team_response(team: ReadingTeam, members: list[ReadingUser]) -> ReadingTeamResponse:
+async def _compute_team_rank(team_id: uuid.UUID, db: AsyncSession) -> tuple[int, int]:
+    """Ranks teams the same way the leaderboard does — by roster size until real
+    quiz/reading points exist to rank by instead."""
+    from app.domains.reading.repo_reading import list_teams_with_member_counts
+
+    rows = await list_teams_with_member_counts(db)
+    place = next((i + 1 for i, (team, _) in enumerate(rows) if team.id == team_id), len(rows))
+    return place, len(rows)
+
+
+def _to_team_response(
+    team: ReadingTeam, members: list[ReadingUser], place: int, teams_total: int
+) -> ReadingTeamResponse:
     return ReadingTeamResponse(
         id=team.id,
         name=team.name,
         members=[
             ReadingTeamMemberResponse(id=m.id, full_name=m.full_name, email=m.email) for m in members
         ],
+        place=place,
+        teams_total=teams_total,
     )
 
 
