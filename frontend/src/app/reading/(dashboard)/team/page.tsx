@@ -1,8 +1,8 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
-import { Check, Copy, Pencil, Send, UserPlus } from "lucide-react";
-import { StatTile } from "@/features/reading/components/StatTile";
+import { Check, Copy, Pencil, Send, UserPlus, Trophy, BookOpen, Flame } from "lucide-react";
+import { StatStrip, type StatStripItem } from "@/features/reading/components/StatStrip";
 import { Modal } from "@/features/reading/components/Modal";
 import { MOCK_DASHBOARD } from "@/features/reading/mockData";
 import { readingAuthApi } from "@/features/reading/authApi";
@@ -85,6 +85,12 @@ function StepBadge({ index, label, active, done }: StepBadgeProps) {
 
 export default function ReadingTeamPage() {
   const { stats } = MOCK_DASHBOARD;
+
+  const statItems: StatStripItem[] = [
+    { icon: Trophy,   label: "Team place",     value: `${stats.teamPlace}/${stats.teamsTotal}`,     note: stats.teamPlaceDelta, accent: false },
+    { icon: BookOpen, label: "Books finished", value: `${stats.booksFinished}/${stats.booksTotal}`, note: stats.lastBookLabel,  accent: false },
+    { icon: Flame,    label: "Reading streak", value: `${stats.readingStreakDays} days`,            note: stats.streakNote,     accent: true  },
+  ];
 
   const [team, setTeam] = useState<ReadingTeam | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -245,10 +251,8 @@ export default function ReadingTeamPage() {
             Place {stats.teamPlace} of {stats.teamsTotal} this semester
           </p>
 
-          <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-            <StatTile label="Team place" value={`${stats.teamPlace}/${stats.teamsTotal}`} note={stats.teamPlaceDelta} />
-            <StatTile label="Books finished" value={`${stats.booksFinished}/${stats.booksTotal}`} note={stats.lastBookLabel} />
-            <StatTile label="Reading streak" value={`${stats.readingStreakDays} days`} note={stats.streakNote} />
+          <div className="mt-6">
+            <StatStrip items={statItems} />
           </div>
 
           <div className="mt-6 rounded-2xl border border-[var(--rd-border)] bg-[var(--rd-panel)] p-7">

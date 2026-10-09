@@ -1,13 +1,25 @@
 "use client";
 
 import { useEffect } from "react";
+import { motion } from "framer-motion";
 import { Trophy, Flame, BookOpen, Zap } from "lucide-react";
 import { BookOfMonthCard } from "@/features/reading/components/BookOfMonthCard";
 import { QuizNightCard } from "@/features/reading/components/QuizNightCard";
-import { StatTile } from "@/features/reading/components/StatTile";
+import { StatStrip, type StatStripItem } from "@/features/reading/components/StatStrip";
 import { MOCK_DASHBOARD } from "@/features/reading/mockData";
 import { readingAuthApi } from "@/features/reading/authApi";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
+
+const EASE = [0.16, 1, 0.3, 1] as const;
+const HOVER_LIFT = { y: -4, transition: { duration: 0.2, ease: EASE } };
+
+function fadeUp(delay = 0) {
+  return {
+    initial: { opacity: 0, y: 16 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.55, delay, ease: EASE },
+  };
+}
 
 export default function ReadingHomePage() {
   const { user, updateUser } = useReadingAuthStore();
@@ -22,9 +34,19 @@ export default function ReadingHomePage() {
   const { stats } = dashboard;
   const firstName = user?.full_name?.split(" ")[0] || dashboard.greetingName;
 
+  const statItems: StatStripItem[] = [
+    { icon: Trophy,   label: "Team place",     value: `${stats.teamPlace}/${stats.teamsTotal}`,      note: stats.teamPlaceDelta,  accent: false },
+    { icon: Zap,      label: "Your points",    value: String(stats.yourPoints),                      note: stats.pointsBreakdown, accent: true  },
+    { icon: BookOpen, label: "Books finished", value: `${stats.booksFinished}/${stats.booksTotal}`,  note: stats.lastBookLabel,   accent: false },
+    { icon: Flame,    label: "Reading streak", value: `${stats.readingStreakDays} days`,             note: stats.streakNote,      accent: true  },
+  ];
+
   return (
-    <div className="mx-auto w-full max-w-[1600px] px-8 py-10 lg:px-12">
-      <div className="relative mb-8 flex flex-col gap-4 overflow-hidden rounded-[28px] border border-[var(--rd-accent-from)]/20 bg-[var(--rd-panel)] px-8 py-8 sm:flex-row sm:items-center sm:justify-between">
+    <div className="w-full px-8 py-10 lg:px-12">
+      <motion.div
+        {...fadeUp(0)}
+        className="relative mb-8 flex flex-col gap-4 overflow-hidden rounded-[28px] border border-[var(--rd-accent-from)]/20 bg-[var(--rd-panel)] px-8 py-8 sm:flex-row sm:items-center sm:justify-between"
+      >
         <Flame
           size={160}
           className="pointer-events-none absolute -left-10 -top-10 text-[var(--rd-accent-from)]/[0.07]"
@@ -59,19 +81,20 @@ export default function ReadingHomePage() {
             Log pages
           </button>
         </div>
-      </div>
+      </motion.div>
 
       <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-[1.6fr_1fr]">
-        <BookOfMonthCard book={dashboard.book} />
-        <QuizNightCard quizNight={dashboard.quizNight} />
+        <motion.div {...fadeUp(0.08)} whileHover={HOVER_LIFT}>
+          <BookOfMonthCard book={dashboard.book} />
+        </motion.div>
+        <motion.div {...fadeUp(0.14)} whileHover={HOVER_LIFT}>
+          <QuizNightCard quizNight={dashboard.quizNight} />
+        </motion.div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatTile size="lg" icon={Trophy} label="Team place" value={`${stats.teamPlace}/${stats.teamsTotal}`} note={stats.teamPlaceDelta} />
-        <StatTile size="lg" icon={Zap} accent label="Your points" value={String(stats.yourPoints)} note={stats.pointsBreakdown} />
-        <StatTile size="lg" icon={BookOpen} label="Books finished" value={`${stats.booksFinished}/${stats.booksTotal}`} note={stats.lastBookLabel} />
-        <StatTile size="lg" icon={Flame} accent label="Reading streak" value={`${stats.readingStreakDays} days`} note={stats.streakNote} />
-      </div>
+      <motion.div {...fadeUp(0.22)}>
+        <StatStrip items={statItems} />
+      </motion.div>
     </div>
   );
 }

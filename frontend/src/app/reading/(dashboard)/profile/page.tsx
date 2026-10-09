@@ -127,19 +127,36 @@ export default function ReadingProfilePage() {
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex-1">
             <p className="text-base font-medium text-[var(--rd-text)]">Badges</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {stats.badges.map((badge) => (
-                <span
-                  key={badge.id}
-                  className={`rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide ${
-                    badge.earned
-                      ? "rd-accent-gradient text-black/80"
-                      : "border border-dashed border-[var(--rd-border)] text-[var(--rd-text-muted)]"
-                  }`}
-                >
-                  {badge.label}
-                </span>
-              ))}
+            <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+              {stats.badges.map((badge) => {
+                const earned = badge.current >= badge.target;
+                const percent = Math.min((badge.current / badge.target) * 100, 100);
+                return (
+                  <div
+                    key={badge.id}
+                    className={`flex flex-col gap-2 rounded-xl border p-3 ${
+                      earned ? "border-[var(--rd-accent-from)]/40 bg-[var(--rd-accent-from)]/[0.06]" : "border-[var(--rd-border)] bg-[var(--rd-ink)]"
+                    }`}
+                  >
+                    <span
+                      className={`text-[11px] font-semibold uppercase tracking-wide ${
+                        earned ? "text-[var(--rd-accent-from)]" : "text-[var(--rd-text-muted)]"
+                      }`}
+                    >
+                      {badge.label}
+                    </span>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--rd-border)]">
+                      <div
+                        className={`h-full rounded-full ${earned ? "bg-emerald-400" : "rd-accent-gradient"}`}
+                        style={{ width: `${percent}%` }}
+                      />
+                    </div>
+                    <span className="text-[11px] text-[var(--rd-text-muted)]">
+                      {badge.current}/{badge.target}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
             <p className="mt-3 text-xs text-[var(--rd-text-muted)]">
               Badges are cosmetic — they never add points, so the league stays fair.

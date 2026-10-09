@@ -102,9 +102,10 @@ export interface VoteRound {
 }
 
 export interface ProfileBadge {
-  id:     string;
-  label:  string;
-  earned: boolean;
+  id:      string;
+  label:   string;
+  current: number;
+  target:  number;
 }
 
 export interface ProfileStats {
