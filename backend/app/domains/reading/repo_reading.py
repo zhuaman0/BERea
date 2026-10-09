@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.domains.reading.model_reading import (
+    ReadingAppSettings,
     ReadingRefreshToken,
     ReadingSemesterRound,
     ReadingTeam,
@@ -17,6 +18,8 @@ from app.domains.reading.model_reading import (
     ReadingVoteOption,
     ReadingVoteRound,
 )
+
+APP_SETTINGS_ROW_ID = 1
 
 
 async def get_user_by_email(email: str, db: AsyncSession) -> ReadingUser | None:
@@ -256,3 +259,24 @@ async def create_semester_round(
 async def list_semester_rounds(db: AsyncSession) -> list[ReadingSemesterRound]:
     result = await db.execute(select(ReadingSemesterRound).order_by(ReadingSemesterRound.index.asc()))
     return list(result.scalars().all())
+
+
+async def get_app_settings(db: AsyncSession) -> ReadingAppSettings:
+    result = await db.execute(select(ReadingAppSettings).where(ReadingAppSettings.id == APP_SETTINGS_ROW_ID))
+    settings_row = result.scalar_one_or_none()
+    if settings_row:
+        return settings_row
+
+    settings_row = ReadingAppSettings(id=APP_SETTINGS_ROW_ID)
+    db.add(settings_row)
+    await db.commit()
+    await db.refresh(settings_row)
+    return settings_row
+
+
+async def set_leaderboard_enabled(enabled: bool, db: AsyncSession) -> ReadingAppSettings:
+    settings_row = await get_app_settings(db)
+    settings_row.leaderboard_enabled = enabled
+    await db.commit()
+    await db.refresh(settings_row)
+    return settings_row

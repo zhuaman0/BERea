@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Crown, Medal, Trophy, Users } from "lucide-react";
 import { readingAuthApi } from "@/features/reading/authApi";
+import { readingSettingsApi } from "@/features/reading/settingsApi";
 import { isApiError } from "@/features/auth/utils";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
 import type { ReadingTeamSummary } from "@/features/reading/authTypes";
@@ -37,9 +38,19 @@ export default function ReadingLeaderboardPage() {
   const [teams, setTeams] = useState<ReadingTeamSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [leaderboardEnabled, setLeaderboardEnabled] = useState(true);
+  const [isCheckingAccess, setIsCheckingAccess] = useState(true);
 
   const rowRefs = useRef<Record<string, HTMLTableRowElement | null>>({});
   const [flashId, setFlashId] = useState<string | null>(null);
+
+  useEffect(() => {
+    readingSettingsApi
+      .get()
+      .then((s) => setLeaderboardEnabled(s.leaderboard_enabled))
+      .catch(() => { /* keep showing the leaderboard if settings fail to load */ })
+      .finally(() => setIsCheckingAccess(false));
+  }, []);
 
   useEffect(() => {
     readingAuthApi
@@ -61,6 +72,19 @@ export default function ReadingLeaderboardPage() {
     }
     setFlashId(myTeam.id);
     window.setTimeout(() => setFlashId(null), 1600);
+  }
+
+  if (!isCheckingAccess && !leaderboardEnabled) {
+    return (
+      <div className="mx-auto w-full max-w-[1600px] px-8 py-10 lg:px-12">
+        <h1 className="font-display text-3xl font-semibold text-[var(--rd-text)]">Leaderboard</h1>
+        <div className="mt-6 rounded-2xl border border-dashed border-[var(--rd-border)] p-10 text-center">
+          <p className="text-sm text-[var(--rd-text-muted)]">
+            The leaderboard is currently unavailable. Check back later.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (

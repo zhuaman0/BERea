@@ -70,6 +70,18 @@ class ReadingTeamSummaryResponse(BaseModel):
     member_count: int
 
 
+class ReadingTeamMemberProfileResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    full_name: str
+    email: EmailStr
+    team_name: str
+    current_streak: int
+    token_balance: int
+    created_at: datetime
+
+
 class ReadingTeamRegistrationCreate(BaseModel):
     team_name: str = Field(min_length=2, max_length=120)
     member_1_name: str = Field(min_length=1, max_length=120)
@@ -155,3 +167,13 @@ class ReadingSemesterRoundResponse(BaseModel):
     starts_at: datetime
     ends_at: datetime
     status: SemesterRoundStatus
+
+
+class ReadingAppSettingsResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    leaderboard_enabled: bool
+
+
+class ReadingAppSettingsUpdate(BaseModel):
+    leaderboard_enabled: bool

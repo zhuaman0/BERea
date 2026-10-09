@@ -107,6 +107,15 @@ class ReadingSemesterRound(TimestampMixin, Base):
     ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
+class ReadingAppSettings(TimestampMixin, Base):
+    """Single-row table of app-wide toggles editable from the admin panel."""
+
+    __tablename__ = "reading_app_settings"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, default=1)
+    leaderboard_enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+
 class ReadingRefreshToken(Base):
     __tablename__ = "reading_refresh_tokens"
 

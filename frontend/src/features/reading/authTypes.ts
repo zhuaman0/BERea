@@ -49,3 +49,13 @@ export interface ReadingTeamSummary {
   name:         string;
   member_count: number;
 }
+
+export interface ReadingTeamMemberProfile {
+  id:              string;
+  full_name:       string;
+  email:           string;
+  team_name:       string;
+  current_streak:  number;
+  token_balance:   number;
+  created_at:      string;
+}

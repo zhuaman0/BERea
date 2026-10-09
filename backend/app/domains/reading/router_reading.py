@@ -7,12 +7,15 @@ from pydantic import ValidationError
 
 from app.dependencies import CurrentUserId, DbSession
 from app.domains.reading.schema_reading import (
+    ReadingAppSettingsResponse,
+    ReadingAppSettingsUpdate,
     ReadingLoginRequest,
     ReadingRefreshRequest,
     ReadingRegisterRequest,
     ReadingSemesterRoundCreate,
     ReadingSemesterRoundResponse,
     ReadingTeamJoinRequest,
+    ReadingTeamMemberProfileResponse,
     ReadingTeamRegistrationCreate,
     ReadingTeamRegistrationResponse,
     ReadingTeamResponse,
@@ -90,6 +93,15 @@ async def rename_my_team(payload: ReadingTeamJoinRequest, user_id: CurrentUserId
     return await rename_my_team_service(user_id, payload, db)
 
 
+@router.get("/teams/members/{member_id}", response_model=ReadingTeamMemberProfileResponse)
+async def get_team_member_profile(
+    member_id: str, user_id: CurrentUserId, db: DbSession
+) -> ReadingTeamMemberProfileResponse:
+    from app.domains.reading.service_reading import get_team_member_profile as get_team_member_profile_service
+
+    return await get_team_member_profile_service(user_id, member_id, db)
+
+
 @router.post("/teams/register", response_model=ReadingTeamRegistrationResponse, status_code=201)
 async def register_team(
     db: DbSession,
@@ -157,3 +169,19 @@ async def list_semester_rounds(user_id: CurrentUserId, db: DbSession) -> list[Re
     from app.domains.reading.service_reading import list_semester_rounds_for_user
 
     return await list_semester_rounds_for_user(db)
+
+
+@router.get("/settings", response_model=ReadingAppSettingsResponse)
+async def get_settings(user_id: CurrentUserId, db: DbSession) -> ReadingAppSettingsResponse:
+    from app.domains.reading.service_reading import get_app_settings_for_user
+
+    return await get_app_settings_for_user(db)
+
+
+@router.patch("/settings", response_model=ReadingAppSettingsResponse)
+async def update_settings(
+    payload: ReadingAppSettingsUpdate, user_id: CurrentUserId, db: DbSession
+) -> ReadingAppSettingsResponse:
+    from app.domains.reading.service_reading import update_app_settings_for_admin
+
+    return await update_app_settings_for_admin(payload, db)

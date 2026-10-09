@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { usePathname } from "next/navigation";
@@ -15,6 +16,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { ReadingTeam } from "@/features/reading/authTypes";
+import { readingSettingsApi } from "@/features/reading/settingsApi";
 
 interface NavItem {
   href:  string;
@@ -22,7 +24,7 @@ interface NavItem {
   icon:  LucideIcon;
 }
 
-const NAV_ITEMS: NavItem[] = [
+const BASE_NAV_ITEMS: NavItem[] = [
   { href: "/reading",             label: "Home",        icon: Home },
   { href: "/reading/games",       label: "Games",       icon: Gamepad2 },
   { href: "/reading/leaderboard", label: "Leaderboard", icon: Trophy },
@@ -53,13 +55,24 @@ function NavLink({ href, label, icon: Icon, isActive }: NavItem & { isActive: bo
 
 export function ReadingSidebar({ team }: ReadingSidebarProps) {
   const pathname = usePathname();
+  const [leaderboardEnabled, setLeaderboardEnabled] = useState(true);
+
+  useEffect(() => {
+    readingSettingsApi.get().then((s) => setLeaderboardEnabled(s.leaderboard_enabled)).catch(() => {
+      /* keep the leaderboard link visible if settings fail to load */
+    });
+  }, []);
+
+  const navItems = leaderboardEnabled
+    ? BASE_NAV_ITEMS
+    : BASE_NAV_ITEMS.filter((item) => item.href !== "/reading/leaderboard");
 
   return (
     <>
       {/* Desktop sidebar */}
       <aside className="hidden w-56 shrink-0 flex-col border-r border-[var(--rd-border)] bg-[var(--rd-panel)] md:flex">
         <nav className="flex flex-col gap-1 px-3 pt-5">
-          {NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <NavLink key={item.href} {...item} isActive={pathname === item.href} />
           ))}
         </nav>
@@ -101,7 +114,7 @@ export function ReadingSidebar({ team }: ReadingSidebarProps) {
 
       {/* Mobile bottom tab bar */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t border-[var(--rd-border)] bg-[var(--rd-panel)] px-2 py-2 md:hidden">
-        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+        {navItems.map(({ href, label, icon: Icon }) => {
           const isActive = pathname === href;
           return (
             <Link
