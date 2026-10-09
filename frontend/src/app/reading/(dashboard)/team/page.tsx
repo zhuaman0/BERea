@@ -1,7 +1,9 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
-import { Check, Copy, Pencil, Send, UserPlus, Trophy, BookOpen, Flame } from "lucide-react";
+import Link from "next/link";
+import type { Route } from "next";
+import { Check, Copy, Mail, Pencil, Send, UserPlus, UserRound, Trophy, BookOpen, Flame } from "lucide-react";
 import { StatStrip, type StatStripItem } from "@/features/reading/components/StatStrip";
 import { Modal } from "@/features/reading/components/Modal";
 import { readingAuthApi } from "@/features/reading/authApi";
@@ -295,22 +297,51 @@ export default function ReadingTeamPage() {
               </span>
             </div>
             <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {team.members.map((member) => (
-                <div key={member.id} className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--rd-border)] text-xs font-semibold text-[var(--rd-text)]">
-                    {initials(member.full_name)}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm text-[var(--rd-text)]">{member.full_name}</p>
-                    <p className="truncate text-xs text-[var(--rd-text-muted)]">{member.email}</p>
+              {team.members.map((member) => {
+                const isMe = member.id === user?.id;
+                return (
+                  <div
+                    key={member.id}
+                    className="flex flex-col gap-4 rounded-xl border border-[var(--rd-border)] bg-[var(--rd-ink)] p-4"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--rd-border)] text-xs font-semibold text-[var(--rd-text)]">
+                        {initials(member.full_name)}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm text-[var(--rd-text)]">
+                          {member.full_name} {isMe && <span className="text-[var(--rd-text-muted)]">· you</span>}
+                        </p>
+                        <p className="truncate text-xs text-[var(--rd-text-muted)]">{member.email}</p>
+                      </div>
+                    </div>
+
+                    {!isMe && (
+                      <div className="flex gap-2">
+                        <a
+                          href={`mailto:${member.email}`}
+                          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[var(--rd-border)] px-3 py-2 text-xs font-medium text-[var(--rd-text)] transition-colors hover:border-[var(--rd-accent-from)]"
+                        >
+                          <Mail size={13} />
+                          Message
+                        </a>
+                        <Link
+                          href={`/reading/team/${member.id}` as Route}
+                          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[var(--rd-border)] px-3 py-2 text-xs font-medium text-[var(--rd-text)] transition-colors hover:border-[var(--rd-accent-from)]"
+                        >
+                          <UserRound size={13} />
+                          View profile
+                        </Link>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
               {Array.from({ length: team.max_members - team.members.length }).map((_, i) => (
                 <button
                   key={`empty-${i}`}
                   onClick={openAddModal}
-                  className="group flex items-center gap-3 rounded-lg text-left"
+                  className="group flex items-center gap-3 rounded-xl border border-dashed border-[var(--rd-border)] p-4 text-left transition-colors hover:border-[var(--rd-accent-from)]"
                 >
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-dashed border-[var(--rd-border)] text-[var(--rd-text-muted)] transition-colors group-hover:border-[var(--rd-accent-from)] group-hover:text-[var(--rd-accent-from)]">
                     <UserPlus size={16} />

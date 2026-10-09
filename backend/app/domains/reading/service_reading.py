@@ -18,11 +18,14 @@ from app.domains.auth.service_auth import (
 from app.domains.reading.model_reading import ReadingSemesterRound, ReadingTeam, ReadingUser, ReadingVoteRound
 from app.domains.reading.schema_reading import (
     TEAM_MAX_MEMBERS,
+    ReadingAppSettingsResponse,
+    ReadingAppSettingsUpdate,
     ReadingLoginRequest,
     ReadingRegisterRequest,
     ReadingSemesterRoundCreate,
     ReadingSemesterRoundResponse,
     ReadingTeamJoinRequest,
+    ReadingTeamMemberProfileResponse,
     ReadingTeamMemberResponse,
     ReadingTeamRegistrationCreate,
     ReadingTeamRegistrationResponse,
@@ -170,6 +173,30 @@ async def rename_my_team(user_id: str, payload: ReadingTeamJoinRequest, db: Asyn
     members = await get_team_members(team.id, db)
     place, teams_total = await _compute_team_rank(team.id, db)
     return _to_team_response(team, members, place, teams_total)
+
+
+async def get_team_member_profile(
+    user_id: str, member_id: str, db: AsyncSession
+) -> ReadingTeamMemberProfileResponse:
+    from app.domains.reading.repo_reading import get_user_by_id
+
+    user = await get_user_by_id(uuid.UUID(user_id), db)
+    if not user or not user.team_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="You haven't joined a team yet")
+
+    member = await get_user_by_id(uuid.UUID(member_id), db)
+    if not member or member.team_id != user.team_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Teammate not found")
+
+    return ReadingTeamMemberProfileResponse(
+        id=member.id,
+        full_name=member.full_name,
+        email=member.email,
+        team_name=member.team.name if member.team else "",
+        current_streak=member.current_streak,
+        token_balance=member.token_balance,
+        created_at=member.created_at,
+    )
 
 
 async def list_teams(db: AsyncSession) -> list[ReadingTeamSummaryResponse]:
@@ -363,3 +390,19 @@ def _to_semester_round_response(round_: ReadingSemesterRound) -> ReadingSemester
         ends_at=round_.ends_at,
         status=status_,  # type: ignore[arg-type]
     )
+
+
+async def get_app_settings_for_user(db: AsyncSession) -> ReadingAppSettingsResponse:
+    from app.domains.reading.repo_reading import get_app_settings
+
+    settings_row = await get_app_settings(db)
+    return ReadingAppSettingsResponse.model_validate(settings_row)
+
+
+async def update_app_settings_for_admin(
+    payload: ReadingAppSettingsUpdate, db: AsyncSession
+) -> ReadingAppSettingsResponse:
+    from app.domains.reading.repo_reading import set_leaderboard_enabled
+
+    settings_row = await set_leaderboard_enabled(payload.leaderboard_enabled, db)
+    return ReadingAppSettingsResponse.model_validate(settings_row)
