@@ -28,17 +28,19 @@ export default function ReadingHomePage() {
     readingAuthApi.me().then(updateUser).catch(() => { /* keep whatever we already have */ });
   }, [updateUser]);
 
-  // Book of the month, quiz night, stats, semester map and bonus tasks have no
-  // backend yet — only the greeting name comes from the real account so far.
+  // Book of the month, quiz night, points and books-finished have no backend
+  // yet. The streak comes from the real account — updated server-side every
+  // time this page loads.
   const dashboard = MOCK_DASHBOARD;
   const { stats } = dashboard;
   const firstName = user?.full_name?.split(" ")[0] || dashboard.greetingName;
+  const currentStreak = user?.current_streak ?? 0;
 
   const statItems: StatStripItem[] = [
     { icon: Trophy,   label: "Team place",     value: `${stats.teamPlace}/${stats.teamsTotal}`,      note: stats.teamPlaceDelta,  accent: false },
     { icon: Zap,      label: "Your points",    value: String(stats.yourPoints),                      note: stats.pointsBreakdown, accent: true  },
     { icon: BookOpen, label: "Books finished", value: `${stats.booksFinished}/${stats.booksTotal}`,  note: stats.lastBookLabel,   accent: false },
-    { icon: Flame,    label: "Reading streak", value: `${stats.readingStreakDays} days`,             note: stats.streakNote,      accent: true  },
+    { icon: Flame,    label: "Reading streak", value: `${currentStreak} days`,                       note: stats.streakNote,      accent: true  },
   ];
 
   return (
@@ -68,7 +70,7 @@ export default function ReadingHomePage() {
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--rd-ink)] px-3 py-1 text-xs font-semibold text-[var(--rd-text)]">
               <Flame size={13} className="text-[var(--rd-accent-from)]" />
-              {stats.readingStreakDays}-day streak
+              {currentStreak}-day streak
             </span>
           </div>
           <p className="mt-2 text-base text-[var(--rd-text-muted)]">{dashboard.greetingNote}</p>

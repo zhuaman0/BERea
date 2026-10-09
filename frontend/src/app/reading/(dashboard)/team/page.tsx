@@ -7,6 +7,7 @@ import { Modal } from "@/features/reading/components/Modal";
 import { MOCK_DASHBOARD } from "@/features/reading/mockData";
 import { readingAuthApi } from "@/features/reading/authApi";
 import { isApiError } from "@/features/auth/utils";
+import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
 import type { ReadingTeam } from "@/features/reading/authTypes";
 
 interface StudentDraft {
@@ -85,11 +86,13 @@ function StepBadge({ index, label, active, done }: StepBadgeProps) {
 
 export default function ReadingTeamPage() {
   const { stats } = MOCK_DASHBOARD;
+  const { user, updateUser } = useReadingAuthStore();
+  const currentStreak = user?.current_streak ?? 0;
 
   const statItems: StatStripItem[] = [
     { icon: Trophy,   label: "Team place",     value: `${stats.teamPlace}/${stats.teamsTotal}`,     note: stats.teamPlaceDelta, accent: false },
     { icon: BookOpen, label: "Books finished", value: `${stats.booksFinished}/${stats.booksTotal}`, note: stats.lastBookLabel,  accent: false },
-    { icon: Flame,    label: "Reading streak", value: `${stats.readingStreakDays} days`,            note: stats.streakNote,     accent: true  },
+    { icon: Flame,    label: "Reading streak", value: `${currentStreak} days`,                      note: stats.streakNote,     accent: true  },
   ];
 
   const [team, setTeam] = useState<ReadingTeam | null>(null);
@@ -122,6 +125,10 @@ export default function ReadingTeamPage() {
       .catch((err) => setLoadError(isApiError(err) ? err.detail : "Couldn't load your team."))
       .finally(() => setIsLoading(false));
   }, []);
+
+  useEffect(() => {
+    readingAuthApi.me().then(updateUser).catch(() => { /* keep whatever we already have */ });
+  }, [updateUser]);
 
   async function handleRenameSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();

@@ -33,13 +33,15 @@ export interface QuizNight {
   entryNote:   string;
 }
 
-export type SemesterMonthStatus = "done" | "in_progress" | "locked";
+export type SemesterRoundStatus = "done" | "in_progress" | "locked";
 
-export interface SemesterMonth {
+export interface SemesterRound {
+  id:         string;
   index:      number;
   label:      string;
-  status:     SemesterMonthStatus;
-  points:     number | null;
+  starts_at:  string;
+  ends_at:    string;
+  status:     SemesterRoundStatus;
 }
 
 export type BonusTaskStatus = "open" | "done";
@@ -53,16 +55,15 @@ export interface BonusTask {
 }
 
 export interface DashboardStats {
-  teamPlace:         number;
-  teamsTotal:        number;
-  teamPlaceDelta:    string;
-  yourPoints:        number;
-  pointsBreakdown:   string;
-  booksFinished:     number;
-  booksTotal:        number;
-  lastBookLabel:     string;
-  readingStreakDays: number;
-  streakNote:        string;
+  teamPlace:       number;
+  teamsTotal:      number;
+  teamPlaceDelta:  string;
+  yourPoints:      number;
+  pointsBreakdown: string;
+  booksFinished:   number;
+  booksTotal:      number;
+  lastBookLabel:   string;
+  streakNote:      string;
 }
 
 export interface ReadingDashboard {
@@ -75,7 +76,6 @@ export interface ReadingDashboard {
   book:         BookOfMonth;
   quizNight:    QuizNight;
   stats:        DashboardStats;
-  semesterMap:  SemesterMonth[];
   bonusTasks:   BonusTask[];
   team:         Team;
 }

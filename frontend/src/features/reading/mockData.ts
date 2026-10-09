@@ -55,15 +55,8 @@ export const MOCK_DASHBOARD: ReadingDashboard = {
     booksFinished:     1,
     booksTotal:        4,
     lastBookLabel:     "September: Ұшқан ұя",
-    readingStreakDays: 9,
     streakNote:        "+5 pts per 7-day streak",
   },
-  semesterMap: [
-    { index: 1, label: "September · Ұшқан ұя",       status: "done",        points: 58 },
-    { index: 2, label: "October · Шоко әлем 2",       status: "in_progress", points: null },
-    { index: 3, label: "November · voting opens 1 Nov", status: "locked",   points: null },
-    { index: 4, label: "December · final + grand prize", status: "locked", points: null },
-  ],
   bonusTasks: [
     { id: "b1", title: "30s TikTok review",       points: 150, status: "open", note: "×2 points in the next round" },
     { id: "b2", title: "Quote card on Instagram", points: 80,  status: "open", note: "+20 flat points, once per month" },

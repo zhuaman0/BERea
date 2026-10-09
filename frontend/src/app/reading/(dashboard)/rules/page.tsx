@@ -1,9 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { SemesterMapCard } from "@/features/reading/components/SemesterMapCard";
 import { BonusTasksCard } from "@/features/reading/components/BonusTasksCard";
 import { MOCK_DASHBOARD } from "@/features/reading/mockData";
+import { readingSemesterApi } from "@/features/reading/semesterApi";
+import type { SemesterRound } from "@/features/reading/types";
 
 const RULES = [
   {
@@ -41,6 +44,12 @@ function fadeUp(delay = 0) {
 export default function ReadingRulesPage() {
   const dashboard = MOCK_DASHBOARD;
 
+  const [rounds, setRounds] = useState<SemesterRound[]>([]);
+
+  useEffect(() => {
+    readingSemesterApi.listRounds().then(setRounds).catch(() => { /* leave empty — card shows its own fallback */ });
+  }, []);
+
   return (
     <div className="max-w-4xl px-6 py-10 md:px-8">
       <motion.div {...fadeUp(0)}>
@@ -55,7 +64,7 @@ export default function ReadingRulesPage() {
         Your progress
       </motion.p>
       <motion.div {...fadeUp(0.14)} className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
-        <SemesterMapCard months={dashboard.semesterMap} />
+        <SemesterMapCard rounds={rounds} />
         <BonusTasksCard tasks={dashboard.bonusTasks} />
       </motion.div>
 

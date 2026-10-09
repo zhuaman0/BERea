@@ -60,7 +60,7 @@ export function ReadingRegisterForm() {
 
       const placeholder: ReadingUser = {
         id: "", email: result.data.email, full_name: result.data.full_name,
-        team_name: null, token_balance: 0, created_at: new Date().toISOString(),
+        team_name: null, token_balance: 0, current_streak: 0, created_at: new Date().toISOString(),
       };
       setSession(placeholder, access_token, refresh_token);
       document.cookie = "nats-session=1; path=/; SameSite=Lax";
