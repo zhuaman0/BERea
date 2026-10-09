@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Trophy, Flame, BookOpen, Zap } from "lucide-react";
 import { BookOfMonthCard } from "@/features/reading/components/BookOfMonthCard";
 import { QuizNightCard } from "@/features/reading/components/QuizNightCard";
-import { StatTile } from "@/features/reading/components/StatTile";
+import { StatStrip, type StatStripItem } from "@/features/reading/components/StatStrip";
 import { MOCK_DASHBOARD } from "@/features/reading/mockData";
 import { readingAuthApi } from "@/features/reading/authApi";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
@@ -34,15 +34,15 @@ export default function ReadingHomePage() {
   const { stats } = dashboard;
   const firstName = user?.full_name?.split(" ")[0] || dashboard.greetingName;
 
-  const statTiles = [
-    { icon: Trophy, label: "Team place",    value: `${stats.teamPlace}/${stats.teamsTotal}`,     note: stats.teamPlaceDelta,     accent: false },
-    { icon: Zap,    label: "Your points",   value: String(stats.yourPoints),                     note: stats.pointsBreakdown,    accent: true  },
-    { icon: BookOpen, label: "Books finished", value: `${stats.booksFinished}/${stats.booksTotal}`, note: stats.lastBookLabel,    accent: false },
-    { icon: Flame,  label: "Reading streak", value: `${stats.readingStreakDays} days`,            note: stats.streakNote,         accent: true  },
-  ] as const;
+  const statItems: StatStripItem[] = [
+    { icon: Trophy,   label: "Team place",     value: `${stats.teamPlace}/${stats.teamsTotal}`,      note: stats.teamPlaceDelta,  accent: false },
+    { icon: Zap,      label: "Your points",    value: String(stats.yourPoints),                      note: stats.pointsBreakdown, accent: true  },
+    { icon: BookOpen, label: "Books finished", value: `${stats.booksFinished}/${stats.booksTotal}`,  note: stats.lastBookLabel,   accent: false },
+    { icon: Flame,    label: "Reading streak", value: `${stats.readingStreakDays} days`,             note: stats.streakNote,      accent: true  },
+  ];
 
   return (
-    <div className="w-full max-w-[1600px] px-8 py-10 lg:px-12">
+    <div className="w-full px-8 py-10 lg:px-12">
       <motion.div
         {...fadeUp(0)}
         className="relative mb-8 flex flex-col gap-4 overflow-hidden rounded-[28px] border border-[var(--rd-accent-from)]/20 bg-[var(--rd-panel)] px-8 py-8 sm:flex-row sm:items-center sm:justify-between"
@@ -92,13 +92,9 @@ export default function ReadingHomePage() {
         </motion.div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {statTiles.map((tile, i) => (
-          <motion.div key={tile.label} {...fadeUp(0.2 + i * 0.06)} whileHover={HOVER_LIFT}>
-            <StatTile size="lg" icon={tile.icon} accent={tile.accent} label={tile.label} value={tile.value} note={tile.note} />
-          </motion.div>
-        ))}
-      </div>
+      <motion.div {...fadeUp(0.22)}>
+        <StatStrip items={statItems} />
+      </motion.div>
     </div>
   );
 }
