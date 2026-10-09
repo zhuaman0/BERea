@@ -87,11 +87,16 @@ scripts/    Dev automation (seed, migrate, reset)
 
 ## Git Workflow
 - **One branch per task.** Never commit a new task's work directly to `main`.
-- **Branch name**: `<type>/<kebab-slug>`, same `<type>` list as commit messages above.
-  - `feat/team-registration-form`, `fix/leaderboard-session-guard`, `chore/project-governance`,
-    `refactor/vote-round-service`, `docs/reading-domain-glossary`, `test/vote-round-winner-calc`
-  - Scope the slug to the task, not the whole feature area — `feat/dashboard-gamification` beats
-    `feat/dashboard-stuff`.
+- **Branch name**: `<product>/<type>/<kebab-slug>`.
+  - `<product>` says which product the task is for — `rd` for 451°/NATS Spirea (reading league),
+    `fs` for Furniture Studio. Use the repo-wide type when a task genuinely touches shared
+    infra/docs/tooling rather than one product (see the `docs/project-governance` branch).
+  - `<type>` is the same list as commit messages above (`feat`, `fix`, `refactor`, `chore`,
+    `docs`, `test`).
+  - Examples: `rd/feat/dashboard-left-align-animations`, `rd/fix/leaderboard-session-guard`,
+    `fs/feat/catalog-price-filter`, `fs/fix/configurator-save-race`.
+  - Scope the slug to the task, not the whole feature area — `rd/feat/dashboard-gamification`
+    beats `rd/feat/dashboard-stuff`.
 - **Commit as you go**, in logically separate commits where the diff naturally splits (e.g.
   backend migration/model/service/router as one commit, the matching frontend UI as another) —
   not one giant commit at the end of the task.
