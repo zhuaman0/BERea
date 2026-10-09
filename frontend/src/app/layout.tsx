@@ -19,20 +19,20 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "BERea — Discover how YOU learn best",
-    template: "%s | BERea",
+    default: "NATS Spirea — Read four books. Win the semester.",
+    template: "%s | NATS Spirea",
   },
   description:
-    "Stop guessing. Start testing. BERea helps students find study methods that actually work for their brain.",
-  keywords: ["study", "pomodoro", "flashcards", "IELTS", "learning", "focus"],
+    "A semester-long reading league for students: teams of 2–3, one book a month, live Kahoot-style quiz nights, and bonus challenges — the top team wins a scholarship or internship.",
+  keywords: ["reading", "gamification", "university", "book club", "quiz", "students"],
   openGraph: {
     type: "website",
-    siteName: "BERea",
+    siteName: "NATS Spirea",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#6366f1",
+  themeColor: "#ff6b2c",
   colorScheme: "light dark",
 };
 

@@ -38,6 +38,10 @@ class Settings(BaseSettings):
     # ─── YouTube ─────────────────────────────────────────────────────────────
     youtube_api_key: str = ""
 
+    # ─── Uploads ─────────────────────────────────────────────────────────────
+    upload_dir: str = "uploads"
+    max_upload_size_mb: int = 5
+
     @field_validator("backend_cors_origins", mode="before")
     @classmethod
     def parse_cors(cls, v: str | list[str]) -> list[str]:

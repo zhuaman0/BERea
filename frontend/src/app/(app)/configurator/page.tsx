@@ -4,7 +4,6 @@ import dynamic from "next/dynamic";
 import { ConfiguratorPanel } from "@/features/configurator/ConfiguratorPanel";
 import { useConfiguratorStore } from "@/features/configurator/useConfiguratorStore";
 
-// Load Three.js only on client side — it needs browser APIs
 const FurnitureScene = dynamic(
   () => import("@/features/configurator/FurnitureScene").then((m) => m.FurnitureScene),
   { ssr: false, loading: () => <SceneLoader /> }
@@ -12,64 +11,60 @@ const FurnitureScene = dynamic(
 
 function SceneLoader() {
   return (
-    <div className="flex-1 bg-slate-50 flex items-center justify-center">
-      <div className="text-center space-y-3">
-        <div className="w-10 h-10 border-2 border-slate-900 border-t-transparent rounded-full animate-spin mx-auto" />
-        <p className="text-sm text-slate-400 font-medium">Загрузка 3D сцены...</p>
+    <div className="flex-1 bg-[#FAFAF8] flex items-center justify-center">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 border border-stone-300 border-t-stone-900 rounded-full animate-spin" />
+        <p className="text-[10px] tracking-[0.25em] uppercase text-stone-400">Загрузка сцены</p>
       </div>
     </div>
   );
 }
 
 function PriceSummary() {
-  const { totalPrice, selectedColor, selectedHandle, selectedTemplate } = useConfiguratorStore();
+  const { totalPrice, selectedColor, selectedDoorStyle, selectedHandle, selectedTemplate } = useConfiguratorStore();
+
+  const rows = [
+    { label: "Корпус",   value: "85 000 ₸" },
+    { label: "Дверей",   value: `${selectedTemplate.bottomDoors + selectedTemplate.topDoors} шт` },
+    { label: "Материал", value: selectedDoorStyle.label },
+    { label: "Цвет",     value: selectedColor.label, dot: selectedColor.hex },
+    { label: "Ручки",    value: selectedHandle.label },
+    ...(selectedTemplate.hasIsland ? [{ label: "Остров", value: "50 000 ₸" }] : []),
+  ] as const;
 
   return (
-    <aside className="hidden xl:flex flex-col w-64 shrink-0 border-l border-slate-100 bg-white p-5">
-      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Состав</p>
+    <aside className="hidden xl:flex flex-col w-60 shrink-0 border-l border-stone-100 bg-white">
+      <div className="p-5 border-b border-stone-100">
+        <p className="text-[9px] tracking-[0.28em] uppercase text-stone-400">Состав</p>
+      </div>
 
-      <div className="space-y-3 flex-1 text-sm">
-        <div className="flex justify-between">
-          <span className="text-slate-500">Корпус</span>
-          <span className="font-medium text-slate-900">85 000 ₸</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-slate-500">Дверей</span>
-          <span className="font-medium text-slate-900">
-            {selectedTemplate.bottomDoors + selectedTemplate.topDoors} шт
-          </span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-slate-500">Цвет</span>
-          <span className="font-medium text-slate-900 flex items-center gap-1.5">
-            <span
-              className="w-3 h-3 rounded-full border border-slate-200 inline-block"
-              style={{ backgroundColor: selectedColor.hex }}
-            />
-            {selectedColor.label}
-          </span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-slate-500">Ручки</span>
-          <span className="font-medium text-slate-900">{selectedHandle.label}</span>
-        </div>
-        {selectedTemplate.hasIsland && (
-          <div className="flex justify-between">
-            <span className="text-slate-500">Остров</span>
-            <span className="font-medium text-slate-900">50 000 ₸</span>
+      <div className="flex flex-col gap-3 p-5 flex-1">
+        {rows.map((row) => (
+          <div key={row.label} className="flex items-center justify-between">
+            <span className="text-[12px] text-stone-400 font-light">{row.label}</span>
+            <span className="text-[12px] text-stone-900 font-light flex items-center gap-1.5">
+              {"dot" in row && row.dot && (
+                <span
+                  className="w-3 h-3 inline-block border border-stone-200"
+                  style={{ backgroundColor: row.dot }}
+                />
+              )}
+              {row.value}
+            </span>
           </div>
-        )}
-        <div className="border-t border-slate-100 pt-3 flex justify-between font-bold">
-          <span className="text-slate-900">Итого</span>
-          <span className="text-slate-900">{totalPrice.toLocaleString("ru")} ₸</span>
+        ))}
+
+        <div className="border-t border-stone-100 pt-3 mt-1 flex items-baseline justify-between">
+          <span className="text-[10px] tracking-[0.2em] uppercase text-stone-400">Итого</span>
+          <span className="text-lg font-light text-stone-900">{totalPrice.toLocaleString("ru")} ₸</span>
         </div>
       </div>
 
-      <div className="mt-6 space-y-2">
-        <button className="w-full py-3 bg-slate-900 text-white text-sm font-semibold rounded-xl hover:bg-slate-800 transition-colors">
+      <div className="p-5 border-t border-stone-100 flex flex-col gap-2">
+        <button className="w-full py-3 bg-stone-900 text-white text-[11px] font-semibold tracking-widest uppercase hover:bg-stone-800 transition-colors duration-200">
           Оставить заявку
         </button>
-        <button className="w-full py-2.5 border border-slate-200 text-slate-600 text-sm font-medium rounded-xl hover:bg-slate-50 transition-colors">
+        <button className="w-full py-2.5 border border-stone-200 text-stone-500 text-[11px] tracking-widest uppercase hover:border-stone-400 hover:text-stone-700 transition-colors duration-200">
           Сохранить дизайн
         </button>
       </div>
@@ -77,47 +72,10 @@ function PriceSummary() {
   );
 }
 
-export default function ConfiguratorPage() {
-  return (
-    <div className="h-full flex flex-col">
-
-      {/* Header */}
-      <div className="shrink-0 px-6 py-4 border-b border-slate-100 bg-white flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900">Конфигуратор мебели</h1>
-          <p className="text-sm text-slate-400">Вращайте модель мышью • Прокрутите для зума</p>
-        </div>
-        <div className="flex items-center gap-2 xl:hidden">
-          <MobilePriceChip />
-        </div>
-      </div>
-
-      {/* Main */}
-      <div className="flex flex-1 min-h-0">
-        {/* Left panel — desktop only */}
-        <div className="hidden lg:flex">
-          <ConfiguratorPanel />
-        </div>
-
-        {/* 3D viewport */}
-        <main className="flex-1 bg-slate-50 min-h-0">
-          <FurnitureScene />
-        </main>
-
-        {/* Right summary — wide desktop only */}
-        <PriceSummary />
-      </div>
-
-      {/* Mobile bottom bar */}
-      <MobileBottomBar />
-    </div>
-  );
-}
-
 function MobilePriceChip() {
   const { totalPrice } = useConfiguratorStore();
   return (
-    <span className="text-base font-black text-slate-900">
+    <span className="text-base font-light text-stone-900">
       {totalPrice.toLocaleString("ru")} ₸
     </span>
   );
@@ -126,14 +84,52 @@ function MobilePriceChip() {
 function MobileBottomBar() {
   const { totalPrice } = useConfiguratorStore();
   return (
-    <div className="lg:hidden shrink-0 bg-white border-t border-slate-100 px-4 py-3 flex items-center gap-3">
+    <div className="lg:hidden shrink-0 bg-white border-t border-stone-100 px-5 py-3 flex items-center gap-3">
       <div className="flex-1">
-        <p className="text-xs text-slate-400">Итого</p>
-        <p className="text-lg font-black text-slate-900">{totalPrice.toLocaleString("ru")} ₸</p>
+        <p className="text-[9px] tracking-[0.2em] uppercase text-stone-400">Итого</p>
+        <p className="text-lg font-light text-stone-900">{totalPrice.toLocaleString("ru")} ₸</p>
       </div>
-      <button className="px-5 py-2.5 bg-slate-900 text-white text-sm font-semibold rounded-xl hover:bg-slate-800 transition-colors">
+      <button className="px-6 py-2.5 bg-stone-900 text-white text-[11px] font-semibold tracking-widest uppercase hover:bg-stone-800 transition-colors duration-200">
         Заказать
       </button>
+    </div>
+  );
+}
+
+export default function ConfiguratorPage() {
+  return (
+    <div className="h-full flex flex-col">
+
+      {/* Header */}
+      <div className="shrink-0 px-6 py-4 border-b border-stone-100 bg-white flex items-center justify-between">
+        <div>
+          <p className="text-[9px] tracking-[0.28em] uppercase text-stone-400 mb-1">
+            Конфигуратор
+          </p>
+          <h1 className="text-xl font-extralight text-stone-900">Настройте вашу мебель</h1>
+        </div>
+        <div className="flex items-center gap-2 xl:hidden">
+          <MobilePriceChip />
+        </div>
+      </div>
+
+      {/* Main */}
+      <div className="flex flex-1 min-h-0">
+        <div className="hidden lg:flex">
+          <ConfiguratorPanel />
+        </div>
+
+        <main className="flex-1 bg-[#FAFAF8] min-h-0 relative">
+          <FurnitureScene />
+          <p className="absolute bottom-4 left-1/2 -translate-x-1/2 text-[9px] tracking-[0.25em] uppercase text-stone-300 pointer-events-none">
+            Вращайте мышью · Прокрутите для зума
+          </p>
+        </main>
+
+        <PriceSummary />
+      </div>
+
+      <MobileBottomBar />
     </div>
   );
 }

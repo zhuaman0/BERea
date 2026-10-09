@@ -44,28 +44,10 @@ services:
       timeout:  5s
       retries:  5
 
-  # ── Next.js frontend ───────────────────────────────────────────────────────
-  frontend:
-    build:
-      context:    ..
-      dockerfile: docker/Dockerfile.frontend
-      target:     development
-    container_name: berea_frontend
-    networks:
-      - berea_net
-    env_file: ../.env
-    environment:
-      NEXT_PUBLIC_API_BASE_URL: http://localhost/api
-      NEXT_TELEMETRY_DISABLED:  "1"
-    volumes:
-      - ../frontend:/app
-      - /app/node_modules
-      - frontend_next_cache:/app/.next
-    restart: unless-stopped
-    depends_on:
-      - backend
-
   # ── Nginx reverse proxy ────────────────────────────────────────────────────
+  # Frontend is NOT containerized — run it on the host with `npm run dev`
+  # (see frontend/README or root package.json). Nginx proxies "/" to it via
+  # host.docker.internal so http://localhost keeps working either way.
   nginx:
     image: nginx:1.27-alpine
     container_name: berea_nginx
@@ -82,10 +64,7 @@ services:
     depends_on:
       backend:
         condition: service_healthy
-      frontend:
-        condition: service_started
 
 # ─── Volumes ────────────────────────────────────────────────────────────────
 volumes:
   postgres_data:
-  frontend_next_cache:

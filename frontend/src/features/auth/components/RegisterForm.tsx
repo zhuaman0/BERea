@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
 import { Eye, EyeOff } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { authApi } from "@/features/auth/api";
@@ -12,27 +11,29 @@ import { usersApi } from "@/features/users/api";
 import { useAuthStore } from "@/features/auth/store/useAuthStore";
 import type { User } from "@/types/auth";
 
+const registerSchema = z.object({
+  full_name: z.string().min(2, "Имя должно содержать не менее 2 символов").max(100),
+  email:     z.string().email("Введите корректный адрес почты"),
+  password:  z.string().min(8, "Пароль должен содержать не менее 8 символов"),
+});
+
+type RegisterValues = z.infer<typeof registerSchema>;
+type FieldErrors = Partial<Record<keyof RegisterValues, string>>;
+
+const inputBase =
+  "h-11 w-full border border-stone-200 bg-white px-4 text-[13px] text-stone-900 placeholder:text-stone-300 transition-colors focus:outline-none focus:border-stone-500";
+
 export function RegisterForm() {
-  const t      = useTranslations("auth");
   const router = useRouter();
   const { setSession, updateUser } = useAuthStore();
 
-  const registerSchema = z.object({
-    full_name: z.string().min(2, t("nameMinLength")).max(100),
-    email:     z.string().email(t("invalidEmail")),
-    password:  z.string().min(8, t("passwordMinLength")),
-  });
-
-  type RegisterValues = z.infer<typeof registerSchema>;
-  type FieldErrors = Partial<Record<keyof RegisterValues, string>>;
-
-  const [values, setValues]           = useState<RegisterValues>({ full_name: "", email: "", password: "" });
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-  const [serverError, setServerError] = useState<string | null>(null);
+  const [values,       setValues]       = useState<RegisterValues>({ full_name: "", email: "", password: "" });
+  const [fieldErrors,  setFieldErrors]  = useState<FieldErrors>({});
+  const [serverError,  setServerError]  = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function set<K extends keyof RegisterValues>(key: K, value: string) {
+  function setField<K extends keyof RegisterValues>(key: K, value: string) {
     setValues((v) => ({ ...v, [key]: value }));
     if (fieldErrors[key]) setFieldErrors((e) => ({ ...e, [key]: undefined }));
   }
@@ -68,112 +69,90 @@ export function RegisterForm() {
       try {
         const profile = await usersApi.me();
         updateUser(profile);
-      } catch {
-        // Continue with placeholder
-      }
+      } catch { /* continue with placeholder */ }
 
-      router.push("/onboarding");
+      router.push("/dashboard");
     } catch (err: unknown) {
       setServerError(
-        isApiError(err) ? err.detail : t("somethingWentWrong")
+        isApiError(err) ? err.detail : "Что-то пошло не так. Попробуйте ещё раз."
       );
     } finally {
       setIsSubmitting(false);
     }
   }
 
-  const inputBase =
-    "h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent";
-
   return (
-    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
 
       {serverError && (
-        <div className="flex items-start gap-2.5 rounded-xl bg-red-50 border border-red-100 px-4 py-3">
-          <span className="text-red-400 mt-px shrink-0">⚠</span>
-          <p className="text-sm text-red-600 leading-snug">{serverError}</p>
+        <div className="border border-red-200 bg-red-50 px-4 py-3">
+          <p className="text-[13px] text-red-600">{serverError}</p>
         </div>
       )}
 
       {/* Full name */}
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="reg-name" className="text-sm font-medium text-slate-700">
-          {t("fullName")}
+        <label htmlFor="reg-name" className="text-[11px] tracking-[0.08em] uppercase font-medium text-stone-500">
+          Полное имя
         </label>
         <input
           id="reg-name"
           type="text"
           value={values.full_name}
-          onChange={(e) => set("full_name", e.target.value)}
-          placeholder={t("fullNamePlaceholder")}
+          onChange={(e) => setField("full_name", e.target.value)}
+          placeholder="Иван Иванов"
           autoComplete="name"
-          aria-invalid={fieldErrors.full_name ? "true" : undefined}
-          aria-describedby={fieldErrors.full_name ? "reg-name-err" : undefined}
-          className={cn(inputBase, fieldErrors.full_name && "border-red-400 focus:ring-red-400")}
+          className={cn(inputBase, fieldErrors.full_name && "border-red-400 focus:border-red-400")}
         />
         {fieldErrors.full_name && (
-          <p id="reg-name-err" role="alert" className="text-xs text-red-500">
-            {fieldErrors.full_name}
-          </p>
+          <p className="text-[11px] text-red-500">{fieldErrors.full_name}</p>
         )}
       </div>
 
       {/* Email */}
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="reg-email" className="text-sm font-medium text-slate-700">
-          {t("email")}
+        <label htmlFor="reg-email" className="text-[11px] tracking-[0.08em] uppercase font-medium text-stone-500">
+          Электронная почта
         </label>
         <input
           id="reg-email"
           type="email"
           value={values.email}
-          onChange={(e) => set("email", e.target.value)}
-          placeholder={t("emailPlaceholder")}
+          onChange={(e) => setField("email", e.target.value)}
+          placeholder="you@example.com"
           autoComplete="email"
-          aria-invalid={fieldErrors.email ? "true" : undefined}
-          aria-describedby={fieldErrors.email ? "reg-email-err" : undefined}
-          className={cn(inputBase, fieldErrors.email && "border-red-400 focus:ring-red-400")}
+          className={cn(inputBase, fieldErrors.email && "border-red-400 focus:border-red-400")}
         />
         {fieldErrors.email && (
-          <p id="reg-email-err" role="alert" className="text-xs text-red-500">
-            {fieldErrors.email}
-          </p>
+          <p className="text-[11px] text-red-500">{fieldErrors.email}</p>
         )}
       </div>
 
       {/* Password */}
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="reg-password" className="text-sm font-medium text-slate-700">
-          {t("password")}
+        <label htmlFor="reg-password" className="text-[11px] tracking-[0.08em] uppercase font-medium text-stone-500">
+          Пароль
         </label>
         <div className="relative">
           <input
             id="reg-password"
             type={showPassword ? "text" : "password"}
             value={values.password}
-            onChange={(e) => set("password", e.target.value)}
-            placeholder={t("passwordHint")}
+            onChange={(e) => setField("password", e.target.value)}
+            placeholder="Не менее 8 символов"
             autoComplete="new-password"
-            aria-invalid={fieldErrors.password ? "true" : undefined}
-            aria-describedby={fieldErrors.password ? "reg-password-err" : undefined}
-            className={cn(
-              inputBase, "pr-11",
-              fieldErrors.password && "border-red-400 focus:ring-red-400"
-            )}
+            className={cn(inputBase, "pr-11", fieldErrors.password && "border-red-400 focus:border-red-400")}
           />
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
-            aria-label={showPassword ? t("hidePassword") : t("showPassword")}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-300 hover:text-stone-600 transition-colors"
           >
-            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
           </button>
         </div>
         {fieldErrors.password && (
-          <p id="reg-password-err" role="alert" className="text-xs text-red-500">
-            {fieldErrors.password}
-          </p>
+          <p className="text-[11px] text-red-500">{fieldErrors.password}</p>
         )}
       </div>
 
@@ -181,12 +160,12 @@ export function RegisterForm() {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="mt-1 h-11 w-full rounded-xl bg-blue-800 text-white text-sm font-semibold hover:bg-blue-900 active:bg-blue-950 transition-colors disabled:opacity-60 disabled:pointer-events-none inline-flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+        className="h-11 w-full bg-stone-900 text-white text-[11px] font-semibold tracking-widest uppercase hover:bg-stone-800 active:bg-black transition-colors disabled:opacity-50 disabled:pointer-events-none inline-flex items-center justify-center gap-2"
       >
         {isSubmitting && (
-          <span className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+          <span className="w-4 h-4 border-2 border-white border-t-transparent animate-spin" />
         )}
-        {t("register")}
+        Создать аккаунт
       </button>
     </form>
   );

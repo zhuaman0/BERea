@@ -1,0 +1,50 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { LogOut } from "lucide-react";
+import { readingAuthApi } from "@/features/reading/authApi";
+import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
+
+export default function ReadingSettingsPage() {
+  const router = useRouter();
+  const { user, refreshToken, clearSession } = useReadingAuthStore();
+
+  async function handleLogout() {
+    try {
+      if (refreshToken) await readingAuthApi.logout(refreshToken);
+    } catch {
+      // clear local session even if server revocation fails
+    }
+    clearSession();
+    document.cookie = "nats-session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+    router.push("/reading/login");
+  }
+
+  return (
+    <div className="mx-auto max-w-4xl px-6 py-10 md:px-8">
+      <h1 className="font-display text-2xl font-semibold text-[var(--rd-text)]">Settings</h1>
+      <p className="mt-1 text-[13px] text-[var(--rd-text-muted)]">
+        Account and notification preferences are coming in a later step.
+      </p>
+
+      <div className="mt-8 flex items-center justify-between rounded-xl border border-[var(--rd-border)] bg-[var(--rd-panel)] px-5 py-4">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[13px] font-medium text-[var(--rd-text)]">
+            {user?.full_name || "Signed in"}
+          </span>
+          <span className="text-[12px] text-[var(--rd-text-muted)]">
+            {user?.email} · {user?.team_name ?? "No team yet"}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="inline-flex items-center gap-2 rounded-lg border border-[var(--rd-border)] px-4 py-2 text-[12px] font-semibold text-[var(--rd-text)] transition-colors hover:border-red-400 hover:text-red-400"
+        >
+          <LogOut size={14} />
+          Log out
+        </button>
+      </div>
+    </div>
+  );
+}

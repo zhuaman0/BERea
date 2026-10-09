@@ -1,48 +1,43 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
-import { GoogleButton } from "@/shared/components/ui/GoogleButton";
 import { LoginForm } from "@/features/auth/components/LoginForm";
+import { GoogleButton } from "@/shared/components/ui/GoogleButton";
 
-export const metadata: Metadata = { title: "Sign in" };
+export const metadata: Metadata = { title: "Войти — Мебель Studio" };
 
-export default async function LoginPage() {
-  const t = await getTranslations("auth");
-
+export default function LoginPage() {
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-8">
 
-      {/* Header */}
-      <div className="text-center px-1">
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-          {t("welcomeBack")}
+      <div>
+        <p className="text-[9px] tracking-[0.3em] uppercase text-stone-400 mb-3">Вход</p>
+        <h1 className="text-3xl font-extralight text-stone-900 leading-tight">
+          С возвращением
         </h1>
-        <p className="mt-1.5 text-sm text-slate-500 leading-relaxed">
-          {t("enterDetails")}
+        <p className="mt-1.5 text-[13px] text-stone-400 font-light">
+          Войдите, чтобы сохранять дизайны и заказы
         </p>
       </div>
 
-      {/* Card */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-xl shadow-slate-200/50 p-7 flex flex-col gap-5">
+      <div className="flex flex-col gap-4">
         <GoogleButton />
+
         <div className="flex items-center gap-3">
-          <div className="flex-1 h-px bg-slate-100" />
-          <span className="text-[10px] font-bold text-slate-400 tracking-[0.12em] whitespace-nowrap">
-            {t("orContinueWithEmail")}
-          </span>
-          <div className="flex-1 h-px bg-slate-100" />
+          <div className="flex-1 h-px bg-stone-100" />
+          <span className="text-[10px] tracking-[0.2em] uppercase text-stone-300">или</span>
+          <div className="flex-1 h-px bg-stone-100" />
         </div>
+
         <LoginForm />
       </div>
 
-      {/* Footer */}
-      <p className="text-center text-sm text-slate-500">
-        {t("noAccount")}{" "}
+      <p className="text-[13px] text-stone-400 font-light">
+        Нет аккаунта?{" "}
         <Link
           href="/register"
-          className="font-semibold text-blue-700 hover:text-blue-900 hover:underline transition-colors"
+          className="text-stone-900 font-medium hover:underline underline-offset-2 transition-colors"
         >
-          {t("signUp")}
+          Зарегистрироваться
         </Link>
       </p>
     </div>

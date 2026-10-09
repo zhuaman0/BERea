@@ -17,6 +17,7 @@ import app.domains.catalog.model_catalog  # noqa: F401
 import app.domains.categories.model_categories  # noqa: F401
 import app.domains.orders.model_orders  # noqa: F401
 import app.domains.configurator.model_configurator  # noqa: F401
+import app.domains.reading.model_reading  # noqa: F401
 
 
 @asynccontextmanager

@@ -1,339 +1,207 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { TrendingUp, Pencil, Plus, Clock, Dna, Sparkles } from "lucide-react";
-import { useTranslations } from "next-intl";
-import { cn } from "@/shared/lib/utils";
+import type { Route } from "next";
+import { useRouter } from "next/navigation";
+import {
+  Pencil, ShoppingBag, Heart, Calendar,
+  ChevronRight, Bell, Shield, LogOut, Palette, Settings,
+  ArrowRight,
+} from "lucide-react";
 import { useAuthStore } from "@/features/auth/store/useAuthStore";
+import { authApi } from "@/features/auth/api";
+import { configuratorApi } from "@/features/configurator/configuratorApi";
 
-// ─── Placeholder data ─────────────────────────────────────────────────────────
-
-const FOCUS_SCORE     = 87;
-const FOCUS_DELTA_PCT = 5;
-
-const STUDY_METHODS = [
-  { name: "Pomodoro",       emoji: "🍅", minutes: 720, color: "bg-blue-500"    },
-  { name: "Flashcards",     emoji: "📚", minutes: 240, color: "bg-violet-500"  },
-  { name: "Practice Tests", emoji: "📝", minutes: 180, color: "bg-emerald-500" },
-] as const;
-
-const TOTAL_MINUTES = STUDY_METHODS.reduce((sum, m) => sum + m.minutes, 0);
-
-const LEARNING_DNA = {
-  absorptionModes: [
-    { id: "watching",    emoji: "📺", label: "Watching"     },
-    { id: "kinesthetic", emoji: "✍️", label: "Kinesthetic"  },
-    { id: "interactive", emoji: "🗣️", label: "Interactive"  },
-  ],
-  audioPreference: { emoji: "🎧", label: "Lo-Fi Beats" },
-};
-
-const AI_COACH = {
-  id:      "sergeant",
-  emoji:   "😤",
-  name:    "The Drill Sergeant",
-  tagline: "Strict & tough love",
-  quote:   "Stop staring at your stats and start your Pomodoro. You're burning daylight, soldier.",
-  ringBg:  "bg-red-50",
-  dot:     "bg-red-400",
-};
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function nextStreakMilestone(streak: number): number {
-  for (const m of [7, 14, 30, 60, 100, 365]) {
-    if (m > streak) return m;
-  }
-  return streak + 30;
+function daysSince(iso: string | null | undefined): string {
+  if (!iso) return "0";
+  return String(Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000));
 }
-
-function fmtHours(minutes: number): string {
-  const h = minutes / 60;
-  return Number.isInteger(h) ? `${h}h` : `${h.toFixed(1)}h`;
-}
-
-// ─── Shared card wrapper ──────────────────────────────────────────────────────
-
-function Card({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div className={cn("bg-white rounded-3xl shadow-xl shadow-slate-200/40 p-6 flex flex-col", className)}>
-      {children}
-    </div>
-  );
-}
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
-  const t       = useTranslations("profile");
-  const { user } = useAuthStore();
+  const { user, refreshToken, clearSession } = useAuthStore();
+  const router = useRouter();
+  const [designCount, setDesignCount] = useState(0);
 
-  const firstName = user?.full_name?.split(" ")[0] ?? "there";
-  const initials  = user?.full_name
-    ? user.full_name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
+  useEffect(() => {
+    configuratorApi.list().then(d => setDesignCount(d.length)).catch(() => {});
+  }, []);
+
+  async function handleLogout() {
+    try {
+      if (refreshToken) await authApi.logout(refreshToken);
+    } catch { /* revoke best-effort */ }
+    clearSession();
+    document.cookie = "berea-session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+    router.push("/login");
+  }
+
+  const initials = user?.full_name
+    ? user.full_name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()
     : "?";
 
-  const streak    = user?.current_streak ?? 0;
-  const milestone = nextStreakMilestone(streak);
-  const streakPct = Math.min((streak / milestone) * 100, 100);
-  const daysLeft  = milestone - streak;
+  const displayName = user?.full_name || "—";
+
+  const STATS = [
+    { icon: <Heart size={13} />,       label: "Дизайнов",    value: String(designCount)        },
+    { icon: <ShoppingBag size={13} />, label: "Заказов",     value: "0"                        },
+    { icon: <Calendar size={13} />,    label: "Дней с нами", value: daysSince(user?.created_at) },
+  ] as const;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 md:p-8">
+    <div className="min-h-screen bg-stone-50">
 
-      {/* ── Welcome Header ──────────────────────────────────────────────── */}
-      <header className="md:col-span-3">
-        <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">
-          {t("welcomeBack", { name: firstName })}
-        </h1>
-        <p className="mt-1.5 text-sm text-slate-500">
-          {t("readyToFocus")}
-        </p>
-      </header>
+      {/* ── Hero ─────────────────────────────────────────────────────── */}
+      <div className="bg-stone-900">
+        <div className="px-8 md:px-12 max-w-5xl">
 
-      {/* ── User Identity Card ──────────────────────────────────────────── */}
-      <Card className="items-center text-center gap-5">
+          {/* Identity row */}
+          <div className="flex items-center justify-between gap-6 py-10 border-b border-stone-800">
 
-        {user?.avatar_url ? (
-          <img
-            src={user.avatar_url}
-            alt={user.full_name}
-            className="w-24 h-24 rounded-full object-cover ring-4 ring-blue-50 shadow-lg"
-          />
-        ) : (
-          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-3xl font-bold ring-4 ring-blue-50 shadow-lg shadow-blue-100/60 shrink-0">
-            {initials}
-          </div>
-        )}
-
-        <div className="space-y-1 min-w-0 w-full">
-          <h2 className="text-lg font-bold text-slate-900 truncate">
-            {user?.full_name || user?.email?.split("@")[0] || "—"}
-          </h2>
-          <p className="text-sm text-slate-400 truncate">{user?.email ?? "—"}</p>
-
-          {user && !user.is_verified && (
-            <span className="inline-flex mt-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-600 border border-amber-100">
-              {t("emailNotVerified")}
-            </span>
-          )}
-        </div>
-
-        <button className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-colors duration-150 mt-auto">
-          <Pencil size={13} strokeWidth={2.5} />
-          {t("editProfile")}
-        </button>
-      </Card>
-
-      {/* ── Streak Card ─────────────────────────────────────────────────── */}
-      <Card className="gap-4">
-        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
-          {t("dayStudyStreak")}
-        </p>
-
-        <div className="flex items-end gap-2.5">
-          <span className="text-7xl font-black leading-none text-orange-500 tabular-nums">
-            {streak}
-          </span>
-          <span className="text-3xl mb-1.5" aria-hidden>🔥</span>
-        </div>
-
-        <div className="space-y-2 mt-auto">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400">{streak} days</span>
-            <span className="text-xs font-medium text-slate-500">{t("goal", { count: milestone })}</span>
-          </div>
-          <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-orange-400 to-red-500 transition-all duration-700"
-              style={{ width: `${streakPct}%` }}
-            />
-          </div>
-          <p className="text-xs text-slate-400">
-            {streak === 0 ? t("streakEmpty") : t("streakProgress", { count: daysLeft })}
-          </p>
-        </div>
-      </Card>
-
-      {/* ── Focus Score Card ────────────────────────────────────────────── */}
-      <Card className="gap-4">
-        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
-          {t("focusScore")}
-        </p>
-
-        <div className="flex items-end gap-1.5">
-          <span className="text-7xl font-black leading-none text-slate-900 tabular-nums">
-            {FOCUS_SCORE}
-          </span>
-          <span className="text-2xl font-light text-slate-300 mb-2">/100</span>
-        </div>
-
-        <div className="flex items-center gap-1.5 text-sm font-medium text-emerald-600">
-          <TrendingUp size={16} strokeWidth={2.5} aria-hidden />
-          <span>{t("improvementThisWeek", { pct: FOCUS_DELTA_PCT })}</span>
-        </div>
-
-        <div className="space-y-1.5 mt-auto">
-          <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-blue-400 to-blue-600 transition-all duration-700"
-              style={{ width: `${FOCUS_SCORE}%` }}
-            />
-          </div>
-          <p className="text-xs text-slate-400">
-            {t("focusBasis")}
-          </p>
-        </div>
-      </Card>
-
-      {/* ── Learning DNA Card ───────────────────────────────────────────── */}
-      <Card className="md:col-span-2 gap-6">
-
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-              <Dna size={18} className="text-blue-500" strokeWidth={2} />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-slate-900">{t("learningDna")}</h2>
-              <p className="text-xs text-slate-400 mt-0.5">{t("brainPrefers")}</p>
-            </div>
-          </div>
-
-          <Link
-            href="/onboarding"
-            className="shrink-0 text-xs font-medium text-slate-400 hover:text-blue-500 transition-colors mt-1"
-          >
-            Edit
-          </Link>
-        </div>
-
-        {/* Absorption modes */}
-        <div className="flex flex-col gap-3">
-          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
-            {t("howYouAbsorb")}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {LEARNING_DNA.absorptionModes.map((mode) => (
-              <span
-                key={mode.id}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-sm font-semibold text-blue-700"
-              >
-                <span className="text-base leading-none">{mode.emoji}</span>
-                {mode.label}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Audio vibe */}
-        <div className="flex flex-col gap-3">
-          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
-            {t("studyVibe")}
-          </p>
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-sm font-semibold text-slate-600 self-start">
-            <span className="text-base leading-none">{LEARNING_DNA.audioPreference.emoji}</span>
-            {LEARNING_DNA.audioPreference.label}
-          </span>
-        </div>
-      </Card>
-
-      {/* ── AI Coach Card ────────────────────────────────────────────────── */}
-      <Card className="md:col-span-1 gap-5">
-
-        {/* Header */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center shrink-0">
-              <Sparkles size={17} className="text-slate-500" strokeWidth={2} />
-            </div>
-            <h2 className="text-base font-bold text-slate-900">{t("aiCoach")}</h2>
-          </div>
-
-          <Link
-            href="/onboarding"
-            className="shrink-0 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-700 hover:border-slate-300 transition-colors"
-          >
-            {t("change")}
-          </Link>
-        </div>
-
-        {/* Coach identity */}
-        <div className="flex items-center gap-3">
-          <div className={cn(
-            "w-14 h-14 rounded-2xl flex items-center justify-center text-3xl select-none shrink-0",
-            AI_COACH.ringBg
-          )}>
-            {AI_COACH.emoji}
-          </div>
-          <div className="flex flex-col gap-0.5 min-w-0">
-            <p className="text-sm font-bold text-slate-900 leading-snug">{AI_COACH.name}</p>
-            <div className="flex items-center gap-1.5">
-              <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", AI_COACH.dot)} />
-              <p className="text-xs text-slate-400">{AI_COACH.tagline}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Quote block */}
-        <div className="bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3.5 mt-auto">
-          <p className="text-xs text-slate-500 italic leading-relaxed">
-            "{AI_COACH.quote}"
-          </p>
-        </div>
-      </Card>
-
-      {/* ── Preferred Methods Card (full-width) ─────────────────────────── */}
-      <Card className="md:col-span-3 gap-6">
-
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-base font-bold text-slate-900">{t("preferredMethods")}</h2>
-            <p className="text-sm text-slate-400 mt-0.5 flex items-center gap-1.5">
-              <Clock size={13} aria-hidden />
-              {t("totalThisMonth", { hours: fmtHours(TOTAL_MINUTES) })}
-            </p>
-          </div>
-
-          <Link
-            href="/configurator"
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 active:bg-slate-950 transition-colors shadow-md shrink-0"
-          >
-            <Plus size={16} strokeWidth={2.5} />
-            {t("startNewSession")}
-          </Link>
-        </div>
-
-        <div className="flex flex-col gap-5">
-          {STUDY_METHODS.map(({ name, emoji, minutes, color }) => {
-            const pct      = Math.round((minutes / TOTAL_MINUTES) * 100);
-            const barWidth = (minutes / TOTAL_MINUTES) * 100;
-            return (
-              <div key={name} className="flex items-center gap-4">
-                <div className="flex items-center gap-2.5 w-44 shrink-0">
-                  <span className="text-xl leading-none" aria-hidden>{emoji}</span>
-                  <span className="text-sm font-medium text-slate-700">{name}</span>
+            <div className="flex items-center gap-7">
+              {/* Avatar */}
+              {user?.avatar_url ? (
+                <img
+                  src={user.avatar_url}
+                  alt={displayName}
+                  className="w-24 h-24 object-cover shrink-0"
+                />
+              ) : (
+                <div className="w-24 h-24 bg-stone-800 border border-stone-700 flex items-center justify-center shrink-0 select-none">
+                  <span className="text-3xl font-extralight text-stone-400">{initials}</span>
                 </div>
+              )}
 
-                <div className="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                  <div
-                    className={cn("h-full rounded-full transition-all duration-700", color)}
-                    style={{ width: `${barWidth}%` }}
-                  />
-                </div>
+              {/* Name + meta */}
+              <div>
+                <p className="text-[9px] tracking-[0.3em] uppercase text-stone-600 mb-2">Аккаунт</p>
+                <h1 className="text-4xl font-extralight text-white leading-none tracking-tight">
+                  {displayName}
+                </h1>
+                <p className="text-stone-500 text-[13px] mt-2 font-light">{user?.email ?? "—"}</p>
+                {user && !user.is_verified && (
+                  <p className="text-[11px] text-amber-500 mt-2">Email не подтверждён</p>
+                )}
+              </div>
+            </div>
 
-                <div className="flex items-center gap-2 w-20 justify-end shrink-0">
-                  <span className="text-sm font-semibold text-slate-900 tabular-nums">
-                    {fmtHours(minutes)}
-                  </span>
-                  <span className="text-xs text-slate-400 tabular-nums">{pct}%</span>
+            <button className="shrink-0 flex items-center gap-2 border border-stone-700 text-stone-400 hover:text-white hover:border-stone-500 text-[10px] tracking-[0.15em] uppercase font-medium px-4 py-2.5 transition-colors">
+              <Pencil size={11} strokeWidth={2} />
+              Изменить
+            </button>
+          </div>
+
+          {/* Stats strip */}
+          <div className="grid grid-cols-3">
+            {STATS.map(({ icon, label, value }) => (
+              <div key={label} className="py-6 pr-8 border-r border-stone-800 last:border-r-0">
+                <p className="text-3xl font-extralight text-white tabular-nums leading-none mb-2">{value}</p>
+                <div className="flex items-center gap-1.5 text-stone-500">
+                  {icon}
+                  <p className="text-[11px]">{label}</p>
                 </div>
               </div>
-            );
-          })}
-        </div>
-      </Card>
+            ))}
+          </div>
 
+        </div>
+      </div>
+
+      {/* ── Body ─────────────────────────────────────────────────────── */}
+      <div className="px-8 md:px-12 py-10 max-w-5xl flex flex-col gap-10">
+
+        {/* ── Quick actions ──────────────────────────────────────────── */}
+        <div>
+          <p className="text-[9px] tracking-[0.3em] uppercase text-stone-400 mb-5">Разделы</p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Link
+              href="/my-designs"
+              className="group flex flex-col gap-4 p-5 border border-stone-200 bg-white hover:border-stone-400 hover:-translate-y-0.5 transition-all duration-200"
+            >
+              <div className="w-9 h-9 border border-stone-200 flex items-center justify-center text-stone-400 group-hover:border-stone-900 group-hover:text-stone-900 transition-colors">
+                <Palette size={15} strokeWidth={1.75} />
+              </div>
+              <div className="flex-1">
+                <p className="text-[13px] font-light text-stone-900">Мои дизайны</p>
+                <p className="text-[11px] text-stone-400 mt-0.5">Сохранённые конфигурации</p>
+              </div>
+              <ArrowRight size={13} className="text-stone-300 group-hover:text-stone-600 group-hover:translate-x-0.5 transition-all duration-200" />
+            </Link>
+
+            <Link
+              href={"/orders" as Route}
+              className="group flex flex-col gap-4 p-5 border border-stone-200 bg-white hover:border-stone-400 hover:-translate-y-0.5 transition-all duration-200"
+            >
+              <div className="w-9 h-9 border border-stone-200 flex items-center justify-center text-stone-400 group-hover:border-stone-900 group-hover:text-stone-900 transition-colors">
+                <ShoppingBag size={15} strokeWidth={1.75} />
+              </div>
+              <div className="flex-1">
+                <p className="text-[13px] font-light text-stone-900">Мои заказы</p>
+                <p className="text-[11px] text-stone-400 mt-0.5">История и статусы</p>
+              </div>
+              <ArrowRight size={13} className="text-stone-300 group-hover:text-stone-600 group-hover:translate-x-0.5 transition-all duration-200" />
+            </Link>
+
+            <Link
+              href="/configurator"
+              className="group flex flex-col gap-4 p-5 border border-stone-900 bg-stone-900 hover:bg-stone-800 hover:-translate-y-0.5 transition-all duration-200"
+            >
+              <div className="w-9 h-9 border border-stone-700 flex items-center justify-center text-stone-400 group-hover:border-stone-500 group-hover:text-white transition-colors">
+                <Settings size={15} strokeWidth={1.75} />
+              </div>
+              <div className="flex-1">
+                <p className="text-[13px] font-light text-white">Конфигуратор</p>
+                <p className="text-[11px] text-stone-500 mt-0.5">Создать новую мебель</p>
+              </div>
+              <ArrowRight size={13} className="text-stone-600 group-hover:text-stone-400 group-hover:translate-x-0.5 transition-all duration-200" />
+            </Link>
+          </div>
+        </div>
+
+        {/* ── Settings ───────────────────────────────────────────────── */}
+        <div>
+          <p className="text-[9px] tracking-[0.3em] uppercase text-stone-400 mb-5">Настройки</p>
+
+          <div className="bg-white border border-stone-200">
+            {[
+              {
+                icon: <Bell size={14} strokeWidth={1.75} />,
+                label: "Уведомления",
+                desc: "Заказы, акции и новинки",
+              },
+              {
+                icon: <Shield size={14} strokeWidth={1.75} />,
+                label: "Безопасность",
+                desc: "Пароль и двухфакторная защита",
+              },
+            ].map(({ icon, label, desc }) => (
+              <button
+                key={label}
+                className="group w-full flex items-center gap-4 px-5 py-4 border-b border-stone-100 hover:bg-stone-50 transition-colors text-left"
+              >
+                <span className="text-stone-400 group-hover:text-stone-700 transition-colors shrink-0">
+                  {icon}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-light text-stone-900">{label}</p>
+                  <p className="text-[11px] text-stone-400 mt-0.5">{desc}</p>
+                </div>
+                <ChevronRight size={13} className="text-stone-300 group-hover:text-stone-500 transition-colors shrink-0" />
+              </button>
+            ))}
+
+            <button
+              onClick={handleLogout}
+              className="group w-full flex items-center gap-4 px-5 py-4 hover:bg-red-50 transition-colors text-left"
+            >
+              <LogOut size={14} strokeWidth={1.75} className="text-red-400 shrink-0" />
+              <p className="text-[13px] font-light text-red-500">Выйти</p>
+            </button>
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }

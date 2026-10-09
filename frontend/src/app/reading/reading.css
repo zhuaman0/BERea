@@ -1,0 +1,153 @@
+/*
+ * Scoped theme for the NATS Spirea reading module — deliberately isolated
+ * from the furniture site's globals.css tokens (`.rd-` prefix) so this
+ * module can keep its own dark/fire-gradient identity without touching
+ * the rest of the app's light theme.
+ */
+.reading-theme {
+  --rd-ink:          #0b0b0c;
+  --rd-panel:        #141416;
+  --rd-border:       #232326;
+  --rd-text:         #f5f3f0;
+  --rd-text-muted:   #9a9a9e;
+  --rd-accent-from:  #ff6b2c;
+  --rd-accent-to:    #ffc24d;
+
+  /* Distinct per-teammate progress-bar colors so multiple bars stay readable side by side. */
+  --rd-mate-1: #5b8cff;
+  --rd-mate-2: #34d399;
+  --rd-mate-3: #f472b6;
+  --rd-mate-4: #a78bfa;
+
+  background-color: var(--rd-ink);
+  color: var(--rd-text);
+  font-family: var(--font-ibm-plex-sans), system-ui, sans-serif;
+}
+
+.reading-theme .font-display {
+  font-family: var(--font-space-grotesk), system-ui, sans-serif;
+}
+
+.reading-theme .font-mono {
+  font-family: var(--font-ibm-plex-mono), ui-monospace, monospace;
+}
+
+.rd-accent-gradient {
+  background-image: linear-gradient(135deg, var(--rd-accent-from), var(--rd-accent-to));
+}
+
+.rd-scroll-x {
+  scrollbar-width: thin;
+  scrollbar-color: var(--rd-border) transparent;
+}
+
+.rd-scroll-x::-webkit-scrollbar {
+  height: 6px;
+}
+
+.rd-scroll-x::-webkit-scrollbar-thumb {
+  background-color: var(--rd-border);
+  border-radius: 999px;
+}
+
+/* ── Animated hero flame (CSS/SVG, replaces the video background) ───────── */
+
+.rd-flame-layer {
+  position: absolute;
+  inset: auto 0 0 0;
+  width: 100%;
+  transform-origin: bottom center;
+  will-change: transform, filter;
+}
+
+.rd-flame-back {
+  height: 55%;
+  opacity: 0.45;
+  filter: blur(8px);
+  animation: rd-flame-sway-1 7s ease-in-out infinite;
+}
+
+.rd-flame-mid {
+  height: 40%;
+  opacity: 0.7;
+  filter: blur(2px);
+  animation: rd-flame-sway-2 4.5s ease-in-out infinite;
+}
+
+.rd-flame-front {
+  height: 28%;
+  opacity: 0.95;
+  animation: rd-flame-sway-3 2.6s ease-in-out infinite;
+}
+
+@keyframes rd-flame-sway-1 {
+  0%, 100% { transform: scaleY(1) scaleX(1); }
+  50%      { transform: scaleY(1.08) scaleX(1.02); }
+}
+
+@keyframes rd-flame-sway-2 {
+  0%, 100% { transform: scaleY(1) translateX(0); }
+  50%      { transform: scaleY(1.12) translateX(-1%); }
+}
+
+@keyframes rd-flame-sway-3 {
+  0%, 100% { transform: scaleY(1) translateX(0); filter: brightness(1); }
+  50%      { transform: scaleY(1.15) translateX(1%); filter: brightness(1.15); }
+}
+
+.rd-ember {
+  position: absolute;
+  bottom: 10%;
+  border-radius: 999px;
+  background: var(--rd-accent-to);
+  box-shadow: 0 0 6px 1px var(--rd-accent-from);
+  animation: rd-ember-rise linear infinite;
+}
+
+@keyframes rd-ember-rise {
+  0%   { transform: translate(0, 0); opacity: 0; }
+  12%  { opacity: 1; }
+  100% { transform: translate(var(--rd-ember-drift, 12px), -260px); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rd-flame-back, .rd-flame-mid, .rd-flame-front, .rd-ember {
+    animation: none;
+  }
+}
+
+/* ── Rules "lit fuse" timeline ────────────────────────────────────────── */
+
+.rd-node-dot {
+  animation: rd-node-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes rd-node-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 138, 61, 0.55); }
+  50%      { box-shadow: 0 0 0 7px rgba(255, 138, 61, 0); }
+}
+
+.rd-fuse-spark {
+  background: radial-gradient(circle, var(--rd-accent-to), var(--rd-accent-from) 70%, transparent 100%);
+  box-shadow: 0 0 12px 3px var(--rd-accent-from);
+  animation: rd-fuse-travel 3.8s linear infinite;
+}
+
+@keyframes rd-fuse-travel {
+  0%   { top: 0%;   opacity: 0; }
+  6%   { opacity: 1; }
+  94%  { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rd-node-dot, .rd-fuse-spark {
+    animation: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rd-node-dot, .rd-fuse-spark {
+    animation: none;
+  }
+}

@@ -29,6 +29,9 @@ frontend/.vite/
 # ─── Docker ─────────────────────────────────────────────────────────────────
 docker/postgres-data/
 
+# ─── Uploads (user-submitted files — payment receipts, etc.) ─────────────────
+backend/uploads/
+
 # ─── OS ─────────────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db

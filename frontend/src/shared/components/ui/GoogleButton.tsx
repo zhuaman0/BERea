@@ -1,15 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import { authApi } from "@/features/auth/api";
 
-interface GoogleButtonProps {
-  disabled?: boolean;
-}
-
-export function GoogleButton({ disabled }: GoogleButtonProps) {
-  const t = useTranslations("auth");
+export function GoogleButton() {
   const [loading, setLoading] = useState(false);
 
   async function handleClick() {
@@ -26,15 +20,15 @@ export function GoogleButton({ disabled }: GoogleButtonProps) {
     <button
       type="button"
       onClick={handleClick}
-      disabled={disabled || loading}
-      className="w-full flex items-center justify-center gap-3 h-11 px-4 rounded-xl bg-white border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50 active:bg-slate-100 transition-colors duration-150 disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+      disabled={loading}
+      className="w-full flex items-center justify-center gap-3 h-11 border border-stone-200 bg-white text-[12px] font-medium tracking-wide text-stone-700 hover:bg-stone-50 hover:border-stone-400 active:bg-stone-100 transition-colors disabled:opacity-50 disabled:pointer-events-none"
     >
       {loading ? (
-        <span className="size-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
+        <span className="w-4 h-4 border-2 border-stone-300 border-t-stone-700 animate-spin" />
       ) : (
         <GoogleIcon />
       )}
-      {t("continueWithGoogle")}
+      Войти через Google
     </button>
   );
 }

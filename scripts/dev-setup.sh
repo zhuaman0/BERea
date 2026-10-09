@@ -35,7 +35,8 @@ docker compose run --rm backend alembic upgrade head
 
 echo ""
 echo "✓ BERea dev environment is ready."
-echo "  Run: docker compose up"
-echo "  Frontend: http://localhost:5173"
+echo "  Run: docker compose up          (db, backend, nginx)"
+echo "  Then, in another terminal: npm run dev   (frontend, on the host)"
+echo "  Frontend direct: http://localhost:3003"
 echo "  Backend API: http://localhost:8000/docs"
 echo "  Full stack via Nginx: http://localhost"

@@ -158,7 +158,7 @@ async def google_oauth_callback(code: str, db: AsyncSession) -> tuple[str, str]:
     if not user:
         user = await get_user_by_email(email, db)
         if user:
-            await link_google_to_user(user, google_id, db)
+            await link_google_to_user(user, google_id, avatar_url, db)
         else:
             user = await create_oauth_user(email, full_name, google_id, avatar_url, db)
 

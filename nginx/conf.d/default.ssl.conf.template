@@ -40,7 +40,8 @@ upstream berea_backend {
 }
 
 upstream berea_frontend {
-    server    berea_frontend:3000;
+    # Frontend runs on the host (`npm run dev`), not in this compose stack.
+    server    host.docker.internal:3003;
     keepalive 32;
 }
 

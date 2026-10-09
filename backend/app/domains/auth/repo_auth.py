@@ -45,8 +45,11 @@ async def create_oauth_user(
     return user
 
 
-async def link_google_to_user(user: User, google_id: str, db: AsyncSession) -> None:
+async def link_google_to_user(user: User, google_id: str, avatar_url: str | None, db: AsyncSession) -> None:
     user.google_id = google_id
+    if avatar_url and not user.avatar_url:
+        user.avatar_url = avatar_url
+    user.is_verified = True
     await db.commit()
 
 
