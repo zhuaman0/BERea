@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,6 +9,7 @@ from sqlalchemy.orm import selectinload
 
 from app.domains.reading.model_reading import (
     ReadingRefreshToken,
+    ReadingSemesterRound,
     ReadingTeam,
     ReadingTeamRegistration,
     ReadingUser,
@@ -224,3 +225,34 @@ async def cast_vote(round_id: uuid.UUID, option_id: uuid.UUID, user_id: uuid.UUI
     await db.commit()
     await db.refresh(vote)
     return vote
+
+
+async def touch_user_streak(user: ReadingUser, today: date, db: AsyncSession) -> ReadingUser:
+    """Updates the user's daily-activity streak if today hasn't already been counted."""
+    if user.last_active_date == today:
+        return user
+
+    if user.last_active_date is not None and (today - user.last_active_date).days == 1:
+        user.current_streak += 1
+    else:
+        user.current_streak = 1
+    user.last_active_date = today
+
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
+async def create_semester_round(
+    index: int, label: str, starts_at: datetime, ends_at: datetime, db: AsyncSession
+) -> ReadingSemesterRound:
+    round_ = ReadingSemesterRound(index=index, label=label, starts_at=starts_at, ends_at=ends_at)
+    db.add(round_)
+    await db.commit()
+    await db.refresh(round_)
+    return round_
+
+
+async def list_semester_rounds(db: AsyncSession) -> list[ReadingSemesterRound]:
+    result = await db.execute(select(ReadingSemesterRound).order_by(ReadingSemesterRound.index.asc()))
+    return list(result.scalars().all())

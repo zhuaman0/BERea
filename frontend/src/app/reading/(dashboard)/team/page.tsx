@@ -4,10 +4,12 @@ import { Fragment, useEffect, useState } from "react";
 import { Check, Copy, Pencil, Send, UserPlus, Trophy, BookOpen, Flame } from "lucide-react";
 import { StatStrip, type StatStripItem } from "@/features/reading/components/StatStrip";
 import { Modal } from "@/features/reading/components/Modal";
-import { MOCK_DASHBOARD } from "@/features/reading/mockData";
 import { readingAuthApi } from "@/features/reading/authApi";
+import { readingSemesterApi } from "@/features/reading/semesterApi";
 import { isApiError } from "@/features/auth/utils";
+import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
 import type { ReadingTeam } from "@/features/reading/authTypes";
+import type { SemesterRound } from "@/features/reading/types";
 
 interface StudentDraft {
   firstName: string;
@@ -84,17 +86,37 @@ function StepBadge({ index, label, active, done }: StepBadgeProps) {
 }
 
 export default function ReadingTeamPage() {
-  const { stats } = MOCK_DASHBOARD;
-
-  const statItems: StatStripItem[] = [
-    { icon: Trophy,   label: "Team place",     value: `${stats.teamPlace}/${stats.teamsTotal}`,     note: stats.teamPlaceDelta, accent: false },
-    { icon: BookOpen, label: "Books finished", value: `${stats.booksFinished}/${stats.booksTotal}`, note: stats.lastBookLabel,  accent: false },
-    { icon: Flame,    label: "Reading streak", value: `${stats.readingStreakDays} days`,            note: stats.streakNote,     accent: true  },
-  ];
+  const { user, updateUser } = useReadingAuthStore();
+  const currentStreak = user?.current_streak ?? 0;
 
   const [team, setTeam] = useState<ReadingTeam | null>(null);
+  const [rounds, setRounds] = useState<SemesterRound[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+
+  const booksFinished = rounds.filter((r) => r.status === "done").length;
+  const activeRound = rounds.find((r) => r.status === "in_progress");
+
+  const statItems: StatStripItem[] = [
+    {
+      icon: Trophy, label: "Team place",
+      value: team ? `${team.place}/${team.teams_total}` : "—",
+      note: "Ranked by roster size for now",
+      accent: false,
+    },
+    {
+      icon: BookOpen, label: "Books finished",
+      value: rounds.length > 0 ? `${booksFinished}/${rounds.length}` : "—",
+      note: activeRound ? `${activeRound.label} in progress` : "No active round",
+      accent: false,
+    },
+    {
+      icon: Flame, label: "Reading streak",
+      value: `${currentStreak} days`,
+      note: "+5 pts per 7-day streak",
+      accent: true,
+    },
+  ];
 
   const [isRenaming, setIsRenaming] = useState(false);
   const [newName, setNewName] = useState("");
@@ -121,6 +143,14 @@ export default function ReadingTeamPage() {
       .then((t) => { setTeam(t); setNewName(t.name); })
       .catch((err) => setLoadError(isApiError(err) ? err.detail : "Couldn't load your team."))
       .finally(() => setIsLoading(false));
+  }, []);
+
+  useEffect(() => {
+    readingAuthApi.me().then(updateUser).catch(() => { /* keep whatever we already have */ });
+  }, [updateUser]);
+
+  useEffect(() => {
+    readingSemesterApi.listRounds().then(setRounds).catch(() => { /* stat tile shows a dash until it loads */ });
   }, []);
 
   async function handleRenameSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -247,9 +277,11 @@ export default function ReadingTeamPage() {
             )}
           </div>
           {renameError && <p className="mt-2 text-sm text-red-400">{renameError}</p>}
-          <p className="mt-1 text-sm text-[var(--rd-text-muted)]">
-            Place {stats.teamPlace} of {stats.teamsTotal} this semester
-          </p>
+          {team && (
+            <p className="mt-1 text-sm text-[var(--rd-text-muted)]">
+              Place {team.place} of {team.teams_total} this semester
+            </p>
+          )}
 
           <div className="mt-6">
             <StatStrip items={statItems} />

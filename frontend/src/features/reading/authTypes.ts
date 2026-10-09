@@ -1,10 +1,11 @@
 export interface ReadingUser {
-  id:            string;
-  email:         string;
-  full_name:     string;
-  team_name:     string | null;
-  token_balance: number;
-  created_at:    string;
+  id:             string;
+  email:          string;
+  full_name:      string;
+  team_name:      string | null;
+  token_balance:  number;
+  current_streak: number;
+  created_at:     string;
 }
 
 export interface ReadingTokenResponse {
@@ -39,6 +40,8 @@ export interface ReadingTeam {
   name:        string;
   members:     ReadingTeamMember[];
   max_members: number;
+  place:       number;
+  teams_total: number;
 }
 
 export interface ReadingTeamSummary {

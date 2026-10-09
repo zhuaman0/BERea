@@ -15,11 +15,13 @@ from app.domains.auth.service_auth import (
     hash_password,
     verify_password,
 )
-from app.domains.reading.model_reading import ReadingTeam, ReadingUser, ReadingVoteRound
+from app.domains.reading.model_reading import ReadingSemesterRound, ReadingTeam, ReadingUser, ReadingVoteRound
 from app.domains.reading.schema_reading import (
     TEAM_MAX_MEMBERS,
     ReadingLoginRequest,
     ReadingRegisterRequest,
+    ReadingSemesterRoundCreate,
+    ReadingSemesterRoundResponse,
     ReadingTeamJoinRequest,
     ReadingTeamMemberResponse,
     ReadingTeamRegistrationCreate,
@@ -44,6 +46,7 @@ def _to_user_response(user: ReadingUser) -> ReadingUserResponse:
         full_name=user.full_name,
         team_name=user.team.name if user.team else None,
         token_balance=user.token_balance,
+        current_streak=user.current_streak,
         created_at=user.created_at,
     )
 
@@ -101,11 +104,12 @@ async def revoke_refresh_token(refresh_token: str, db: AsyncSession) -> None:
 
 
 async def get_current_reading_user(user_id: str, db: AsyncSession) -> ReadingUserResponse:
-    from app.domains.reading.repo_reading import get_user_by_id
+    from app.domains.reading.repo_reading import get_user_by_id, touch_user_streak
 
     user = await get_user_by_id(uuid.UUID(user_id), db)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    user = await touch_user_streak(user, datetime.now(timezone.utc).date(), db)
     return _to_user_response(user)
 
 
@@ -142,7 +146,8 @@ async def get_my_team(user_id: str, db: AsyncSession) -> ReadingTeamResponse:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="You haven't joined a team yet")
 
     members = await get_team_members(user.team_id, db)
-    return _to_team_response(user.team, members)
+    place, teams_total = await _compute_team_rank(user.team_id, db)
+    return _to_team_response(user.team, members, place, teams_total)
 
 
 async def rename_my_team(user_id: str, payload: ReadingTeamJoinRequest, db: AsyncSession) -> ReadingTeamResponse:
@@ -163,7 +168,8 @@ async def rename_my_team(user_id: str, payload: ReadingTeamJoinRequest, db: Asyn
 
     team = await rename_team(user.team, payload.team_name, db)
     members = await get_team_members(team.id, db)
-    return _to_team_response(team, members)
+    place, teams_total = await _compute_team_rank(team.id, db)
+    return _to_team_response(team, members, place, teams_total)
 
 
 async def list_teams(db: AsyncSession) -> list[ReadingTeamSummaryResponse]:
@@ -176,13 +182,27 @@ async def list_teams(db: AsyncSession) -> list[ReadingTeamSummaryResponse]:
     ]
 
 
-def _to_team_response(team: ReadingTeam, members: list[ReadingUser]) -> ReadingTeamResponse:
+async def _compute_team_rank(team_id: uuid.UUID, db: AsyncSession) -> tuple[int, int]:
+    """Ranks teams the same way the leaderboard does — by roster size until real
+    quiz/reading points exist to rank by instead."""
+    from app.domains.reading.repo_reading import list_teams_with_member_counts
+
+    rows = await list_teams_with_member_counts(db)
+    place = next((i + 1 for i, (team, _) in enumerate(rows) if team.id == team_id), len(rows))
+    return place, len(rows)
+
+
+def _to_team_response(
+    team: ReadingTeam, members: list[ReadingUser], place: int, teams_total: int
+) -> ReadingTeamResponse:
     return ReadingTeamResponse(
         id=team.id,
         name=team.name,
         members=[
             ReadingTeamMemberResponse(id=m.id, full_name=m.full_name, email=m.email) for m in members
         ],
+        place=place,
+        teams_total=teams_total,
     )
 
 
@@ -307,4 +327,39 @@ async def _to_vote_round_response(
         options=options,
         winner_option_id=winner_option_id,
         your_vote_option_id=your_vote_option_id,
+    )
+
+
+async def create_semester_round_for_admin(
+    payload: ReadingSemesterRoundCreate, db: AsyncSession
+) -> ReadingSemesterRoundResponse:
+    from app.domains.reading.repo_reading import create_semester_round
+
+    round_ = await create_semester_round(payload.index, payload.label, payload.starts_at, payload.ends_at, db)
+    return _to_semester_round_response(round_)
+
+
+async def list_semester_rounds_for_user(db: AsyncSession) -> list[ReadingSemesterRoundResponse]:
+    from app.domains.reading.repo_reading import list_semester_rounds
+
+    rounds = await list_semester_rounds(db)
+    return [_to_semester_round_response(round_) for round_ in rounds]
+
+
+def _to_semester_round_response(round_: ReadingSemesterRound) -> ReadingSemesterRoundResponse:
+    now = datetime.now(timezone.utc)
+    if now < round_.starts_at:
+        status_ = "locked"
+    elif now > round_.ends_at:
+        status_ = "done"
+    else:
+        status_ = "in_progress"
+
+    return ReadingSemesterRoundResponse(
+        id=round_.id,
+        index=round_.index,
+        label=round_.label,
+        starts_at=round_.starts_at,
+        ends_at=round_.ends_at,
+        status=status_,  # type: ignore[arg-type]
     )

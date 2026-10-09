@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, UniqueConstraint, Uuid
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, UniqueConstraint, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base, TimestampMixin
@@ -29,6 +29,8 @@ class ReadingUser(TimestampMixin, Base):
         Uuid(as_uuid=True), ForeignKey("reading_teams.id", ondelete="SET NULL"), nullable=True, index=True
     )
     token_balance: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    current_streak: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    last_active_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     team: Mapped[ReadingTeam | None] = relationship(back_populates="members")
     refresh_tokens: Mapped[list[ReadingRefreshToken]] = relationship(
@@ -93,6 +95,16 @@ class ReadingVote(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     option: Mapped[ReadingVoteOption] = relationship(back_populates="votes")
+
+
+class ReadingSemesterRound(TimestampMixin, Base):
+    __tablename__ = "reading_semester_rounds"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    index: Mapped[int] = mapped_column(Integer, nullable=False)
+    label: Mapped[str] = mapped_column(String(120), nullable=False)
+    starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
 class ReadingRefreshToken(Base):
