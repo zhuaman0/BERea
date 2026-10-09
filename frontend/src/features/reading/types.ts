@@ -1,17 +1,3 @@
-export interface TeamMember {
-  id:     string;
-  name:   string;
-  handle: string;
-  online: boolean;
-}
-
-export interface Team {
-  id:      string;
-  name:    string;
-  place:   number;
-  members: TeamMember[];
-}
-
 export interface BookOfMonth {
   id:                  string;
   title:               string;
@@ -54,30 +40,12 @@ export interface BonusTask {
   note:   string;
 }
 
-export interface DashboardStats {
-  teamPlace:       number;
-  teamsTotal:      number;
-  teamPlaceDelta:  string;
-  yourPoints:      number;
-  pointsBreakdown: string;
-  booksFinished:   number;
-  booksTotal:      number;
-  lastBookLabel:   string;
-  streakNote:      string;
-}
-
 export interface ReadingDashboard {
-  seasonLabel:  string;
-  monthIndex:   number;
-  monthTotal:   number;
-  totalPoints:  number;
   greetingName: string;
   greetingNote: string;
   book:         BookOfMonth;
   quizNight:    QuizNight;
-  stats:        DashboardStats;
   bonusTasks:   BonusTask[];
-  team:         Team;
 }
 
 export type VoteStage = "language" | "genre" | "book";
@@ -101,32 +69,14 @@ export interface VoteRound {
   your_vote_option_id: string | null;
 }
 
-export interface ProfileBadge {
-  id:      string;
-  label:   string;
-  current: number;
-  target:  number;
-}
-
-export interface ProfileStats {
-  totalPoints: number;
-  quizNights:  number;
-  roundsWon:   number;
-  accuracy:    number;
-  boardPlace:  number;
-  boardTotal:  number;
-}
-
 export interface ReadingProfile {
   name:            string;
   handle:          string;
   teamName:        string;
   memberSince:     string;
   tokenBalance:    number;
-  stats:           ProfileStats;
   readingLogLabel: string;
   yourProgress:    number;
   teammates:       { name: string; progress: number }[];
-  badges:          ProfileBadge[];
   activityDays:    number[];
 }

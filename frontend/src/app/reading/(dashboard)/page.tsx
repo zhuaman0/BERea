@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Trophy, Flame, BookOpen, Zap } from "lucide-react";
 import { BookOfMonthCard } from "@/features/reading/components/BookOfMonthCard";
@@ -8,7 +8,10 @@ import { QuizNightCard } from "@/features/reading/components/QuizNightCard";
 import { StatStrip, type StatStripItem } from "@/features/reading/components/StatStrip";
 import { MOCK_DASHBOARD } from "@/features/reading/mockData";
 import { readingAuthApi } from "@/features/reading/authApi";
+import { readingSemesterApi } from "@/features/reading/semesterApi";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
+import type { ReadingTeam } from "@/features/reading/authTypes";
+import type { SemesterRound } from "@/features/reading/types";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 const HOVER_LIFT = { y: -4, transition: { duration: 0.2, ease: EASE } };
@@ -23,24 +26,49 @@ function fadeUp(delay = 0) {
 
 export default function ReadingHomePage() {
   const { user, updateUser } = useReadingAuthStore();
+  const [team, setTeam] = useState<ReadingTeam | null>(null);
+  const [rounds, setRounds] = useState<SemesterRound[]>([]);
 
   useEffect(() => {
     readingAuthApi.me().then(updateUser).catch(() => { /* keep whatever we already have */ });
+    readingAuthApi.myTeam().then(setTeam).catch(() => { /* stat tile shows a dash until it loads */ });
+    readingSemesterApi.listRounds().then(setRounds).catch(() => { /* same */ });
   }, [updateUser]);
 
-  // Book of the month, quiz night, points and books-finished have no backend
-  // yet. The streak comes from the real account — updated server-side every
-  // time this page loads.
+  // Book of the month and quiz night have no backend yet. Everything in the
+  // stat strip below is either real (streak, team place, books finished) or
+  // an honest zero — never a made-up number.
   const dashboard = MOCK_DASHBOARD;
-  const { stats } = dashboard;
   const firstName = user?.full_name?.split(" ")[0] || dashboard.greetingName;
   const currentStreak = user?.current_streak ?? 0;
+  const booksFinished = rounds.filter((r) => r.status === "done").length;
+  const activeRound = rounds.find((r) => r.status === "in_progress");
 
   const statItems: StatStripItem[] = [
-    { icon: Trophy,   label: "Team place",     value: `${stats.teamPlace}/${stats.teamsTotal}`,      note: stats.teamPlaceDelta,  accent: false },
-    { icon: Zap,      label: "Your points",    value: String(stats.yourPoints),                      note: stats.pointsBreakdown, accent: true  },
-    { icon: BookOpen, label: "Books finished", value: `${stats.booksFinished}/${stats.booksTotal}`,  note: stats.lastBookLabel,   accent: false },
-    { icon: Flame,    label: "Reading streak", value: `${currentStreak} days`,                       note: stats.streakNote,      accent: true  },
+    {
+      icon: Trophy, label: "Team place",
+      value: team ? `${team.place}/${team.teams_total}` : "—",
+      note: "Ranked by roster size for now",
+      accent: false,
+    },
+    {
+      icon: Zap, label: "Your points",
+      value: "0",
+      note: "Points start counting at the first quiz night",
+      accent: true,
+    },
+    {
+      icon: BookOpen, label: "Books finished",
+      value: rounds.length > 0 ? `${booksFinished}/${rounds.length}` : "—",
+      note: activeRound ? `${activeRound.label} in progress` : "No active round",
+      accent: false,
+    },
+    {
+      icon: Flame, label: "Reading streak",
+      value: `${currentStreak} days`,
+      note: "+5 pts per 7-day streak",
+      accent: true,
+    },
   ];
 
   return (

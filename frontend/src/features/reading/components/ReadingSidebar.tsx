@@ -14,7 +14,7 @@ import {
   LogOut,
   type LucideIcon,
 } from "lucide-react";
-import type { Team } from "@/features/reading/types";
+import type { ReadingTeam } from "@/features/reading/authTypes";
 
 interface NavItem {
   href:  string;
@@ -32,7 +32,7 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 interface ReadingSidebarProps {
-  team: Team;
+  team: ReadingTeam | null;
 }
 
 function NavLink({ href, label, icon: Icon, isActive }: NavItem & { isActive: boolean }) {
@@ -64,26 +64,26 @@ export function ReadingSidebar({ team }: ReadingSidebarProps) {
           ))}
         </nav>
 
-        <div className="mt-6 flex-1 overflow-y-auto px-3">
-          <p className="mb-2 px-3 text-[10px] uppercase tracking-[0.2em] text-[var(--rd-text-muted)]">
-            Team · {team.name}
-          </p>
-          <div className="flex flex-col gap-1">
-            {team.members.map((member) => (
-              <div key={member.id} className="flex items-center gap-2.5 rounded-lg px-3 py-2">
-                <span className="relative h-7 w-7 shrink-0 rounded-full bg-[var(--rd-border)]">
-                  {member.online && (
-                    <span className="absolute -right-0.5 -bottom-0.5 h-2 w-2 rounded-full bg-emerald-400 ring-2 ring-[var(--rd-panel)]" />
-                  )}
-                </span>
-                <div className="min-w-0">
-                  <p className="truncate text-[13px] leading-none text-[var(--rd-text)]">{member.name}</p>
-                  <p className="mt-0.5 truncate text-[11px] text-[var(--rd-text-muted)]">{member.handle}</p>
+        {team && (
+          <div className="mt-6 flex-1 overflow-y-auto px-3">
+            <p className="mb-2 px-3 text-[10px] uppercase tracking-[0.2em] text-[var(--rd-text-muted)]">
+              Team · {team.name}
+            </p>
+            <div className="flex flex-col gap-1">
+              {team.members.map((member) => (
+                <div key={member.id} className="flex items-center gap-2.5 rounded-lg px-3 py-2">
+                  <span className="h-7 w-7 shrink-0 rounded-full bg-[var(--rd-border)]" />
+                  <div className="min-w-0">
+                    <p className="truncate text-[13px] leading-none text-[var(--rd-text)]">{member.full_name}</p>
+                    <p className="mt-0.5 truncate text-[11px] text-[var(--rd-text-muted)]">
+                      @{member.email.split("@")[0]}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="flex flex-col gap-1 border-t border-[var(--rd-border)] px-3 py-3">
           <NavLink

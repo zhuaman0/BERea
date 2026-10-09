@@ -4,12 +4,12 @@ import { Flame } from "lucide-react";
 
 interface ReadingTopbarProps {
   seasonLabel: string;
-  monthIndex:  number;
-  monthTotal:  number;
+  roundIndex:  number;
+  roundTotal:  number;
   totalPoints: number;
 }
 
-export function ReadingTopbar({ seasonLabel, monthIndex, monthTotal, totalPoints }: ReadingTopbarProps) {
+export function ReadingTopbar({ seasonLabel, roundIndex, roundTotal, totalPoints }: ReadingTopbarProps) {
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-[var(--rd-border)] bg-[var(--rd-panel)] px-4 md:px-6">
       <Link href={"/reading" as Route} className="flex min-w-0 items-center gap-2.5">
@@ -19,9 +19,11 @@ export function ReadingTopbar({ seasonLabel, monthIndex, monthTotal, totalPoints
         <span className="font-display truncate text-[14px] font-semibold tracking-tight text-[var(--rd-text)]">
           NATS SPIREA
         </span>
-        <span className="hidden truncate text-[12px] text-[var(--rd-text-muted)] sm:inline">
-          · {seasonLabel} · Month {monthIndex} of {monthTotal}
-        </span>
+        {roundTotal > 0 && (
+          <span className="hidden truncate text-[12px] text-[var(--rd-text-muted)] sm:inline">
+            · {seasonLabel} · Round {roundIndex} of {roundTotal}
+          </span>
+        )}
       </Link>
 
       <div className="flex shrink-0 items-center gap-3">

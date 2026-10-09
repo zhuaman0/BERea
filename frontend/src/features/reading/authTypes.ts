@@ -40,6 +40,8 @@ export interface ReadingTeam {
   name:        string;
   members:     ReadingTeamMember[];
   max_members: number;
+  place:       number;
+  teams_total: number;
 }
 
 export interface ReadingTeamSummary {

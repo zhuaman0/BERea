@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { MOCK_PROFILE } from "@/features/reading/mockData";
 import { readingAuthApi } from "@/features/reading/authApi";
+import { readingSemesterApi } from "@/features/reading/semesterApi";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
+import type { ReadingTeam } from "@/features/reading/authTypes";
+import type { SemesterRound } from "@/features/reading/types";
 
 const MATE_COLORS = ["var(--rd-mate-1)", "var(--rd-mate-2)", "var(--rd-mate-3)", "var(--rd-mate-4)"];
 
@@ -29,22 +32,39 @@ function Fact({ label, value }: FactProps) {
 
 export default function ReadingProfilePage() {
   const { user, updateUser } = useReadingAuthStore();
+  const [team, setTeam] = useState<ReadingTeam | null>(null);
+  const [rounds, setRounds] = useState<SemesterRound[]>([]);
 
   useEffect(() => {
     readingAuthApi.me().then(updateUser).catch(() => { /* keep whatever we already have */ });
+    readingAuthApi.myTeam().then(setTeam).catch(() => { /* fact shows a dash until it loads */ });
+    readingSemesterApi.listRounds().then(setRounds).catch(() => { /* same */ });
   }, [updateUser]);
 
   // Identity fields (name, handle, team, token balance) come from the real
-  // account. Quiz/points/badge stats have no backend yet, so they stay mock
-  // until the reading-league scoring system is built.
+  // account. The reading-progress log and 14-day activity graph below have no
+  // backend yet — everything else (points, place, rounds, badge progress) is
+  // real or an honest zero, never a made-up number.
   const stats = MOCK_PROFILE;
   const maxActivity = Math.max(...stats.activityDays, 1);
+  const booksFinished = rounds.filter((r) => r.status === "done").length;
+  const currentStreak = user?.current_streak ?? 0;
 
   const displayName = user?.full_name || MOCK_PROFILE.name;
   const handle = user?.email ? `@${user.email.split("@")[0]}` : MOCK_PROFILE.handle;
   const teamName = user?.team_name ?? MOCK_PROFILE.teamName;
   const memberSince = user?.created_at ? memberSinceLabel(user.created_at) : MOCK_PROFILE.memberSince;
   const tokenBalance = user?.token_balance ?? MOCK_PROFILE.tokenBalance;
+
+  const badges = [
+    { id: "point-collector", label: "250 points",    current: 0,              target: 250 },
+    { id: "all-4-books",     label: "All 4 books",    current: booksFinished,  target: rounds.length || 4 },
+    { id: "streak-9",        label: "9-day streak",   current: currentStreak,  target: 9 },
+    { id: "first-finish",    label: "First finish",   current: 0,              target: 1 },
+    { id: "tiktok-3",        label: "TikTok ×3",      current: 0,              target: 3 },
+    { id: "perfect-round",   label: "Perfect round",  current: 0,              target: 1 },
+    { id: "semester-winner", label: "Semester winner", current: 0,             target: 1 },
+  ];
 
   return (
     <div className="mx-auto w-full max-w-[1600px] px-8 py-10 lg:px-12">
@@ -83,11 +103,11 @@ export default function ReadingProfilePage() {
         <div className="mt-6 grid grid-cols-2 gap-x-8 gap-y-3 border-t border-[var(--rd-border)] pt-6 sm:grid-cols-4">
           <Fact label="Team" value={teamName} />
           <Fact label="Member since" value={memberSince} />
-          <Fact label="Total points" value={String(stats.stats.totalPoints)} />
-          <Fact label="Leaderboard place" value={`${stats.stats.boardPlace}/${stats.stats.boardTotal}`} />
-          <Fact label="Rounds won" value={String(stats.stats.roundsWon)} />
-          <Fact label="Quiz nights" value={String(stats.stats.quizNights)} />
-          <Fact label="Accuracy" value={`${stats.stats.accuracy}%`} />
+          <Fact label="Total points" value="0" />
+          <Fact label="Leaderboard place" value={team ? `${team.place}/${team.teams_total}` : "—"} />
+          <Fact label="Rounds won" value="0" />
+          <Fact label="Quiz nights" value="0" />
+          <Fact label="Accuracy" value="—" />
         </div>
       </div>
 
@@ -128,7 +148,7 @@ export default function ReadingProfilePage() {
           <div className="flex-1">
             <p className="text-base font-medium text-[var(--rd-text)]">Badges</p>
             <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-              {stats.badges.map((badge) => {
+              {badges.map((badge) => {
                 const earned = badge.current >= badge.target;
                 const percent = Math.min((badge.current / badge.target) * 100, 100);
                 return (
