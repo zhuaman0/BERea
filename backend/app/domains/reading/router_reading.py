@@ -15,6 +15,7 @@ from app.domains.reading.schema_reading import (
     ReadingSemesterRoundCreate,
     ReadingSemesterRoundResponse,
     ReadingTeamJoinRequest,
+    ReadingTeamMemberAddRequest,
     ReadingTeamMemberProfileResponse,
     ReadingTeamRegistrationCreate,
     ReadingTeamRegistrationResponse,
@@ -91,6 +92,15 @@ async def rename_my_team(payload: ReadingTeamJoinRequest, user_id: CurrentUserId
     from app.domains.reading.service_reading import rename_my_team as rename_my_team_service
 
     return await rename_my_team_service(user_id, payload, db)
+
+
+@router.post("/teams/members", response_model=ReadingTeamResponse, status_code=201)
+async def add_team_member(
+    payload: ReadingTeamMemberAddRequest, user_id: CurrentUserId, db: DbSession
+) -> ReadingTeamResponse:
+    from app.domains.reading.service_reading import add_team_member as add_team_member_service
+
+    return await add_team_member_service(user_id, payload, db)
 
 
 @router.get("/teams/members/{member_id}", response_model=ReadingTeamMemberProfileResponse)
