@@ -10,6 +10,8 @@ from app.domains.reading.schema_reading import (
     ReadingLoginRequest,
     ReadingRefreshRequest,
     ReadingRegisterRequest,
+    ReadingSemesterRoundCreate,
+    ReadingSemesterRoundResponse,
     ReadingTeamJoinRequest,
     ReadingTeamRegistrationCreate,
     ReadingTeamRegistrationResponse,
@@ -139,3 +141,19 @@ async def cast_vote(
     from app.domains.reading.service_reading import cast_vote_for_user
 
     return await cast_vote_for_user(round_id, user_id, payload, db)
+
+
+@router.post("/semester-rounds", response_model=ReadingSemesterRoundResponse, status_code=201)
+async def create_semester_round(
+    payload: ReadingSemesterRoundCreate, user_id: CurrentUserId, db: DbSession
+) -> ReadingSemesterRoundResponse:
+    from app.domains.reading.service_reading import create_semester_round_for_admin
+
+    return await create_semester_round_for_admin(payload, db)
+
+
+@router.get("/semester-rounds", response_model=list[ReadingSemesterRoundResponse])
+async def list_semester_rounds(user_id: CurrentUserId, db: DbSession) -> list[ReadingSemesterRoundResponse]:
+    from app.domains.reading.service_reading import list_semester_rounds_for_user
+
+    return await list_semester_rounds_for_user(db)

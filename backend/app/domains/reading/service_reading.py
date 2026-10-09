@@ -15,11 +15,13 @@ from app.domains.auth.service_auth import (
     hash_password,
     verify_password,
 )
-from app.domains.reading.model_reading import ReadingTeam, ReadingUser, ReadingVoteRound
+from app.domains.reading.model_reading import ReadingSemesterRound, ReadingTeam, ReadingUser, ReadingVoteRound
 from app.domains.reading.schema_reading import (
     TEAM_MAX_MEMBERS,
     ReadingLoginRequest,
     ReadingRegisterRequest,
+    ReadingSemesterRoundCreate,
+    ReadingSemesterRoundResponse,
     ReadingTeamJoinRequest,
     ReadingTeamMemberResponse,
     ReadingTeamRegistrationCreate,
@@ -44,6 +46,7 @@ def _to_user_response(user: ReadingUser) -> ReadingUserResponse:
         full_name=user.full_name,
         team_name=user.team.name if user.team else None,
         token_balance=user.token_balance,
+        current_streak=user.current_streak,
         created_at=user.created_at,
     )
 
@@ -101,11 +104,12 @@ async def revoke_refresh_token(refresh_token: str, db: AsyncSession) -> None:
 
 
 async def get_current_reading_user(user_id: str, db: AsyncSession) -> ReadingUserResponse:
-    from app.domains.reading.repo_reading import get_user_by_id
+    from app.domains.reading.repo_reading import get_user_by_id, touch_user_streak
 
     user = await get_user_by_id(uuid.UUID(user_id), db)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    user = await touch_user_streak(user, datetime.now(timezone.utc).date(), db)
     return _to_user_response(user)
 
 
@@ -307,4 +311,39 @@ async def _to_vote_round_response(
         options=options,
         winner_option_id=winner_option_id,
         your_vote_option_id=your_vote_option_id,
+    )
+
+
+async def create_semester_round_for_admin(
+    payload: ReadingSemesterRoundCreate, db: AsyncSession
+) -> ReadingSemesterRoundResponse:
+    from app.domains.reading.repo_reading import create_semester_round
+
+    round_ = await create_semester_round(payload.index, payload.label, payload.starts_at, payload.ends_at, db)
+    return _to_semester_round_response(round_)
+
+
+async def list_semester_rounds_for_user(db: AsyncSession) -> list[ReadingSemesterRoundResponse]:
+    from app.domains.reading.repo_reading import list_semester_rounds
+
+    rounds = await list_semester_rounds(db)
+    return [_to_semester_round_response(round_) for round_ in rounds]
+
+
+def _to_semester_round_response(round_: ReadingSemesterRound) -> ReadingSemesterRoundResponse:
+    now = datetime.now(timezone.utc)
+    if now < round_.starts_at:
+        status_ = "locked"
+    elif now > round_.ends_at:
+        status_ = "done"
+    else:
+        status_ = "in_progress"
+
+    return ReadingSemesterRoundResponse(
+        id=round_.id,
+        index=round_.index,
+        label=round_.label,
+        starts_at=round_.starts_at,
+        ends_at=round_.ends_at,
+        status=status_,  # type: ignore[arg-type]
     )

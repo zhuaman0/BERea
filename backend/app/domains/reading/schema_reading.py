@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, ValidationInfo, field_validator
 
 
 class ReadingRegisterRequest(BaseModel):
@@ -40,6 +40,7 @@ class ReadingUserResponse(BaseModel):
     full_name: str
     team_name: str | None
     token_balance: int
+    current_streak: int
     created_at: datetime
 
 
@@ -123,3 +124,32 @@ class ReadingVoteRoundResponse(BaseModel):
     options: list[ReadingVoteOptionResult]
     winner_option_id: uuid.UUID | None
     your_vote_option_id: uuid.UUID | None
+
+
+SemesterRoundStatus = Literal["done", "in_progress", "locked"]
+
+
+class ReadingSemesterRoundCreate(BaseModel):
+    index: int = Field(ge=1, le=12)
+    label: str = Field(min_length=1, max_length=120)
+    starts_at: datetime
+    ends_at: datetime
+
+    @field_validator("ends_at")
+    @classmethod
+    def _ends_after_starts(cls, ends_at: datetime, info: ValidationInfo) -> datetime:
+        starts_at = info.data.get("starts_at")
+        if starts_at is not None and ends_at <= starts_at:
+            raise ValueError("ends_at must be after starts_at")
+        return ends_at
+
+
+class ReadingSemesterRoundResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    index: int
+    label: str
+    starts_at: datetime
+    ends_at: datetime
+    status: SemesterRoundStatus
