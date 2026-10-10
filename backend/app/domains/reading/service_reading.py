@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import secrets
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 from fastapi import HTTPException, UploadFile, status
@@ -114,7 +114,7 @@ async def get_current_reading_user(user_id: str, db: AsyncSession) -> ReadingUse
     user = await get_user_by_id(uuid.UUID(user_id), db)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    user = await touch_user_streak(user, datetime.now(timezone.utc).date(), db)
+    user = await touch_user_streak(user, _today(), db)
     return _to_user_response(user)
 
 
@@ -233,10 +233,22 @@ async def get_team_member_profile(
         full_name=member.full_name,
         email=member.email,
         team_name=member.team.name if member.team else "",
-        current_streak=member.current_streak,
+        current_streak=_effective_streak(member, _today()),
         token_balance=member.token_balance,
         created_at=member.created_at,
     )
+
+
+def _today() -> date:
+    return datetime.now(timezone.utc).date()
+
+
+def _effective_streak(user: ReadingUser, today: date) -> int:
+    """`current_streak` is only recomputed when the user next visits, so for anyone viewed
+    by someone else a streak whose last day is older than yesterday is already broken."""
+    if user.last_active_date is None or (today - user.last_active_date).days > 1:
+        return 0
+    return user.current_streak
 
 
 async def list_teams(db: AsyncSession) -> list[ReadingTeamSummaryResponse]:
@@ -262,11 +274,20 @@ async def _compute_team_rank(team_id: uuid.UUID, db: AsyncSession) -> tuple[int,
 def _to_team_response(
     team: ReadingTeam, members: list[ReadingUser], place: int, teams_total: int
 ) -> ReadingTeamResponse:
+    today = _today()
     return ReadingTeamResponse(
         id=team.id,
         name=team.name,
         members=[
-            ReadingTeamMemberResponse(id=m.id, full_name=m.full_name, email=m.email) for m in members
+            ReadingTeamMemberResponse(
+                id=m.id,
+                full_name=m.full_name,
+                email=m.email,
+                current_streak=_effective_streak(m, today),
+                active_today=m.last_active_date == today,
+                created_at=m.created_at,
+            )
+            for m in members
         ],
         place=place,
         teams_total=teams_total,
