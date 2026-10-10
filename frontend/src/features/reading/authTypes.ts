@@ -30,9 +30,12 @@ export interface ReadingTeamJoinRequest {
 }
 
 export interface ReadingTeamMember {
-  id:        string;
-  full_name: string;
-  email:     string;
+  id:             string;
+  full_name:      string;
+  email:          string;
+  current_streak: number;
+  active_today:   boolean;
+  created_at:     string;
 }
 
 export interface ReadingTeam {
