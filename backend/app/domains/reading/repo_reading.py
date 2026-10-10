@@ -111,6 +111,21 @@ async def create_user_record(
     return user
 
 
+async def create_team_member_record(
+    email: str, hashed_password: str, full_name: str, team_id: uuid.UUID, db: AsyncSession
+) -> ReadingUser:
+    user = ReadingUser(
+        email=email,
+        hashed_password=hashed_password,
+        full_name=full_name,
+        team_id=team_id,
+    )
+    db.add(user)
+    await db.commit()
+    await db.refresh(user, attribute_names=["team"])
+    return user
+
+
 async def set_user_team(user: ReadingUser, team_id: uuid.UUID, db: AsyncSession) -> ReadingUser:
     user.team_id = team_id
     await db.commit()

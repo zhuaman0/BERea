@@ -4,6 +4,7 @@ import type {
   ReadingRegisterRequest,
   ReadingTeam,
   ReadingTeamJoinRequest,
+  ReadingTeamMemberAddRequest,
   ReadingTeamMemberProfile,
   ReadingTeamSummary,
   ReadingTokenResponse,
@@ -34,4 +35,7 @@ export const readingAuthApi = {
 
   teamMemberProfile: (memberId: string) =>
     readingApiClient.get<ReadingTeamMemberProfile>(`/v1/reading/teams/members/${memberId}`),
+
+  addTeamMember: (body: ReadingTeamMemberAddRequest) =>
+    readingApiClient.post<ReadingTeam>("/v1/reading/teams/members", body),
 };

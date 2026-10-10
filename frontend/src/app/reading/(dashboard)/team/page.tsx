@@ -10,6 +10,7 @@ import { readingAuthApi } from "@/features/reading/authApi";
 import { readingSemesterApi } from "@/features/reading/semesterApi";
 import { isApiError } from "@/features/auth/utils";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
+import { TEAM_INVITE_LINK_ENABLED } from "@/features/reading/teamInviteFeature";
 import type { ReadingTeam } from "@/features/reading/authTypes";
 import type { SemesterRound } from "@/features/reading/types";
 
@@ -130,6 +131,8 @@ export default function ReadingTeamPage() {
   const [linkCopied, setLinkCopied] = useState(false);
   const [addStep, setAddStep] = useState(1);
   const [students, setStudents] = useState<StudentDraft[]>([]);
+  const [isAddingDirectly, setIsAddingDirectly] = useState(false);
+  const [addDirectlyError, setAddDirectlyError] = useState<string | null>(null);
 
   const openSpots = team ? team.max_members - team.members.length : 0;
   const totalSteps = Math.max(openSpots, 1) + 1;
@@ -211,6 +214,7 @@ export default function ReadingTeamPage() {
     setIsAddModalOpen(false);
     setAddStep(1);
     setStudents([]);
+    setAddDirectlyError(null);
   }
 
   function updateStudent(index: number, patch: Partial<StudentDraft>) {
@@ -221,6 +225,28 @@ export default function ReadingTeamPage() {
     e.preventDefault();
     if (!team) return;
     window.location.href = buildInviteMailto(team, students);
+  }
+
+  async function handleAddDirectly(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!team) return;
+    setAddDirectlyError(null);
+    setIsAddingDirectly(true);
+    try {
+      let updatedTeam = team;
+      for (const student of students.filter(isStudentValid)) {
+        updatedTeam = await readingAuthApi.addTeamMember({
+          full_name: `${student.firstName.trim()} ${student.lastName.trim()}`.trim(),
+          email: student.email.trim(),
+        });
+        setTeam(updatedTeam);
+      }
+      closeAddModal();
+    } catch (err) {
+      setAddDirectlyError(isApiError(err) ? err.detail : "Couldn't add that student.");
+    } finally {
+      setIsAddingDirectly(false);
+    }
   }
 
   return (
@@ -373,7 +399,7 @@ export default function ReadingTeamPage() {
             })}
           </div>
 
-          <form onSubmit={handleSendInvites}>
+          <form onSubmit={TEAM_INVITE_LINK_ENABLED ? handleSendInvites : handleAddDirectly}>
             {students.map((student, i) => {
               const stepNum = i + 1;
               if (addStep !== stepNum) return null;
@@ -470,77 +496,107 @@ export default function ReadingTeamPage() {
                   <p className="mt-1 font-display text-base font-semibold text-[var(--rd-text)]">{team.name}</p>
                 </div>
 
-                <div className="mt-1 flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setAddStep(teamStep - 1)}
-                    className="flex-1 rounded-xl border border-[var(--rd-border)] px-4 py-3 text-sm font-medium text-[var(--rd-text)] transition-colors hover:border-[var(--rd-accent-from)]"
-                  >
-                    Back
-                  </button>
-                  <button
-                    type="submit"
-                    className="rd-accent-gradient flex flex-[2] items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-black/85 transition-opacity hover:opacity-90"
-                  >
-                    <Send size={16} />
-                    Send {students.length > 1 ? "invites" : "invite"}
-                  </button>
-                </div>
-                <p className="text-center text-[11px] text-[var(--rd-text-muted)]">
-                  Opens your email app with the invite pre-written.
-                </p>
+                {TEAM_INVITE_LINK_ENABLED ? (
+                  <>
+                    <div className="mt-1 flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setAddStep(teamStep - 1)}
+                        className="flex-1 rounded-xl border border-[var(--rd-border)] px-4 py-3 text-sm font-medium text-[var(--rd-text)] transition-colors hover:border-[var(--rd-accent-from)]"
+                      >
+                        Back
+                      </button>
+                      <button
+                        type="submit"
+                        className="rd-accent-gradient flex flex-[2] items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-black/85 transition-opacity hover:opacity-90"
+                      >
+                        <Send size={16} />
+                        Send {students.length > 1 ? "invites" : "invite"}
+                      </button>
+                    </div>
+                    <p className="text-center text-[11px] text-[var(--rd-text-muted)]">
+                      Opens your email app with the invite pre-written.
+                    </p>
 
-                <div className="mt-3 border-t border-[var(--rd-border)] pt-4">
-                  <p className="text-[11px] uppercase tracking-[0.1em] text-[var(--rd-text-muted)]">
-                    Or share the invite link yourself
-                  </p>
-                  <div className="mt-2 flex items-center gap-2 rounded-xl border border-[var(--rd-border)] bg-[var(--rd-ink)] px-4 py-3">
-                    <input
-                      readOnly
-                      value={buildInviteLink(team)}
-                      onFocus={(e) => e.currentTarget.select()}
-                      className="min-w-0 flex-1 truncate bg-transparent text-sm text-[var(--rd-text)] focus:outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleCopyLink}
-                      className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--rd-border)] px-3 py-1.5 text-xs font-medium text-[var(--rd-text)] transition-colors hover:border-[var(--rd-accent-from)]"
-                    >
-                      {linkCopied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
-                      {linkCopied ? "Copied" : "Copy"}
-                    </button>
-                  </div>
+                    <div className="mt-3 border-t border-[var(--rd-border)] pt-4">
+                      <p className="text-[11px] uppercase tracking-[0.1em] text-[var(--rd-text-muted)]">
+                        Or share the invite link yourself
+                      </p>
+                      <div className="mt-2 flex items-center gap-2 rounded-xl border border-[var(--rd-border)] bg-[var(--rd-ink)] px-4 py-3">
+                        <input
+                          readOnly
+                          value={buildInviteLink(team)}
+                          onFocus={(e) => e.currentTarget.select()}
+                          className="min-w-0 flex-1 truncate bg-transparent text-sm text-[var(--rd-text)] focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleCopyLink}
+                          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--rd-border)] px-3 py-1.5 text-xs font-medium text-[var(--rd-text)] transition-colors hover:border-[var(--rd-accent-from)]"
+                        >
+                          {linkCopied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+                          {linkCopied ? "Copied" : "Copy"}
+                        </button>
+                      </div>
 
-                  {shareSupported && (
-                    <button
-                      type="button"
-                      onClick={handleShare}
-                      className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--rd-border)] px-4 py-2.5 text-sm font-medium text-[var(--rd-text)] transition-colors hover:border-[var(--rd-accent-from)]"
-                    >
-                      <Send size={14} />
-                      Share via apps
-                    </button>
-                  )}
-                </div>
+                      {shareSupported && (
+                        <button
+                          type="button"
+                          onClick={handleShare}
+                          className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--rd-border)] px-4 py-2.5 text-sm font-medium text-[var(--rd-text)] transition-colors hover:border-[var(--rd-accent-from)]"
+                        >
+                          <Send size={14} />
+                          Share via apps
+                        </button>
+                      )}
+                    </div>
 
-                <div className="border-t border-[var(--rd-border)] pt-4">
-                  <p className="text-[11px] uppercase tracking-[0.1em] text-[var(--rd-text-muted)]">
-                    Or have them join with your team name
-                  </p>
-                  <div className="mt-2 flex items-center gap-2 rounded-xl border border-[var(--rd-border)] bg-[var(--rd-ink)] px-4 py-3">
-                    <span className="flex-1 truncate font-display text-sm font-semibold text-[var(--rd-text)]">
-                      {team.name}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={handleCopyTeamName}
-                      className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--rd-border)] px-3 py-1.5 text-xs font-medium text-[var(--rd-text)] transition-colors hover:border-[var(--rd-accent-from)]"
-                    >
-                      {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
-                      {copied ? "Copied" : "Copy"}
-                    </button>
-                  </div>
-                </div>
+                    <div className="border-t border-[var(--rd-border)] pt-4">
+                      <p className="text-[11px] uppercase tracking-[0.1em] text-[var(--rd-text-muted)]">
+                        Or have them join with your team name
+                      </p>
+                      <div className="mt-2 flex items-center gap-2 rounded-xl border border-[var(--rd-border)] bg-[var(--rd-ink)] px-4 py-3">
+                        <span className="flex-1 truncate font-display text-sm font-semibold text-[var(--rd-text)]">
+                          {team.name}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleCopyTeamName}
+                          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--rd-border)] px-3 py-1.5 text-xs font-medium text-[var(--rd-text)] transition-colors hover:border-[var(--rd-accent-from)]"
+                        >
+                          {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+                          {copied ? "Copied" : "Copy"}
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="mt-1 flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setAddStep(teamStep - 1)}
+                        disabled={isAddingDirectly}
+                        className="flex-1 rounded-xl border border-[var(--rd-border)] px-4 py-3 text-sm font-medium text-[var(--rd-text)] transition-colors hover:border-[var(--rd-accent-from)] disabled:opacity-50"
+                      >
+                        Back
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isAddingDirectly}
+                        className="rd-accent-gradient flex flex-[2] items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-black/85 transition-opacity hover:opacity-90 disabled:opacity-50"
+                      >
+                        <UserPlus size={16} />
+                        {isAddingDirectly ? "Adding…" : students.length > 1 ? "Add them to the team" : "Add to the team"}
+                      </button>
+                    </div>
+                    {addDirectlyError && <p className="text-center text-[11px] text-red-400">{addDirectlyError}</p>}
+                    <p className="text-center text-[11px] text-[var(--rd-text-muted)]">
+                      Test version — this adds them straight to the roster. Invite links are
+                      coming in a later update.
+                    </p>
+                  </>
+                )}
               </div>
             )}
           </form>

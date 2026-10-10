@@ -32,6 +32,11 @@ class ReadingTeamJoinRequest(BaseModel):
     team_name: str = Field(min_length=2, max_length=120)
 
 
+class ReadingTeamMemberAddRequest(BaseModel):
+    full_name: str = Field(min_length=1, max_length=120)
+    email: EmailStr
+
+
 class ReadingUserResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

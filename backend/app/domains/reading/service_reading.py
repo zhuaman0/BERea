@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -25,6 +26,7 @@ from app.domains.reading.schema_reading import (
     ReadingSemesterRoundCreate,
     ReadingSemesterRoundResponse,
     ReadingTeamJoinRequest,
+    ReadingTeamMemberAddRequest,
     ReadingTeamMemberProfileResponse,
     ReadingTeamMemberResponse,
     ReadingTeamRegistrationCreate,
@@ -139,6 +141,44 @@ async def join_team(user_id: str, payload: ReadingTeamJoinRequest, db: AsyncSess
 
     user = await set_user_team(user, team.id, db)
     return _to_user_response(user)
+
+
+async def add_team_member(
+    user_id: str, payload: ReadingTeamMemberAddRequest, db: AsyncSession
+) -> ReadingTeamResponse:
+    """Creates a real account for a teammate and adds them to the captain's team directly.
+
+    This is the stand-in for a proper invite-link flow (see TEAM_INVITE_LINK_ENABLED on the
+    frontend): the new member gets a random password they don't know yet, so logging in will
+    require a password reset once that flow exists. Until then this just gets them onto the
+    roster immediately.
+    """
+    from app.domains.reading.repo_reading import (
+        count_team_members,
+        create_team_member_record,
+        get_team_members,
+        get_user_by_email,
+        get_user_by_id,
+    )
+
+    user = await get_user_by_id(uuid.UUID(user_id), db)
+    if not user or not user.team_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="You haven't joined a team yet")
+
+    existing = await get_user_by_email(payload.email, db)
+    if existing:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="That email is already registered")
+
+    member_count = await count_team_members(user.team_id, db)
+    if member_count >= TEAM_MAX_MEMBERS:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Your team is already full")
+
+    placeholder_password = hash_password(secrets.token_urlsafe(24))
+    await create_team_member_record(payload.email, placeholder_password, payload.full_name, user.team_id, db)
+
+    members = await get_team_members(user.team_id, db)
+    place, teams_total = await _compute_team_rank(user.team_id, db)
+    return _to_team_response(user.team, members, place, teams_total)
 
 
 async def get_my_team(user_id: str, db: AsyncSession) -> ReadingTeamResponse:
