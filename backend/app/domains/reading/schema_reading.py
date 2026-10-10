@@ -58,6 +58,9 @@ class ReadingTeamMemberResponse(BaseModel):
     id: uuid.UUID
     full_name: str
     email: EmailStr
+    current_streak: int
+    active_today: bool
+    created_at: datetime
 
 
 class ReadingTeamResponse(BaseModel):
