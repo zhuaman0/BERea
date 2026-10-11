@@ -76,7 +76,7 @@ scripts/    Dev automation (seed, migrate, reset)
 
 ### Commit Messages
 - Format: `<type>(<scope>): <short description>` (max 72 chars)
-- Types: `feat`, `fix`, `refactor`, `chore`, `docs`, `test`
+- Types: `feat`, `fix`, `refactor`, `chore`, `docs`, `test`, `style`
 - Examples: `feat(configurator): add modular template selector`, `fix(catalog): correct price filter range`
 
 ### Docker & Infrastructure
@@ -104,6 +104,18 @@ scripts/    Dev automation (seed, migrate, reset)
   (project-specific — checks this file's conventions specifically: typing, Pydantic v2 at API
   boundaries, module naming, dead code, Tailwind-only styling). Fix what they find, then push.
 - **Merge into `main`** only after review. `main` should always be in a deployable state.
+
+## Hooks & CI
+- **Husky (local, runs on `git commit` / `git push`)** — installed automatically by `npm install` at the repo root.
+  - `pre-commit`: lint-staged → ESLint `--fix` on staged frontend files, `ruff check --fix` on staged backend files
+    (skipped with a warning if ruff isn't installed locally: `pipx install ruff==0.17.0`).
+  - `commit-msg`: enforces `<type>(<scope>): <description>` (≤ 72 chars).
+  - `pre-push`: `npm run typecheck`.
+  - Never bypass with `--no-verify`; fix what the hook reports.
+- **GitHub Actions (`.github/workflows/ci.yml`, runs on every PR and push to `main`)** — frontend lint + typecheck,
+  backend `ruff check` + import check, and the commit-message rule for every commit in the PR.
+- Backend lint rules live in `backend/ruff.toml` (ruff pinned in `requirements-dev.txt`).
+- Project skills in `.claude/skills/`: `cleanup-review`, `db-migration`, `new-endpoint`, `verify-in-browser`, `ship-pr`.
 
 ## Module Naming Conventions
 | Layer | Pattern | Example |
