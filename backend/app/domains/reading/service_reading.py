@@ -396,9 +396,12 @@ async def _store_refresh_token(user_id: uuid.UUID, token: str, db: AsyncSession)
     await save_refresh_token(user_id, token_hash, expires_at, db)
 
 
-async def create_vote_round_for_admin(payload: ReadingVoteRoundCreate, db: AsyncSession) -> ReadingVoteRoundResponse:
+async def create_vote_round_for_admin(
+    user_id: str, payload: ReadingVoteRoundCreate, db: AsyncSession
+) -> ReadingVoteRoundResponse:
     from app.domains.reading.repo_reading import create_vote_round
 
+    await _require_admin(user_id, db)
     opens_at = datetime.now(UTC)
     closes_at = opens_at + timedelta(hours=payload.duration_hours)
     round_ = await create_vote_round(payload.stage, opens_at, closes_at, payload.options, db)
@@ -471,10 +474,11 @@ async def _to_vote_round_response(
 
 
 async def create_semester_round_for_admin(
-    payload: ReadingSemesterRoundCreate, db: AsyncSession
+    user_id: str, payload: ReadingSemesterRoundCreate, db: AsyncSession
 ) -> ReadingSemesterRoundResponse:
     from app.domains.reading.repo_reading import create_semester_round
 
+    await _require_admin(user_id, db)
     round_ = await create_semester_round(payload.index, payload.label, payload.starts_at, payload.ends_at, db)
     return _to_semester_round_response(round_)
 
@@ -513,10 +517,11 @@ async def get_app_settings_for_user(db: AsyncSession) -> ReadingAppSettingsRespo
 
 
 async def update_app_settings_for_admin(
-    payload: ReadingAppSettingsUpdate, db: AsyncSession
+    user_id: str, payload: ReadingAppSettingsUpdate, db: AsyncSession
 ) -> ReadingAppSettingsResponse:
     from app.domains.reading.repo_reading import set_leaderboard_enabled
 
+    await _require_admin(user_id, db)
     settings_row = await set_leaderboard_enabled(payload.leaderboard_enabled, db)
     return ReadingAppSettingsResponse.model_validate(settings_row)
 
@@ -552,16 +557,20 @@ async def get_book_for_user(book_id: str, db: AsyncSession) -> ReadingBookRespon
     return _to_book_response(await _get_book_or_404(book_id, db))
 
 
-async def create_book_for_admin(payload: ReadingBookWrite, db: AsyncSession) -> ReadingBookResponse:
+async def create_book_for_admin(user_id: str, payload: ReadingBookWrite, db: AsyncSession) -> ReadingBookResponse:
     from app.domains.reading.repo_reading import create_book
 
+    await _require_admin(user_id, db)
     book = await create_book(payload.title, payload.description, payload.cover_url, db)
     return _to_book_response(book)
 
 
-async def update_book_for_admin(book_id: str, payload: ReadingBookWrite, db: AsyncSession) -> ReadingBookResponse:
+async def update_book_for_admin(
+    user_id: str, book_id: str, payload: ReadingBookWrite, db: AsyncSession
+) -> ReadingBookResponse:
     from app.domains.reading.repo_reading import update_book
 
+    await _require_admin(user_id, db)
     book = await _get_book_or_404(book_id, db)
     book = await update_book(
         book, title=payload.title, description=payload.description, cover_url=payload.cover_url, db=db
@@ -569,9 +578,12 @@ async def update_book_for_admin(book_id: str, payload: ReadingBookWrite, db: Asy
     return _to_book_response(book)
 
 
-async def upload_book_cover_for_admin(book_id: str, cover: UploadFile, db: AsyncSession) -> ReadingBookResponse:
+async def upload_book_cover_for_admin(
+    user_id: str, book_id: str, cover: UploadFile, db: AsyncSession
+) -> ReadingBookResponse:
     from app.domains.reading.repo_reading import set_book_cover_image
 
+    await _require_admin(user_id, db)
     if cover.content_type not in BOOK_COVER_MIME_TYPES:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Cover must be a JPEG, PNG or WebP image"
@@ -585,16 +597,18 @@ async def upload_book_cover_for_admin(book_id: str, cover: UploadFile, db: Async
     return _to_book_response(book)
 
 
-async def remove_book_cover_for_admin(book_id: str, db: AsyncSession) -> ReadingBookResponse:
+async def remove_book_cover_for_admin(user_id: str, book_id: str, db: AsyncSession) -> ReadingBookResponse:
     from app.domains.reading.repo_reading import clear_book_cover
 
+    await _require_admin(user_id, db)
     book = await clear_book_cover(await _get_book_or_404(book_id, db), db)
     return _to_book_response(book)
 
 
-async def delete_book_for_admin(book_id: str, db: AsyncSession) -> None:
+async def delete_book_for_admin(user_id: str, book_id: str, db: AsyncSession) -> None:
     from app.domains.reading.repo_reading import delete_book
 
+    await _require_admin(user_id, db)
     await delete_book(await _get_book_or_404(book_id, db), db)
 
 

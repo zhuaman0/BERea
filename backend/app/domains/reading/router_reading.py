@@ -160,7 +160,7 @@ async def create_vote_round(
 ) -> ReadingVoteRoundResponse:
     from app.domains.reading.service_reading import create_vote_round_for_admin
 
-    return await create_vote_round_for_admin(payload, db)
+    return await create_vote_round_for_admin(user_id, payload, db)
 
 
 @router.get("/vote-rounds", response_model=list[ReadingVoteRoundResponse])
@@ -185,7 +185,7 @@ async def create_semester_round(
 ) -> ReadingSemesterRoundResponse:
     from app.domains.reading.service_reading import create_semester_round_for_admin
 
-    return await create_semester_round_for_admin(payload, db)
+    return await create_semester_round_for_admin(user_id, payload, db)
 
 
 @router.get("/semester-rounds", response_model=list[ReadingSemesterRoundResponse])
@@ -208,7 +208,7 @@ async def update_settings(
 ) -> ReadingAppSettingsResponse:
     from app.domains.reading.service_reading import update_app_settings_for_admin
 
-    return await update_app_settings_for_admin(payload, db)
+    return await update_app_settings_for_admin(user_id, payload, db)
 
 
 @router.get("/books", response_model=list[ReadingBookResponse])
@@ -222,7 +222,7 @@ async def list_books(user_id: CurrentUserId, db: DbSession) -> list[ReadingBookR
 async def create_book(payload: ReadingBookWrite, user_id: CurrentUserId, db: DbSession) -> ReadingBookResponse:
     from app.domains.reading.service_reading import create_book_for_admin
 
-    return await create_book_for_admin(payload, db)
+    return await create_book_for_admin(user_id, payload, db)
 
 
 @router.get("/books/{book_id}", response_model=ReadingBookResponse)
@@ -238,14 +238,14 @@ async def update_book(
 ) -> ReadingBookResponse:
     from app.domains.reading.service_reading import update_book_for_admin
 
-    return await update_book_for_admin(book_id, payload, db)
+    return await update_book_for_admin(user_id, book_id, payload, db)
 
 
 @router.delete("/books/{book_id}", status_code=204)
 async def delete_book(book_id: str, user_id: CurrentUserId, db: DbSession) -> None:
     from app.domains.reading.service_reading import delete_book_for_admin
 
-    await delete_book_for_admin(book_id, db)
+    await delete_book_for_admin(user_id, book_id, db)
 
 
 @router.put("/books/{book_id}/cover", response_model=ReadingBookResponse)
@@ -254,14 +254,14 @@ async def upload_book_cover(
 ) -> ReadingBookResponse:
     from app.domains.reading.service_reading import upload_book_cover_for_admin
 
-    return await upload_book_cover_for_admin(book_id, cover, db)
+    return await upload_book_cover_for_admin(user_id, book_id, cover, db)
 
 
 @router.delete("/books/{book_id}/cover", response_model=ReadingBookResponse)
 async def remove_book_cover(book_id: str, user_id: CurrentUserId, db: DbSession) -> ReadingBookResponse:
     from app.domains.reading.service_reading import remove_book_cover_for_admin
 
-    return await remove_book_cover_for_admin(book_id, db)
+    return await remove_book_cover_for_admin(user_id, book_id, db)
 
 
 # Public: <img> tags can't send a bearer token, and book covers aren't sensitive.
