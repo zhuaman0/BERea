@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Plus, Trash2, Crown } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { readingVoteApi } from "@/features/reading/voteApi";
+import { readingBookApi } from "@/features/reading/bookApi";
+import type { ReadingBook } from "@/features/reading/bookTypes";
+import { CatalogBookPicker } from "./CatalogBookPicker";
 import { isApiError } from "@/features/auth/utils";
 import type { VoteRound, VoteStage } from "@/features/reading/types";
 
@@ -23,6 +26,13 @@ const roundSettingsSchema = z.object({
 
 type RoundSettingsValues = z.infer<typeof roundSettingsSchema>;
 
+/** Label of the most recent closed round's winner for a stage, used to narrow the next stage. */
+function latestWinner(rounds: VoteRound[], stage: VoteStage): string | null {
+  const closed = rounds.filter((r) => r.stage === stage && !r.is_open && r.winner_option_id);
+  const latest = closed[closed.length - 1];
+  return latest?.options.find((o) => o.id === latest.winner_option_id)?.label ?? null;
+}
+
 const inputBase =
   "w-full rounded-lg border border-[var(--rd-border)] bg-[var(--rd-ink)] px-3 py-2.5 text-sm text-[var(--rd-text)] placeholder:text-[var(--rd-text-muted)] transition-colors focus:outline-none focus:border-[var(--rd-accent-from)]";
 
@@ -34,9 +44,13 @@ export function VoteRoundManager() {
 
   const [options, setOptions] = useState<string[]>(["", ""]);
   const [optionsError, setOptionsError] = useState<string | null>(null);
+  const [books, setBooks] = useState<ReadingBook[]>([]);
+  const [selectedBookIds, setSelectedBookIds] = useState<string[]>([]);
+  const [onlyMatching, setOnlyMatching] = useState(true);
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
@@ -55,6 +69,17 @@ export function VoteRoundManager() {
 
   useEffect(loadRounds, []);
 
+  useEffect(() => {
+    readingBookApi.list().then(setBooks).catch(() => { /* picker shows the empty-catalog hint */ });
+  }, []);
+
+  const stage = useWatch({ control, name: "stage" });
+  const isBookStage = stage === "book";
+
+  function toggleBook(id: string) {
+    setSelectedBookIds((prev) => (prev.includes(id) ? prev.filter((b) => b !== id) : [...prev, id]));
+  }
+
   function updateOption(i: number, value: string) {
     setOptions((prev) => prev.map((o, idx) => (idx === i ? value : o)));
   }
@@ -65,22 +90,23 @@ export function VoteRoundManager() {
 
   async function onSubmit(values: RoundSettingsValues) {
     const cleaned = options.map((o) => o.trim()).filter(Boolean);
-    if (cleaned.length < 2) {
-      setOptionsError("Add at least 2 options");
+    if (values.stage === "book" ? selectedBookIds.length < 2 : cleaned.length < 2) {
+      setOptionsError(values.stage === "book" ? "Pick at least 2 books" : "Add at least 2 options");
       return;
     }
     setOptionsError(null);
     setServerError(null);
 
     try {
-      const created = await readingVoteApi.createRound({
-        stage: values.stage,
-        options: cleaned,
-        duration_hours: values.durationHours,
-      });
+      const created = await readingVoteApi.createRound(
+        values.stage === "book"
+          ? { stage: values.stage, book_ids: selectedBookIds, duration_hours: values.durationHours }
+          : { stage: values.stage, options: cleaned, duration_hours: values.durationHours }
+      );
       setRounds((prev) => [...prev, created]);
       reset({ stage: values.stage, durationHours: 5 });
       setOptions(["", ""]);
+      setSelectedBookIds([]);
     } catch (err: unknown) {
       setServerError(isApiError(err) ? err.detail : "Couldn't create the round.");
     }
@@ -120,6 +146,20 @@ export function VoteRoundManager() {
           </div>
         </div>
 
+        {isBookStage ? (
+          <div className="mt-4">
+            <CatalogBookPicker
+              books={books}
+              languageWinner={latestWinner(rounds, "language")}
+              genreWinner={latestWinner(rounds, "genre")}
+              onlyMatching={onlyMatching}
+              onOnlyMatchingChange={setOnlyMatching}
+              selectedIds={selectedBookIds}
+              onToggle={toggleBook}
+            />
+            {optionsError && <p className="mt-2 text-[11px] text-red-400">{optionsError}</p>}
+          </div>
+        ) : (
         <div className="mt-4 flex flex-col gap-2">
           <label className="text-xs font-medium uppercase tracking-wide text-[var(--rd-text-muted)]">Options</label>
           {options.map((option, i) => (
@@ -151,6 +191,7 @@ export function VoteRoundManager() {
             Add option
           </button>
         </div>
+        )}
 
         <button
           type="submit"

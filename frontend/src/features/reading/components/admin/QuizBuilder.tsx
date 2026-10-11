@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Circle, Clock, Diamond, Plus, Square, Star, Trash2, Triangle } from "lucide-react";
-import { useReadingQuizStore } from "@/features/reading/store/useReadingQuizStore";
+import { Check, Circle, Clock, Diamond, Loader2, Plus, Square, Star, Trash2, Triangle } from "lucide-react";
+import { isApiError } from "@/features/auth/utils";
+import { readingQuizApi } from "@/features/reading/quizApi";
 import type { Quiz, QuizAnswerOption, QuizQuestion } from "@/features/reading/quizTypes";
 
 const ANSWER_STYLES = [
@@ -47,7 +48,6 @@ interface QuizBuilderProps {
 
 export function QuizBuilder({ initialQuiz }: QuizBuilderProps) {
   const router = useRouter();
-  const upsertQuiz = useReadingQuizStore((s) => s.upsertQuiz);
 
   const [title, setTitle] = useState(initialQuiz?.title ?? "");
   const [monthLabel, setMonthLabel] = useState(initialQuiz?.monthLabel ?? "");
@@ -56,6 +56,7 @@ export function QuizBuilder({ initialQuiz }: QuizBuilderProps) {
   );
   const [activeIndex, setActiveIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const active = questions[activeIndex];
 
@@ -86,7 +87,7 @@ export function QuizBuilder({ initialQuiz }: QuizBuilderProps) {
     setActiveIndex((i) => Math.max(0, i >= index ? i - 1 : i));
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!title.trim()) {
       setError("Give the quiz a title.");
       return;
@@ -99,8 +100,7 @@ export function QuizBuilder({ initialQuiz }: QuizBuilderProps) {
     }
     setError(null);
 
-    const quiz: Quiz = {
-      id:           initialQuiz?.id ?? genId(),
+    const quiz: Omit<Quiz, "id"> = {
       title:        title.trim(),
       monthLabel:   monthLabel.trim() || "This month",
       scheduledFor: initialQuiz?.scheduledFor ?? null,
@@ -113,8 +113,18 @@ export function QuizBuilder({ initialQuiz }: QuizBuilderProps) {
           .map((a) => ({ ...a, text: a.text.trim() })),
       })),
     };
-    upsertQuiz(quiz);
-    router.push("/reading/admin");
+    setIsSaving(true);
+    try {
+      if (initialQuiz) {
+        await readingQuizApi.update(initialQuiz.id, quiz);
+      } else {
+        await readingQuizApi.create(quiz);
+      }
+      router.push("/reading/admin");
+    } catch (err) {
+      setError(isApiError(err) ? err.detail : "Couldn't save the quiz. Please try again.");
+      setIsSaving(false);
+    }
   }
 
   return (
@@ -165,9 +175,11 @@ export function QuizBuilder({ initialQuiz }: QuizBuilderProps) {
             />
             <button
               onClick={handleSave}
-              className="rd-accent-gradient shrink-0 rounded-lg px-5 py-2.5 text-sm font-semibold text-black/85 transition-opacity hover:opacity-90"
+              disabled={isSaving}
+              className="rd-accent-gradient inline-flex shrink-0 items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-black/85 transition-opacity hover:opacity-90 disabled:opacity-60"
             >
-              Save quiz
+              {isSaving && <Loader2 size={15} className="animate-spin" />}
+              {isSaving ? "Saving…" : "Save quiz"}
             </button>
           </div>
           <input

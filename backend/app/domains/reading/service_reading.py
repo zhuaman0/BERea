@@ -18,6 +18,7 @@ from app.domains.auth.service_auth import (
 )
 from app.domains.reading.model_reading import (
     ReadingBook,
+    ReadingQuiz,
     ReadingSemesterRound,
     ReadingTeam,
     ReadingUser,
@@ -27,9 +28,15 @@ from app.domains.reading.schema_reading import (
     TEAM_MAX_MEMBERS,
     ReadingAppSettingsResponse,
     ReadingAppSettingsUpdate,
+    ReadingBookOfMonthResponse,
     ReadingBookResponse,
     ReadingBookWrite,
     ReadingLoginRequest,
+    ReadingProgressUpdate,
+    ReadingQuizAnswerResponse,
+    ReadingQuizQuestionResponse,
+    ReadingQuizResponse,
+    ReadingQuizWrite,
     ReadingRegisterRequest,
     ReadingSemesterRoundCreate,
     ReadingSemesterRoundResponse,
@@ -62,6 +69,7 @@ def _to_user_response(user: ReadingUser) -> ReadingUserResponse:
         team_name=user.team.name if user.team else None,
         token_balance=user.token_balance,
         current_streak=user.current_streak,
+        is_admin=user.is_admin,
         created_at=user.created_at,
     )
 
@@ -390,13 +398,32 @@ async def _store_refresh_token(user_id: uuid.UUID, token: str, db: AsyncSession)
     await save_refresh_token(user_id, token_hash, expires_at, db)
 
 
-async def create_vote_round_for_admin(payload: ReadingVoteRoundCreate, db: AsyncSession) -> ReadingVoteRoundResponse:
+async def create_vote_round_for_admin(
+    user_id: str, payload: ReadingVoteRoundCreate, db: AsyncSession
+) -> ReadingVoteRoundResponse:
     from app.domains.reading.repo_reading import create_vote_round
 
+    await _require_admin(user_id, db)
     opens_at = datetime.now(UTC)
     closes_at = opens_at + timedelta(hours=payload.duration_hours)
-    round_ = await create_vote_round(payload.stage, opens_at, closes_at, payload.options, db)
+    options = await _vote_round_options(payload, db)
+    round_ = await create_vote_round(payload.stage, opens_at, closes_at, options, db)
     return await _to_vote_round_response(round_, None, db)
+
+
+async def _vote_round_options(
+    payload: ReadingVoteRoundCreate, db: AsyncSession
+) -> list[tuple[str, uuid.UUID | None]]:
+    from app.domains.reading.repo_reading import get_books_by_ids
+
+    if payload.book_ids is None:
+        return [(label, None) for label in payload.options]
+
+    unique_ids = list(dict.fromkeys(payload.book_ids))
+    books = {book.id: book for book in await get_books_by_ids(unique_ids, db)}
+    if len(books) != len(unique_ids):
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Some of those books no longer exist")
+    return [(books[book_id].title[:120], book_id) for book_id in unique_ids]
 
 
 async def list_vote_rounds_for_user(user_id: str, db: AsyncSession) -> list[ReadingVoteRoundResponse]:
@@ -436,6 +463,7 @@ async def _to_vote_round_response(
         ReadingVoteOptionResult(
             id=option.id,
             label=option.label,
+            book_id=option.book_id,
             vote_count=tally.get(option.id, 0),
             percent=round((tally.get(option.id, 0) / total_votes) * 100) if total_votes else 0,
         )
@@ -465,10 +493,11 @@ async def _to_vote_round_response(
 
 
 async def create_semester_round_for_admin(
-    payload: ReadingSemesterRoundCreate, db: AsyncSession
+    user_id: str, payload: ReadingSemesterRoundCreate, db: AsyncSession
 ) -> ReadingSemesterRoundResponse:
     from app.domains.reading.repo_reading import create_semester_round
 
+    await _require_admin(user_id, db)
     round_ = await create_semester_round(payload.index, payload.label, payload.starts_at, payload.ends_at, db)
     return _to_semester_round_response(round_)
 
@@ -507,10 +536,11 @@ async def get_app_settings_for_user(db: AsyncSession) -> ReadingAppSettingsRespo
 
 
 async def update_app_settings_for_admin(
-    payload: ReadingAppSettingsUpdate, db: AsyncSession
+    user_id: str, payload: ReadingAppSettingsUpdate, db: AsyncSession
 ) -> ReadingAppSettingsResponse:
     from app.domains.reading.repo_reading import set_leaderboard_enabled
 
+    await _require_admin(user_id, db)
     settings_row = await set_leaderboard_enabled(payload.leaderboard_enabled, db)
     return ReadingAppSettingsResponse.model_validate(settings_row)
 
@@ -524,7 +554,15 @@ def _to_book_response(book: ReadingBook) -> ReadingBookResponse:
     if book.cover_mime:
         # Version by updated_at so a replaced cover never shows a stale cached image.
         cover_url = f"/v1/reading/books/{book.id}/cover?v={int(book.updated_at.timestamp())}"
-    return ReadingBookResponse(id=book.id, title=book.title, description=book.description, cover_url=cover_url)
+    return ReadingBookResponse(
+        id=book.id,
+        title=book.title,
+        description=book.description,
+        cover_url=cover_url,
+        language=book.language,
+        genre=book.genre,
+        page_count=book.page_count,
+    )
 
 
 async def _get_book_or_404(book_id: str, db: AsyncSession) -> ReadingBook:
@@ -546,26 +584,31 @@ async def get_book_for_user(book_id: str, db: AsyncSession) -> ReadingBookRespon
     return _to_book_response(await _get_book_or_404(book_id, db))
 
 
-async def create_book_for_admin(payload: ReadingBookWrite, db: AsyncSession) -> ReadingBookResponse:
+async def create_book_for_admin(user_id: str, payload: ReadingBookWrite, db: AsyncSession) -> ReadingBookResponse:
     from app.domains.reading.repo_reading import create_book
 
-    book = await create_book(payload.title, payload.description, payload.cover_url, db)
+    await _require_admin(user_id, db)
+    book = await create_book(payload, db)
     return _to_book_response(book)
 
 
-async def update_book_for_admin(book_id: str, payload: ReadingBookWrite, db: AsyncSession) -> ReadingBookResponse:
+async def update_book_for_admin(
+    user_id: str, book_id: str, payload: ReadingBookWrite, db: AsyncSession
+) -> ReadingBookResponse:
     from app.domains.reading.repo_reading import update_book
 
+    await _require_admin(user_id, db)
     book = await _get_book_or_404(book_id, db)
-    book = await update_book(
-        book, title=payload.title, description=payload.description, cover_url=payload.cover_url, db=db
-    )
+    book = await update_book(book, payload, db)
     return _to_book_response(book)
 
 
-async def upload_book_cover_for_admin(book_id: str, cover: UploadFile, db: AsyncSession) -> ReadingBookResponse:
+async def upload_book_cover_for_admin(
+    user_id: str, book_id: str, cover: UploadFile, db: AsyncSession
+) -> ReadingBookResponse:
     from app.domains.reading.repo_reading import set_book_cover_image
 
+    await _require_admin(user_id, db)
     if cover.content_type not in BOOK_COVER_MIME_TYPES:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Cover must be a JPEG, PNG or WebP image"
@@ -579,16 +622,18 @@ async def upload_book_cover_for_admin(book_id: str, cover: UploadFile, db: Async
     return _to_book_response(book)
 
 
-async def remove_book_cover_for_admin(book_id: str, db: AsyncSession) -> ReadingBookResponse:
+async def remove_book_cover_for_admin(user_id: str, book_id: str, db: AsyncSession) -> ReadingBookResponse:
     from app.domains.reading.repo_reading import clear_book_cover
 
+    await _require_admin(user_id, db)
     book = await clear_book_cover(await _get_book_or_404(book_id, db), db)
     return _to_book_response(book)
 
 
-async def delete_book_for_admin(book_id: str, db: AsyncSession) -> None:
+async def delete_book_for_admin(user_id: str, book_id: str, db: AsyncSession) -> None:
     from app.domains.reading.repo_reading import delete_book
 
+    await _require_admin(user_id, db)
     await delete_book(await _get_book_or_404(book_id, db), db)
 
 
@@ -599,3 +644,137 @@ async def get_book_cover_image(book_id: str, db: AsyncSession) -> tuple[bytes, s
     if not book or not book.cover_image or not book.cover_mime:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cover not found")
     return book.cover_image, book.cover_mime
+
+
+async def _require_admin(user_id: str, db: AsyncSession) -> None:
+    from app.domains.reading.repo_reading import get_user_by_id
+
+    user = await get_user_by_id(uuid.UUID(user_id), db)
+    if not user or not user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admins only")
+
+
+def _to_quiz_response(quiz: ReadingQuiz) -> ReadingQuizResponse:
+    return ReadingQuizResponse(
+        id=quiz.id,
+        title=quiz.title,
+        month_label=quiz.month_label,
+        scheduled_for=quiz.scheduled_for,
+        status=quiz.status,  # type: ignore[arg-type]
+        questions=[
+            ReadingQuizQuestionResponse(
+                id=q.id,
+                text=q.text,
+                time_limit_seconds=q.time_limit_seconds,
+                points=q.points,
+                answers=[ReadingQuizAnswerResponse(id=a.id, text=a.text, is_correct=a.is_correct) for a in q.answers],
+            )
+            for q in quiz.questions
+        ],
+    )
+
+
+async def _get_quiz_or_404(quiz_id: str, db: AsyncSession) -> ReadingQuiz:
+    from app.domains.reading.repo_reading import get_quiz
+
+    quiz = await get_quiz(uuid.UUID(quiz_id), db)
+    if not quiz:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quiz not found")
+    return quiz
+
+
+async def list_quizzes_for_admin(user_id: str, db: AsyncSession) -> list[ReadingQuizResponse]:
+    from app.domains.reading.repo_reading import list_quizzes
+
+    await _require_admin(user_id, db)
+    return [_to_quiz_response(quiz) for quiz in await list_quizzes(db)]
+
+
+async def get_quiz_for_admin(user_id: str, quiz_id: str, db: AsyncSession) -> ReadingQuizResponse:
+    await _require_admin(user_id, db)
+    return _to_quiz_response(await _get_quiz_or_404(quiz_id, db))
+
+
+async def save_quiz_for_admin(
+    user_id: str, quiz_id: str | None, payload: ReadingQuizWrite, db: AsyncSession
+) -> ReadingQuizResponse:
+    from app.domains.reading.repo_reading import get_quiz, save_quiz
+
+    await _require_admin(user_id, db)
+    existing = await _get_quiz_or_404(quiz_id, db) if quiz_id else None
+    saved_id = await save_quiz(existing, payload, db)
+    # Re-read so the replaced question/answer lists come back fully loaded and ordered.
+    db.expire_all()
+    quiz = await get_quiz(saved_id, db)
+    assert quiz is not None
+    return _to_quiz_response(quiz)
+
+
+async def delete_quiz_for_admin(user_id: str, quiz_id: str, db: AsyncSession) -> None:
+    from app.domains.reading.repo_reading import delete_quiz
+
+    await _require_admin(user_id, db)
+    await delete_quiz(await _get_quiz_or_404(quiz_id, db), db)
+
+
+
+async def _current_book_of_month(db: AsyncSession) -> tuple[ReadingBook, int] | None:
+    """The winner of the most recent closed book round that had votes, with its share of the vote."""
+    from app.domains.reading.repo_reading import get_book, get_vote_tally, list_closed_book_rounds
+
+    for round_ in await list_closed_book_rounds(datetime.now(UTC), db):
+        tally = await get_vote_tally(round_.id, db)
+        total_votes = sum(tally.values())
+        if not total_votes:
+            continue
+        winner = max(round_.options, key=lambda option: tally.get(option.id, 0))
+        if winner.book_id is None:
+            continue
+        book = await get_book(winner.book_id, db)
+        if book:
+            return book, round(tally.get(winner.id, 0) / total_votes * 100)
+    return None
+
+
+async def get_book_of_month_for_user(user_id: str, db: AsyncSession) -> ReadingBookOfMonthResponse | None:
+    from app.domains.reading.repo_reading import get_progress_for_users, get_team_members, get_user_by_id
+
+    user = await get_user_by_id(uuid.UUID(user_id), db)
+    current = await _current_book_of_month(db)
+    if not user or not current:
+        return None
+    book, chosen_by_percent = current
+
+    member_ids = [m.id for m in await get_team_members(user.team_id, db)] if user.team_id else [user.id]
+    pages = await get_progress_for_users(book.id, member_ids, db)
+    team_average_percent = 0
+    if book.page_count:
+        percents = [min(pages.get(member_id, 0), book.page_count) / book.page_count * 100 for member_id in member_ids]
+        team_average_percent = round(sum(percents) / len(percents))
+
+    return ReadingBookOfMonthResponse(
+        book=_to_book_response(book),
+        chosen_by_percent=chosen_by_percent,
+        your_page=pages.get(user.id, 0),
+        team_average_percent=team_average_percent,
+    )
+
+
+async def update_progress_for_user(
+    user_id: str, payload: ReadingProgressUpdate, db: AsyncSession
+) -> ReadingBookOfMonthResponse:
+    from app.domains.reading.repo_reading import set_progress
+
+    current = await _current_book_of_month(db)
+    if not current:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="There's no book of the month yet")
+    book, _ = current
+    if book.page_count and payload.current_page > book.page_count:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"This book only has {book.page_count} pages"
+        )
+
+    await set_progress(uuid.UUID(user_id), book.id, payload.current_page, db)
+    result = await get_book_of_month_for_user(user_id, db)
+    assert result is not None
+    return result

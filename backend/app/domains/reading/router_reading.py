@@ -9,9 +9,13 @@ from app.dependencies import CurrentUserId, DbSession
 from app.domains.reading.schema_reading import (
     ReadingAppSettingsResponse,
     ReadingAppSettingsUpdate,
+    ReadingBookOfMonthResponse,
     ReadingBookResponse,
     ReadingBookWrite,
     ReadingLoginRequest,
+    ReadingProgressUpdate,
+    ReadingQuizResponse,
+    ReadingQuizWrite,
     ReadingRefreshRequest,
     ReadingRegisterRequest,
     ReadingSemesterRoundCreate,
@@ -158,7 +162,7 @@ async def create_vote_round(
 ) -> ReadingVoteRoundResponse:
     from app.domains.reading.service_reading import create_vote_round_for_admin
 
-    return await create_vote_round_for_admin(payload, db)
+    return await create_vote_round_for_admin(user_id, payload, db)
 
 
 @router.get("/vote-rounds", response_model=list[ReadingVoteRoundResponse])
@@ -183,7 +187,7 @@ async def create_semester_round(
 ) -> ReadingSemesterRoundResponse:
     from app.domains.reading.service_reading import create_semester_round_for_admin
 
-    return await create_semester_round_for_admin(payload, db)
+    return await create_semester_round_for_admin(user_id, payload, db)
 
 
 @router.get("/semester-rounds", response_model=list[ReadingSemesterRoundResponse])
@@ -206,7 +210,7 @@ async def update_settings(
 ) -> ReadingAppSettingsResponse:
     from app.domains.reading.service_reading import update_app_settings_for_admin
 
-    return await update_app_settings_for_admin(payload, db)
+    return await update_app_settings_for_admin(user_id, payload, db)
 
 
 @router.get("/books", response_model=list[ReadingBookResponse])
@@ -220,7 +224,7 @@ async def list_books(user_id: CurrentUserId, db: DbSession) -> list[ReadingBookR
 async def create_book(payload: ReadingBookWrite, user_id: CurrentUserId, db: DbSession) -> ReadingBookResponse:
     from app.domains.reading.service_reading import create_book_for_admin
 
-    return await create_book_for_admin(payload, db)
+    return await create_book_for_admin(user_id, payload, db)
 
 
 @router.get("/books/{book_id}", response_model=ReadingBookResponse)
@@ -236,14 +240,14 @@ async def update_book(
 ) -> ReadingBookResponse:
     from app.domains.reading.service_reading import update_book_for_admin
 
-    return await update_book_for_admin(book_id, payload, db)
+    return await update_book_for_admin(user_id, book_id, payload, db)
 
 
 @router.delete("/books/{book_id}", status_code=204)
 async def delete_book(book_id: str, user_id: CurrentUserId, db: DbSession) -> None:
     from app.domains.reading.service_reading import delete_book_for_admin
 
-    await delete_book_for_admin(book_id, db)
+    await delete_book_for_admin(user_id, book_id, db)
 
 
 @router.put("/books/{book_id}/cover", response_model=ReadingBookResponse)
@@ -252,14 +256,14 @@ async def upload_book_cover(
 ) -> ReadingBookResponse:
     from app.domains.reading.service_reading import upload_book_cover_for_admin
 
-    return await upload_book_cover_for_admin(book_id, cover, db)
+    return await upload_book_cover_for_admin(user_id, book_id, cover, db)
 
 
 @router.delete("/books/{book_id}/cover", response_model=ReadingBookResponse)
 async def remove_book_cover(book_id: str, user_id: CurrentUserId, db: DbSession) -> ReadingBookResponse:
     from app.domains.reading.service_reading import remove_book_cover_for_admin
 
-    return await remove_book_cover_for_admin(book_id, db)
+    return await remove_book_cover_for_admin(user_id, book_id, db)
 
 
 # Public: <img> tags can't send a bearer token, and book covers aren't sensitive.
@@ -269,3 +273,56 @@ async def get_book_cover(book_id: str, db: DbSession) -> Response:
 
     image, mime = await get_book_cover_image(book_id, db)
     return Response(content=image, media_type=mime, headers={"Cache-Control": "public, max-age=31536000, immutable"})
+
+
+@router.get("/quizzes", response_model=list[ReadingQuizResponse])
+async def list_quizzes(user_id: CurrentUserId, db: DbSession) -> list[ReadingQuizResponse]:
+    from app.domains.reading.service_reading import list_quizzes_for_admin
+
+    return await list_quizzes_for_admin(user_id, db)
+
+
+@router.post("/quizzes", response_model=ReadingQuizResponse, status_code=201)
+async def create_quiz(payload: ReadingQuizWrite, user_id: CurrentUserId, db: DbSession) -> ReadingQuizResponse:
+    from app.domains.reading.service_reading import save_quiz_for_admin
+
+    return await save_quiz_for_admin(user_id, None, payload, db)
+
+
+@router.get("/quizzes/{quiz_id}", response_model=ReadingQuizResponse)
+async def get_quiz(quiz_id: str, user_id: CurrentUserId, db: DbSession) -> ReadingQuizResponse:
+    from app.domains.reading.service_reading import get_quiz_for_admin
+
+    return await get_quiz_for_admin(user_id, quiz_id, db)
+
+
+@router.put("/quizzes/{quiz_id}", response_model=ReadingQuizResponse)
+async def update_quiz(
+    quiz_id: str, payload: ReadingQuizWrite, user_id: CurrentUserId, db: DbSession
+) -> ReadingQuizResponse:
+    from app.domains.reading.service_reading import save_quiz_for_admin
+
+    return await save_quiz_for_admin(user_id, quiz_id, payload, db)
+
+
+@router.delete("/quizzes/{quiz_id}", status_code=204)
+async def delete_quiz(quiz_id: str, user_id: CurrentUserId, db: DbSession) -> None:
+    from app.domains.reading.service_reading import delete_quiz_for_admin
+
+    await delete_quiz_for_admin(user_id, quiz_id, db)
+
+
+@router.get("/book-of-the-month", response_model=ReadingBookOfMonthResponse | None)
+async def get_book_of_the_month(user_id: CurrentUserId, db: DbSession) -> ReadingBookOfMonthResponse | None:
+    from app.domains.reading.service_reading import get_book_of_month_for_user
+
+    return await get_book_of_month_for_user(user_id, db)
+
+
+@router.put("/book-of-the-month/progress", response_model=ReadingBookOfMonthResponse)
+async def update_reading_progress(
+    payload: ReadingProgressUpdate, user_id: CurrentUserId, db: DbSession
+) -> ReadingBookOfMonthResponse:
+    from app.domains.reading.service_reading import update_progress_for_user
+
+    return await update_progress_for_user(user_id, payload, db)

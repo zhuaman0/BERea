@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, ValidationInfo, field_validator, model_validator
 
 
 class ReadingRegisterRequest(BaseModel):
@@ -46,6 +46,7 @@ class ReadingUserResponse(BaseModel):
     team_name: str | None
     token_balance: int
     current_streak: int
+    is_admin: bool
     created_at: datetime
 
 
@@ -145,16 +146,25 @@ VoteStage = Literal["language", "genre", "book"]
 
 class ReadingVoteRoundCreate(BaseModel):
     stage: VoteStage
-    options: list[str] = Field(min_length=2, max_length=12)
+    options: list[str] = Field(default_factory=list, max_length=12)
+    book_ids: list[uuid.UUID] | None = Field(default=None, max_length=12)
     duration_hours: float = Field(gt=0, le=168)
 
     @field_validator("options")
     @classmethod
     def _clean_options(cls, value: list[str]) -> list[str]:
-        cleaned = [option.strip() for option in value if option.strip()]
-        if len(cleaned) < 2:
+        return [option.strip() for option in value if option.strip()]
+
+    @model_validator(mode="after")
+    def _options_or_books(self) -> ReadingVoteRoundCreate:
+        if self.book_ids is not None:
+            if self.stage != "book":
+                raise ValueError("Catalog books can only be offered in a book round")
+            if len(set(self.book_ids)) < 2:
+                raise ValueError("Pick at least 2 books")
+        elif len(self.options) < 2:
             raise ValueError("Add at least 2 options")
-        return cleaned
+        return self
 
 
 class ReadingVoteCastRequest(BaseModel):
@@ -164,6 +174,7 @@ class ReadingVoteCastRequest(BaseModel):
 class ReadingVoteOptionResult(BaseModel):
     id: uuid.UUID
     label: str
+    book_id: uuid.UUID | None = None
     vote_count: int
     percent: int
 
@@ -223,6 +234,16 @@ class ReadingBookWrite(BaseModel):
     title: str = Field(min_length=1, max_length=200)
     description: str = Field(default="", max_length=4000)
     cover_url: str | None = Field(default=None, max_length=1024)
+    language: str | None = Field(default=None, max_length=40)
+    genre: str | None = Field(default=None, max_length=60)
+    page_count: int | None = Field(default=None, ge=1, le=5000)
+
+    @field_validator("language", "genre")
+    @classmethod
+    def _blank_is_none(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return value.strip() or None
 
     @field_validator("title", "description")
     @classmethod
@@ -245,3 +266,70 @@ class ReadingBookResponse(BaseModel):
     title: str
     description: str
     cover_url: str | None
+    language: str | None
+    genre: str | None
+    page_count: int | None
+
+
+class ReadingBookOfMonthResponse(BaseModel):
+    book: ReadingBookResponse
+    chosen_by_percent: int
+    your_page: int
+    team_average_percent: int
+
+
+class ReadingProgressUpdate(BaseModel):
+    current_page: int = Field(ge=0, le=5000)
+
+
+QuizStatus = Literal["draft", "scheduled"]
+
+
+class ReadingQuizAnswerWrite(BaseModel):
+    text: str = Field(min_length=1, max_length=300)
+    is_correct: bool
+
+
+class ReadingQuizQuestionWrite(BaseModel):
+    text: str = Field(min_length=1, max_length=1000)
+    time_limit_seconds: int = Field(ge=5, le=300)
+    points: int = Field(ge=0, le=5000)
+    answers: list[ReadingQuizAnswerWrite] = Field(min_length=2, max_length=4)
+
+    @field_validator("answers")
+    @classmethod
+    def _one_correct(cls, answers: list[ReadingQuizAnswerWrite]) -> list[ReadingQuizAnswerWrite]:
+        if sum(a.is_correct for a in answers) != 1:
+            raise ValueError("Mark exactly one answer as correct")
+        return answers
+
+
+class ReadingQuizWrite(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+    month_label: str = Field(min_length=1, max_length=60)
+    scheduled_for: datetime | None = None
+    status: QuizStatus = "draft"
+    questions: list[ReadingQuizQuestionWrite] = Field(min_length=1, max_length=100)
+
+
+class ReadingQuizAnswerResponse(BaseModel):
+    id: uuid.UUID
+    text: str
+    is_correct: bool
+
+
+class ReadingQuizQuestionResponse(BaseModel):
+    id: uuid.UUID
+    text: str
+    time_limit_seconds: int
+    points: int
+    answers: list[ReadingQuizAnswerResponse]
+
+
+class ReadingQuizResponse(BaseModel):
+    id: uuid.UUID
+    title: str
+    month_label: str
+    scheduled_for: datetime | None
+    status: QuizStatus
+    questions: list[ReadingQuizQuestionResponse]

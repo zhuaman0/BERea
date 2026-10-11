@@ -1,14 +1,3 @@
-export interface BookOfMonth {
-  id:                  string;
-  title:               string;
-  monthLabel:          string;
-  chosenByPercent:     number;
-  pageCount:           number;
-  yourPage:            number;
-  yourProgressPercent: number;
-  teamAveragePercent:  number;
-}
-
 export interface QuizNight {
   daysLeft:    number;
   hoursLeft:   number;
@@ -43,7 +32,6 @@ export interface BonusTask {
 export interface ReadingDashboard {
   greetingName: string;
   greetingNote: string;
-  book:         BookOfMonth;
   quizNight:    QuizNight;
   bonusTasks:   BonusTask[];
 }
@@ -53,6 +41,7 @@ export type VoteStage = "language" | "genre" | "book";
 export interface VoteOptionResult {
   id:         string;
   label:      string;
+  book_id:    string | null;
   vote_count: number;
   percent:    number;
 }

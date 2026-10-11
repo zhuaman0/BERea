@@ -20,6 +20,10 @@ from app.domains.orders.model_orders import Order  # noqa: F401
 from app.domains.reading.model_reading import (  # noqa: F401
     ReadingAppSettings,
     ReadingBook,
+    ReadingProgress,
+    ReadingQuiz,
+    ReadingQuizAnswer,
+    ReadingQuizQuestion,
     ReadingRefreshToken,
     ReadingSemesterRound,
     ReadingTeam,

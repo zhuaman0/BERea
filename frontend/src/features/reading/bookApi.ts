@@ -28,3 +28,17 @@ export function bookCoverSrc(coverUrl: string | null): string | null {
   if (!coverUrl) return null;
   return coverUrl.startsWith("/") ? `${API_BASE}${coverUrl}` : coverUrl;
 }
+
+export interface BookOfMonthResult {
+  book:                 ReadingBook;
+  chosen_by_percent:    number;
+  your_page:            number;
+  team_average_percent: number;
+}
+
+export const readingBookOfMonthApi = {
+  get: () => readingApiClient.get<BookOfMonthResult | null>("/v1/reading/book-of-the-month"),
+
+  logProgress: (currentPage: number) =>
+    readingApiClient.put<BookOfMonthResult>("/v1/reading/book-of-the-month/progress", { current_page: currentPage }),
+};
