@@ -25,6 +25,8 @@ from app.domains.reading.schema_reading import (
     ReadingRegisterRequest,
     ReadingSemesterRoundCreate,
     ReadingSemesterRoundResponse,
+    ReadingTeamCover,
+    ReadingTeamCoverUpdate,
     ReadingTeamJoinRequest,
     ReadingTeamMemberAddRequest,
     ReadingTeamMemberProfileResponse,
@@ -256,9 +258,44 @@ async def list_teams(db: AsyncSession) -> list[ReadingTeamSummaryResponse]:
 
     rows = await list_teams_with_member_counts(db)
     return [
-        ReadingTeamSummaryResponse(id=team.id, name=team.name, member_count=member_count)
+        ReadingTeamSummaryResponse(
+            id=team.id, name=team.name, member_count=member_count, cover=_to_team_cover(team)
+        )
         for team, member_count in rows
     ]
+
+
+async def update_my_team_cover(
+    user_id: str, payload: ReadingTeamCoverUpdate, db: AsyncSession
+) -> ReadingTeamResponse:
+    from app.domains.reading.repo_reading import get_team_members, get_user_by_id, update_team_cover
+
+    user = await get_user_by_id(uuid.UUID(user_id), db)
+    if not user or not user.team:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="You haven't joined a team yet")
+
+    team = await update_team_cover(
+        user.team,
+        title=payload.title,
+        color=payload.color,
+        pattern=payload.pattern,
+        emblem=payload.emblem,
+        animation=payload.animation,
+        db=db,
+    )
+    members = await get_team_members(team.id, db)
+    place, teams_total = await _compute_team_rank(team.id, db)
+    return _to_team_response(team, members, place, teams_total)
+
+
+def _to_team_cover(team: ReadingTeam) -> ReadingTeamCover:
+    return ReadingTeamCover(
+        title=team.cover_title,
+        color=team.cover_color,  # type: ignore[arg-type]
+        pattern=team.cover_pattern,  # type: ignore[arg-type]
+        emblem=team.cover_emblem,  # type: ignore[arg-type]
+        animation=team.cover_animation,  # type: ignore[arg-type]
+    )
 
 
 async def _compute_team_rank(team_id: uuid.UUID, db: AsyncSession) -> tuple[int, int]:
@@ -291,6 +328,7 @@ def _to_team_response(
         ],
         place=place,
         teams_total=teams_total,
+        cover=_to_team_cover(team),
     )
 
 

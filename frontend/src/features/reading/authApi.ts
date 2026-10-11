@@ -9,6 +9,7 @@ import type {
   ReadingTeamSummary,
   ReadingTokenResponse,
   ReadingUser,
+  TeamCover,
 } from "@/features/reading/authTypes";
 
 export const readingAuthApi = {
@@ -32,6 +33,9 @@ export const readingAuthApi = {
 
   renameTeam: (body: ReadingTeamJoinRequest) =>
     readingApiClient.patch<ReadingTeam>("/v1/reading/teams/me", body),
+
+  updateTeamCover: (body: TeamCover) =>
+    readingApiClient.put<ReadingTeam>("/v1/reading/teams/me/cover", body),
 
   teamMemberProfile: (memberId: string) =>
     readingApiClient.get<ReadingTeamMemberProfile>(`/v1/reading/teams/members/${memberId}`),

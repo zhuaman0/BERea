@@ -2,25 +2,26 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Pencil, UserPlus } from "lucide-react";
+import { Paintbrush, Pencil, UserPlus } from "lucide-react";
 import { isApiError } from "@/features/auth/utils";
 import { cn } from "@/shared/lib/utils";
 import type { ReadingTeam } from "@/features/reading/authTypes";
 import { PagePattern } from "./PagePattern";
-import { TeamBook } from "./TeamBook";
+import { CoverShowcase } from "./CoverShowcase";
 import { initials, type TeamTheme } from "./teamTheme";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 interface TeamHeroProps {
   team:          ReadingTeam;
-  theme:      TeamTheme;
+  theme:         TeamTheme;
   roundLabel:    string | null;
   onRename:      (name: string) => Promise<void>;
   onAddStudents: () => void;
+  onDesignCover: () => void;
 }
 
-export function TeamHero({ team, theme, roundLabel, onRename, onAddStudents }: TeamHeroProps) {
+export function TeamHero({ team, theme, roundLabel, onRename, onAddStudents, onDesignCover }: TeamHeroProps) {
   const [isRenaming, setIsRenaming] = useState(false);
   const [draftName, setDraftName] = useState(team.name);
   const [renameError, setRenameError] = useState<string | null>(null);
@@ -67,12 +68,23 @@ export function TeamHero({ team, theme, roundLabel, onRename, onAddStudents }: T
           transition={{ duration: 0.8, delay: 0.1, ease: EASE }}
           className="w-36 shrink-0 lg:w-48"
         >
-          <motion.div
-            animate={{ y: [0, -8, 0], rotate: [-1.5, 1.5, -1.5] }}
-            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+          <button
+            type="button"
+            onClick={onDesignCover}
+            tabIndex={-1}
+            aria-hidden="true"
+            className="block w-full cursor-pointer transition-transform duration-300 hover:scale-[1.03]"
           >
-            <TeamBook theme={theme} monogram={initials(team.name)} className="w-full drop-shadow-2xl" />
-          </motion.div>
+            <CoverShowcase cover={team.cover} teamName={team.name} className="w-full" />
+          </button>
+          <button
+            type="button"
+            onClick={onDesignCover}
+            className="mx-auto mt-3 flex items-center gap-1.5 rounded-full border border-[var(--rd-border)] bg-[var(--rd-ink)]/70 px-3 py-1.5 text-[11px] font-medium text-[var(--rd-text-muted)] transition-colors hover:border-[var(--rd-accent-from)] hover:text-[var(--rd-text)]"
+          >
+            <Paintbrush size={12} />
+            Design cover
+          </button>
         </motion.div>
 
         <div className="min-w-0 flex-1">

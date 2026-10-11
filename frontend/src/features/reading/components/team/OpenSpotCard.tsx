@@ -3,17 +3,15 @@
 import { motion } from "framer-motion";
 import { Plus } from "lucide-react";
 import { BOOK_COVER, BOOK_SPINE_WIDTH } from "./TeamBook";
-import { toRoman } from "./teamTheme";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 interface OpenSpotCardProps {
-  rosterSlot: number;
   index:      number;
   onAdd:      () => void;
 }
 
-export function OpenSpotCard({ rosterSlot, index, onAdd }: OpenSpotCardProps) {
+export function OpenSpotCard({ index, onAdd }: OpenSpotCardProps) {
   const { x, y, width, height, radius } = BOOK_COVER;
   const outline = "fill-transparent stroke-[var(--rd-text-muted)] transition-colors group-hover:stroke-[var(--rd-accent-from)]";
 
@@ -27,10 +25,6 @@ export function OpenSpotCard({ rosterSlot, index, onAdd }: OpenSpotCardProps) {
       whileHover={{ y: -4 }}
       className="group relative flex min-h-[300px] flex-col items-center justify-center gap-4 overflow-hidden rounded-2xl border border-dashed border-[var(--rd-border)] bg-[var(--rd-ink)]/40 p-6 text-center transition-colors hover:border-[var(--rd-accent-from)]/60 focus-visible:border-[var(--rd-accent-from)] focus-visible:outline-none"
     >
-      <span aria-hidden="true" className="absolute right-5 top-3 select-none font-serif text-[52px] font-bold italic leading-none text-transparent [-webkit-text-stroke:1px_rgba(255,255,255,0.1)]">
-        {toRoman(rosterSlot)}
-      </span>
-
       <div className="relative w-24">
         <motion.svg
           viewBox="0 0 200 200"

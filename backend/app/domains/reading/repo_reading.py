@@ -97,6 +97,26 @@ async def rename_team(team: ReadingTeam, new_name: str, db: AsyncSession) -> Rea
     return team
 
 
+async def update_team_cover(
+    team: ReadingTeam,
+    *,
+    title: str | None,
+    color: str,
+    pattern: str,
+    emblem: str,
+    animation: str,
+    db: AsyncSession,
+) -> ReadingTeam:
+    team.cover_title = title
+    team.cover_color = color
+    team.cover_pattern = pattern
+    team.cover_emblem = emblem
+    team.cover_animation = animation
+    await db.commit()
+    await db.refresh(team)
+    return team
+
+
 async def create_user_record(
     email: str, hashed_password: str, full_name: str, db: AsyncSession
 ) -> ReadingUser:
