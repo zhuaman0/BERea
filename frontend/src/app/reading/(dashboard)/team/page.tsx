@@ -5,6 +5,7 @@ import { MotionConfig } from "framer-motion";
 import { BookOpen, Flame, Trophy } from "lucide-react";
 import { StatStrip, type StatStripItem } from "@/features/reading/components/StatStrip";
 import { AddStudentsModal } from "@/features/reading/components/team/AddStudentsModal";
+import { CoverBuilderModal } from "@/features/reading/components/team/CoverBuilderModal";
 import { CheckInPanel } from "@/features/reading/components/team/CheckInPanel";
 import { OpenSpotCard } from "@/features/reading/components/team/OpenSpotCard";
 import { PlayerCard } from "@/features/reading/components/team/PlayerCard";
@@ -40,6 +41,7 @@ export default function ReadingTeamPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isCoverModalOpen, setIsCoverModalOpen] = useState(false);
 
   useEffect(() => {
     // /users/me is what records today's check-in, so it has to land before the roster is read —
@@ -60,6 +62,8 @@ export default function ReadingTeamPage() {
 
   const openAddModal = useCallback(() => setIsAddModalOpen(true), []);
   const closeAddModal = useCallback(() => setIsAddModalOpen(false), []);
+  const openCoverModal = useCallback(() => setIsCoverModalOpen(true), []);
+  const closeCoverModal = useCallback(() => setIsCoverModalOpen(false), []);
 
   async function handleRename(name: string) {
     const updated = await readingAuthApi.renameTeam({ team_name: name });
@@ -106,6 +110,7 @@ export default function ReadingTeamPage() {
               roundLabel={activeRound ? `${activeRound.label} in play` : null}
               onRename={handleRename}
               onAddStudents={openAddModal}
+              onDesignCover={openCoverModal}
             />
 
             <div className="mt-6">
@@ -125,7 +130,6 @@ export default function ReadingTeamPage() {
                     <PlayerCard
                       key={member.id}
                       member={member}
-                      rosterSlot={i + 1}
                       theme={TEAM_THEME}
                       isMe={member.id === user?.id}
                       index={i}
@@ -134,7 +138,6 @@ export default function ReadingTeamPage() {
                   {Array.from({ length: team.max_members - team.members.length }).map((_, i) => (
                     <OpenSpotCard
                       key={`open-${i}`}
-                      rosterSlot={team.members.length + i + 1}
                       index={team.members.length + i}
                       onAdd={openAddModal}
                     />
@@ -152,6 +155,10 @@ export default function ReadingTeamPage() {
 
         {isAddModalOpen && team && (
           <AddStudentsModal team={team} onClose={closeAddModal} onTeamUpdated={setTeam} />
+        )}
+
+        {isCoverModalOpen && team && (
+          <CoverBuilderModal team={team} onClose={closeCoverModal} onSaved={setTeam} />
         )}
       </div>
     </MotionConfig>

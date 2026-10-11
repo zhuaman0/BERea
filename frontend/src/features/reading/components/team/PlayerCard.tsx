@@ -14,7 +14,7 @@ import { Flame, Mail, UserRound } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import type { ReadingTeamMember } from "@/features/reading/authTypes";
 import { PagePattern } from "./PagePattern";
-import { initials, toRoman, type TeamTheme } from "./teamTheme";
+import { initials, type TeamTheme } from "./teamTheme";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 const TILT_SPRING = { stiffness: 220, damping: 18, mass: 0.6 };
@@ -31,13 +31,12 @@ function streakStatus(member: ReadingTeamMember): string {
 
 interface PlayerCardProps {
   member:     ReadingTeamMember;
-  rosterSlot: number;
   theme:      TeamTheme;
   isMe:       boolean;
   index:      number;
 }
 
-export function PlayerCard({ member, rosterSlot, theme, isMe, index }: PlayerCardProps) {
+export function PlayerCard({ member, theme, isMe, index }: PlayerCardProps) {
   const reduceMotion = useReducedMotion();
   const pointerX = useMotionValue(0.5);
   const pointerY = useMotionValue(0.5);
@@ -85,12 +84,6 @@ export function PlayerCard({ member, rosterSlot, theme, isMe, index }: PlayerCar
 
         <div className={cn("relative h-24 overflow-hidden", theme.bandSoft)}>
           <PagePattern theme={theme} className="inset-0 h-full w-full" />
-          <span aria-hidden="true" className="absolute right-5 top-3 select-none text-right">
-            <span className="block text-[9px] font-semibold uppercase tracking-[0.3em] text-[var(--rd-text-muted)]/70">Chapter</span>
-            <span className="block font-serif text-[52px] font-bold italic leading-none text-transparent [-webkit-text-stroke:1.2px_rgba(255,255,255,0.22)]">
-              {toRoman(rosterSlot)}
-            </span>
-          </span>
           {isMe && (
             <span className={cn("absolute left-4 top-4 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.15em] text-black/80", theme.band)}>
               You

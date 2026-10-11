@@ -6,6 +6,8 @@ import { readingAuthApi } from "@/features/reading/authApi";
 import { readingSettingsApi } from "@/features/reading/settingsApi";
 import { isApiError } from "@/features/auth/utils";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
+import { CoverShowcase } from "@/features/reading/components/team/CoverShowcase";
+import { TeamBook } from "@/features/reading/components/team/TeamBook";
 import type { ReadingTeamSummary } from "@/features/reading/authTypes";
 
 const MEDAL_STYLE: Record<number, { icon: typeof Trophy; ring: string; iconColor: string }> = {
@@ -13,24 +15,6 @@ const MEDAL_STYLE: Record<number, { icon: typeof Trophy; ring: string; iconColor
   2: { icon: Trophy, ring: "ring-1 ring-[var(--rd-border)]",      iconColor: "text-[var(--rd-text-muted)]" },
   3: { icon: Medal,  ring: "ring-1 ring-[var(--rd-border)]",      iconColor: "text-[var(--rd-text-muted)]" },
 };
-
-const AVATAR_HUES = [18, 265, 200, 330, 140, 40];
-
-function avatarColor(name: string): string {
-  const sum = [...name].reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-  const hue = AVATAR_HUES[sum % AVATAR_HUES.length];
-  return `hsl(${hue}, 55%, 42%)`;
-}
-
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase();
-}
 
 export default function ReadingLeaderboardPage() {
   const myTeamName = useReadingAuthStore((s) => s.user?.team_name ?? null);
@@ -133,12 +117,7 @@ export default function ReadingLeaderboardPage() {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div
-                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white"
-                        style={{ backgroundColor: avatarColor(team.name) }}
-                      >
-                        {initials(team.name)}
-                      </div>
+                      <CoverShowcase cover={team.cover} teamName={team.name} compact className="w-20 shrink-0" />
                       <div className="min-w-0">
                         <p className="truncate font-display text-base font-semibold text-[var(--rd-text)]">
                           {team.name}
@@ -190,12 +169,7 @@ export default function ReadingLeaderboardPage() {
                         <td className="px-5 py-4 text-[var(--rd-text-muted)]">{i + 4}</td>
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-3">
-                            <div
-                              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white"
-                              style={{ backgroundColor: avatarColor(team.name) }}
-                            >
-                              {initials(team.name)}
-                            </div>
+                            <TeamBook cover={team.cover} teamName={team.name} compact className="w-10 shrink-0" />
                             <span className={isMine ? "font-semibold text-[var(--rd-text)]" : "text-[var(--rd-text)]"}>
                               {team.name}
                             </span>

@@ -7,9 +7,10 @@ interface ModalProps {
   title: string;
   onClose: () => void;
   children: React.ReactNode;
+  size?: "md" | "xl";
 }
 
-export function Modal({ title, onClose, children }: ModalProps) {
+export function Modal({ title, onClose, children, size = "md" }: ModalProps) {
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
@@ -33,7 +34,7 @@ export function Modal({ title, onClose, children }: ModalProps) {
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="w-full max-w-md rounded-2xl border border-[var(--rd-border)] bg-[var(--rd-panel)] p-6 shadow-2xl"
+        className={`max-h-[calc(100vh-2rem)] w-full overflow-y-auto ${size === "xl" ? "max-w-3xl" : "max-w-md"} rounded-2xl border border-[var(--rd-border)] bg-[var(--rd-panel)] p-6 shadow-2xl`}
       >
         <div className="flex items-center justify-between">
           <h2 className="font-display text-lg font-semibold text-[var(--rd-text)]">{title}</h2>

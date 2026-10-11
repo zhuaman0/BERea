@@ -38,6 +38,19 @@ export interface ReadingTeamMember {
   created_at:     string;
 }
 
+export type CoverColor = "ember" | "crimson" | "ocean" | "forest" | "plum" | "midnight" | "parchment";
+export type CoverPattern = "plain" | "stripes" | "dots" | "lines";
+export type CoverEmblem = "monogram" | "flame" | "star" | "feather" | "crown" | "moon";
+export type CoverAnimation = "float" | "glow" | "still";
+
+export interface TeamCover {
+  title:     string | null;
+  color:     CoverColor;
+  pattern:   CoverPattern;
+  emblem:    CoverEmblem;
+  animation: CoverAnimation;
+}
+
 export interface ReadingTeam {
   id:          string;
   name:        string;
@@ -45,12 +58,14 @@ export interface ReadingTeam {
   max_members: number;
   place:       number;
   teams_total: number;
+  cover:       TeamCover;
 }
 
 export interface ReadingTeamSummary {
   id:           string;
   name:         string;
   member_count: number;
+  cover:        TeamCover;
 }
 
 export interface ReadingTeamMemberAddRequest {
