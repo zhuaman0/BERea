@@ -217,3 +217,31 @@ class ReadingAppSettingsResponse(BaseModel):
 
 class ReadingAppSettingsUpdate(BaseModel):
     leaderboard_enabled: bool
+
+
+class ReadingBookWrite(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+    description: str = Field(default="", max_length=4000)
+    cover_url: str | None = Field(default=None, max_length=1024)
+
+    @field_validator("title", "description")
+    @classmethod
+    def _strip(cls, value: str) -> str:
+        return value.strip()
+
+    @field_validator("cover_url")
+    @classmethod
+    def _http_url_or_none(cls, value: str | None) -> str | None:
+        if value is None or not value.strip():
+            return None
+        url = value.strip()
+        if not url.startswith(("http://", "https://")):
+            raise ValueError("Cover URL must start with http:// or https://")
+        return url
+
+
+class ReadingBookResponse(BaseModel):
+    id: uuid.UUID
+    title: str
+    description: str
+    cover_url: str | None

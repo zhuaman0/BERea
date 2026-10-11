@@ -20,6 +20,7 @@ from app.domains.configurator.model_configurator import SavedDesign  # noqa: F40
 from app.domains.orders.model_orders import Order  # noqa: F401
 from app.domains.reading.model_reading import (  # noqa: F401
     ReadingAppSettings,
+    ReadingBook,
     ReadingRefreshToken,
     ReadingSemesterRound,
     ReadingTeam,

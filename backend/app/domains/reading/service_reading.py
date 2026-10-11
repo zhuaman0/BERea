@@ -16,11 +16,19 @@ from app.domains.auth.service_auth import (
     hash_password,
     verify_password,
 )
-from app.domains.reading.model_reading import ReadingSemesterRound, ReadingTeam, ReadingUser, ReadingVoteRound
+from app.domains.reading.model_reading import (
+    ReadingBook,
+    ReadingSemesterRound,
+    ReadingTeam,
+    ReadingUser,
+    ReadingVoteRound,
+)
 from app.domains.reading.schema_reading import (
     TEAM_MAX_MEMBERS,
     ReadingAppSettingsResponse,
     ReadingAppSettingsUpdate,
+    ReadingBookResponse,
+    ReadingBookWrite,
     ReadingLoginRequest,
     ReadingRegisterRequest,
     ReadingSemesterRoundCreate,
@@ -505,3 +513,89 @@ async def update_app_settings_for_admin(
 
     settings_row = await set_leaderboard_enabled(payload.leaderboard_enabled, db)
     return ReadingAppSettingsResponse.model_validate(settings_row)
+
+
+BOOK_COVER_MIME_TYPES = {"image/jpeg", "image/png", "image/webp"}
+BOOK_COVER_MAX_BYTES = 2 * 1024 * 1024
+
+
+def _to_book_response(book: ReadingBook) -> ReadingBookResponse:
+    cover_url = book.cover_url
+    if book.cover_mime:
+        # Version by updated_at so a replaced cover never shows a stale cached image.
+        cover_url = f"/v1/reading/books/{book.id}/cover?v={int(book.updated_at.timestamp())}"
+    return ReadingBookResponse(id=book.id, title=book.title, description=book.description, cover_url=cover_url)
+
+
+async def _get_book_or_404(book_id: str, db: AsyncSession) -> ReadingBook:
+    from app.domains.reading.repo_reading import get_book
+
+    book = await get_book(uuid.UUID(book_id), db)
+    if not book:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found")
+    return book
+
+
+async def list_books_for_user(db: AsyncSession) -> list[ReadingBookResponse]:
+    from app.domains.reading.repo_reading import list_books
+
+    return [_to_book_response(book) for book in await list_books(db)]
+
+
+async def get_book_for_user(book_id: str, db: AsyncSession) -> ReadingBookResponse:
+    return _to_book_response(await _get_book_or_404(book_id, db))
+
+
+async def create_book_for_admin(payload: ReadingBookWrite, db: AsyncSession) -> ReadingBookResponse:
+    from app.domains.reading.repo_reading import create_book
+
+    book = await create_book(payload.title, payload.description, payload.cover_url, db)
+    return _to_book_response(book)
+
+
+async def update_book_for_admin(book_id: str, payload: ReadingBookWrite, db: AsyncSession) -> ReadingBookResponse:
+    from app.domains.reading.repo_reading import update_book
+
+    book = await _get_book_or_404(book_id, db)
+    book = await update_book(
+        book, title=payload.title, description=payload.description, cover_url=payload.cover_url, db=db
+    )
+    return _to_book_response(book)
+
+
+async def upload_book_cover_for_admin(book_id: str, cover: UploadFile, db: AsyncSession) -> ReadingBookResponse:
+    from app.domains.reading.repo_reading import set_book_cover_image
+
+    if cover.content_type not in BOOK_COVER_MIME_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Cover must be a JPEG, PNG or WebP image"
+        )
+    contents = await cover.read()
+    if len(contents) > BOOK_COVER_MAX_BYTES:
+        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Cover must be under 2MB")
+
+    book = await _get_book_or_404(book_id, db)
+    book = await set_book_cover_image(book, contents, cover.content_type, db)
+    return _to_book_response(book)
+
+
+async def remove_book_cover_for_admin(book_id: str, db: AsyncSession) -> ReadingBookResponse:
+    from app.domains.reading.repo_reading import clear_book_cover
+
+    book = await clear_book_cover(await _get_book_or_404(book_id, db), db)
+    return _to_book_response(book)
+
+
+async def delete_book_for_admin(book_id: str, db: AsyncSession) -> None:
+    from app.domains.reading.repo_reading import delete_book
+
+    await delete_book(await _get_book_or_404(book_id, db), db)
+
+
+async def get_book_cover_image(book_id: str, db: AsyncSession) -> tuple[bytes, str]:
+    from app.domains.reading.repo_reading import get_book_with_cover
+
+    book = await get_book_with_cover(uuid.UUID(book_id), db)
+    if not book or not book.cover_image or not book.cover_mime:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cover not found")
+    return book.cover_image, book.cover_mime

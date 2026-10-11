@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import date, datetime
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, UniqueConstraint, Uuid
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, LargeBinary, String, Text, UniqueConstraint, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base, TimestampMixin
@@ -110,6 +110,18 @@ class ReadingSemesterRound(TimestampMixin, Base):
     label: Mapped[str] = mapped_column(String(120), nullable=False)
     starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ReadingBook(TimestampMixin, Base):
+    __tablename__ = "reading_books"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str] = mapped_column(Text, default="", server_default="", nullable=False)
+    cover_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    # Uploaded covers are resized client-side to ~100 KB, small enough to keep in the row itself.
+    cover_image: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True, deferred=True)
+    cover_mime: Mapped[str | None] = mapped_column(String(32), nullable=True)
 
 
 class ReadingAppSettings(TimestampMixin, Base):
