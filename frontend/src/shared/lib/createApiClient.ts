@@ -57,7 +57,13 @@ function createApiClient(config: ApiClientConfig) {
 
     refreshPromise = (async () => {
       const { refreshToken } = readSession();
-      if (!refreshToken) throw new Error("No refresh token");
+      if (!refreshToken) {
+        // Tokens live in per-tab sessionStorage but the session cookie is shared across tabs,
+        // so a new tab can pass the route guard with nothing to authenticate with.
+        clearSession();
+        window.location.href = config.loginPath;
+        throw new Error("No refresh token");
+      }
 
       const res = await fetch(`${API_BASE}${config.refreshPath}`, {
         method:  "POST",
