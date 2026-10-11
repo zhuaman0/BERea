@@ -168,7 +168,7 @@ function CoachCard({ persona, selected, onClick }: CoachCardProps) {
         </div>
 
         <p className="text-xs text-slate-500 italic leading-relaxed">
-          "{persona.quote}"
+          &ldquo;{persona.quote}&rdquo;
         </p>
       </div>
     </button>
