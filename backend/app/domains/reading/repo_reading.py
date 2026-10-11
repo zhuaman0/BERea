@@ -13,7 +13,10 @@ from app.domains.reading.model_reading import (
     ReadingProgress,
     ReadingQuiz,
     ReadingQuizAnswer,
+    ReadingQuizParticipant,
     ReadingQuizQuestion,
+    ReadingQuizSession,
+    ReadingQuizSubmission,
     ReadingRefreshToken,
     ReadingSemesterRound,
     ReadingTeam,
@@ -482,4 +485,94 @@ async def set_progress(user_id: uuid.UUID, book_id: uuid.UUID, current_page: int
         db.add(ReadingProgress(user_id=user_id, book_id=book_id, current_page=current_page))
     else:
         progress.current_page = current_page
+    await db.commit()
+
+
+def _session_query() -> Select[tuple[ReadingQuizSession]]:
+    return select(ReadingQuizSession).options(
+        selectinload(ReadingQuizSession.quiz)
+        .selectinload(ReadingQuiz.questions)
+        .selectinload(ReadingQuizQuestion.answers),
+        selectinload(ReadingQuizSession.participants).selectinload(ReadingQuizParticipant.user),
+        selectinload(ReadingQuizSession.participants).selectinload(ReadingQuizParticipant.team),
+    )
+
+
+async def finish_active_sessions(db: AsyncSession) -> None:
+    result = await db.execute(select(ReadingQuizSession).where(ReadingQuizSession.status != "finished"))
+    for session in result.scalars().all():
+        session.status = "finished"
+    await db.commit()
+
+
+async def create_quiz_session(quiz_id: uuid.UUID, pin: str, db: AsyncSession) -> uuid.UUID:
+    session = ReadingQuizSession(quiz_id=quiz_id, pin=pin, status="lobby", current_index=-1)
+    db.add(session)
+    await db.commit()
+    return session.id
+
+
+async def get_quiz_session(session_id: uuid.UUID, db: AsyncSession) -> ReadingQuizSession | None:
+    result = await db.execute(_session_query().where(ReadingQuizSession.id == session_id))
+    return result.scalar_one_or_none()
+
+
+async def get_active_quiz_session(db: AsyncSession, pin: str | None = None) -> ReadingQuizSession | None:
+    query = _session_query().where(ReadingQuizSession.status != "finished")
+    if pin is not None:
+        query = query.where(ReadingQuizSession.pin == pin)
+    result = await db.execute(query.order_by(ReadingQuizSession.created_at.desc()).limit(1))
+    return result.scalar_one_or_none()
+
+
+async def set_quiz_session_phase(
+    session: ReadingQuizSession, status: str, current_index: int, started_at: datetime | None, db: AsyncSession
+) -> None:
+    session.status = status
+    session.current_index = current_index
+    session.question_started_at = started_at
+    await db.commit()
+
+
+async def add_quiz_participant(
+    session_id: uuid.UUID, user_id: uuid.UUID, team_id: uuid.UUID | None, db: AsyncSession
+) -> None:
+    db.add(
+        ReadingQuizParticipant(
+            session_id=session_id, user_id=user_id, team_id=team_id, score=0, joined_at=datetime.now(UTC)
+        )
+    )
+    await db.commit()
+
+
+async def get_question_responses(
+    session_id: uuid.UUID, question_id: uuid.UUID, db: AsyncSession
+) -> list[ReadingQuizSubmission]:
+    result = await db.execute(
+        select(ReadingQuizSubmission)
+        .join(ReadingQuizParticipant, ReadingQuizParticipant.id == ReadingQuizSubmission.participant_id)
+        .where(ReadingQuizParticipant.session_id == session_id, ReadingQuizSubmission.question_id == question_id)
+    )
+    return list(result.scalars().all())
+
+
+async def record_quiz_response(
+    participant: ReadingQuizParticipant,
+    question_id: uuid.UUID,
+    answer_id: uuid.UUID,
+    is_correct: bool,
+    points: int,
+    db: AsyncSession,
+) -> None:
+    db.add(
+        ReadingQuizSubmission(
+            participant_id=participant.id,
+            question_id=question_id,
+            answer_id=answer_id,
+            is_correct=is_correct,
+            points=points,
+            answered_at=datetime.now(UTC),
+        )
+    )
+    participant.score += points
     await db.commit()

@@ -14,7 +14,7 @@ const ANSWER_STYLES = [
   { color: "#22c55e", icon: Square },
 ];
 
-const TIME_LIMIT_OPTIONS = [10, 20, 30, 60];
+const TIME_LIMIT_OPTIONS = [5, 10, 20, 30, 60];
 const POINTS_OPTIONS = [500, 1000, 2000];
 
 function genId(): string {

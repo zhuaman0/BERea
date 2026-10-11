@@ -193,6 +193,68 @@ class ReadingQuizAnswer(Base):
     question: Mapped[ReadingQuizQuestion] = relationship(back_populates="answers")
 
 
+class ReadingQuizSession(TimestampMixin, Base):
+    """One live run of a quiz. `status` is what the host last set; the service derives the
+    effective phase (a question auto-reveals once its time limit passes)."""
+
+    __tablename__ = "reading_quiz_sessions"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    quiz_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("reading_quizzes.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    pin: Mapped[str] = mapped_column(String(6), nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(20), default="lobby", nullable=False)
+    current_index: Mapped[int] = mapped_column(Integer, default=-1, nullable=False)
+    question_started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    quiz: Mapped[ReadingQuiz] = relationship()
+    participants: Mapped[list[ReadingQuizParticipant]] = relationship(
+        back_populates="session", cascade="all, delete-orphan"
+    )
+
+
+class ReadingQuizParticipant(Base):
+    __tablename__ = "reading_quiz_participants"
+    __table_args__ = (UniqueConstraint("session_id", "user_id", name="uq_quiz_participant_session_user"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    session_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("reading_quiz_sessions.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("reading_users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    team_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("reading_teams.id", ondelete="SET NULL"), nullable=True
+    )
+    score: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    joined_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    session: Mapped[ReadingQuizSession] = relationship(back_populates="participants")
+    user: Mapped[ReadingUser] = relationship()
+    team: Mapped[ReadingTeam | None] = relationship()
+
+
+class ReadingQuizSubmission(Base):
+    __tablename__ = "reading_quiz_responses"
+    __table_args__ = (UniqueConstraint("participant_id", "question_id", name="uq_quiz_response_participant_question"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    participant_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("reading_quiz_participants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    question_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("reading_quiz_questions.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    answer_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("reading_quiz_answers.id", ondelete="CASCADE"), nullable=False
+    )
+    is_correct: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    points: Mapped[int] = mapped_column(Integer, nullable=False)
+    answered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
 class ReadingAppSettings(TimestampMixin, Base):
     """Single-row table of app-wide toggles editable from the admin panel."""
 

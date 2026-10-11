@@ -12,6 +12,12 @@ from app.domains.reading.schema_reading import (
     ReadingBookOfMonthResponse,
     ReadingBookResponse,
     ReadingBookWrite,
+    ReadingLiveAnswerRequest,
+    ReadingLiveHostState,
+    ReadingLiveJoinRequest,
+    ReadingLivePlayerState,
+    ReadingLiveSessionCreate,
+    ReadingLiveSummary,
     ReadingLoginRequest,
     ReadingProgressUpdate,
     ReadingQuizResponse,
@@ -326,3 +332,56 @@ async def update_reading_progress(
     from app.domains.reading.service_reading import update_progress_for_user
 
     return await update_progress_for_user(user_id, payload, db)
+
+
+@router.post("/quiz-sessions", response_model=ReadingLiveSummary, status_code=201)
+async def start_live_session(
+    payload: ReadingLiveSessionCreate, user_id: CurrentUserId, db: DbSession
+) -> ReadingLiveSummary:
+    from app.domains.reading.service_reading import start_live_session_for_admin
+
+    return await start_live_session_for_admin(user_id, payload, db)
+
+
+@router.get("/quiz-sessions/live", response_model=ReadingLiveSummary | None)
+async def get_live_session(user_id: CurrentUserId, db: DbSession) -> ReadingLiveSummary | None:
+    from app.domains.reading.service_reading import get_active_live_session
+
+    return await get_active_live_session(db)
+
+
+@router.post("/quiz-sessions/join", response_model=ReadingLiveSummary)
+async def join_live_session(payload: ReadingLiveJoinRequest, user_id: CurrentUserId, db: DbSession) -> ReadingLiveSummary:
+    from app.domains.reading.service_reading import join_live_session as join_live_session_service
+
+    return await join_live_session_service(user_id, payload, db)
+
+
+@router.get("/quiz-sessions/{session_id}/host", response_model=ReadingLiveHostState)
+async def get_live_host_state(session_id: str, user_id: CurrentUserId, db: DbSession) -> ReadingLiveHostState:
+    from app.domains.reading.service_reading import get_live_host_state_for_admin
+
+    return await get_live_host_state_for_admin(user_id, session_id, db)
+
+
+@router.post("/quiz-sessions/{session_id}/next", response_model=ReadingLiveHostState)
+async def advance_live_session(session_id: str, user_id: CurrentUserId, db: DbSession) -> ReadingLiveHostState:
+    from app.domains.reading.service_reading import advance_live_session_for_admin
+
+    return await advance_live_session_for_admin(user_id, session_id, db)
+
+
+@router.get("/quiz-sessions/{session_id}/state", response_model=ReadingLivePlayerState)
+async def get_live_player_state(session_id: str, user_id: CurrentUserId, db: DbSession) -> ReadingLivePlayerState:
+    from app.domains.reading.service_reading import get_live_player_state as get_live_player_state_service
+
+    return await get_live_player_state_service(user_id, session_id, db)
+
+
+@router.post("/quiz-sessions/{session_id}/answer", response_model=ReadingLivePlayerState)
+async def answer_live_question(
+    session_id: str, payload: ReadingLiveAnswerRequest, user_id: CurrentUserId, db: DbSession
+) -> ReadingLivePlayerState:
+    from app.domains.reading.service_reading import answer_live_question as answer_live_question_service
+
+    return await answer_live_question_service(user_id, session_id, payload, db)

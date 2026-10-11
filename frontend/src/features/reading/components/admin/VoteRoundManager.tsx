@@ -19,10 +19,23 @@ const STAGES: { value: VoteStage; label: string }[] = [
   { value: "book",     label: "Book" },
 ];
 
-const roundSettingsSchema = z.object({
-  stage:         z.enum(["language", "genre", "book"]),
-  durationHours: z.coerce.number().positive().max(168),
-});
+const SECONDS_PER_UNIT = { seconds: 1, minutes: 60, hours: 3600 } as const;
+const MAX_ROUND_SECONDS = 168 * 3600;
+
+const roundSettingsSchema = z
+  .object({
+    stage:        z.enum(["language", "genre", "book"]),
+    duration:     z.coerce.number().positive("Must be more than 0"),
+    durationUnit: z.enum(["seconds", "minutes", "hours"]),
+  })
+  .refine((v) => v.duration * SECONDS_PER_UNIT[v.durationUnit] <= MAX_ROUND_SECONDS, {
+    message: "A round can last at most 7 days",
+    path: ["duration"],
+  });
+
+function toHours(values: { duration: number; durationUnit: keyof typeof SECONDS_PER_UNIT }): number {
+  return (values.duration * SECONDS_PER_UNIT[values.durationUnit]) / 3600;
+}
 
 type RoundSettingsValues = z.infer<typeof roundSettingsSchema>;
 
@@ -56,7 +69,7 @@ export function VoteRoundManager() {
     formState: { errors, isSubmitting },
   } = useForm<RoundSettingsValues>({
     resolver: zodResolver(roundSettingsSchema),
-    defaultValues: { stage: "language", durationHours: 5 },
+    defaultValues: { stage: "language", duration: 5, durationUnit: "hours" },
   });
 
   function loadRounds() {
@@ -100,11 +113,11 @@ export function VoteRoundManager() {
     try {
       const created = await readingVoteApi.createRound(
         values.stage === "book"
-          ? { stage: values.stage, book_ids: selectedBookIds, duration_hours: values.durationHours }
-          : { stage: values.stage, options: cleaned, duration_hours: values.durationHours }
+          ? { stage: values.stage, book_ids: selectedBookIds, duration_hours: toHours(values) }
+          : { stage: values.stage, options: cleaned, duration_hours: toHours(values) }
       );
       setRounds((prev) => [...prev, created]);
-      reset({ stage: values.stage, durationHours: 5 });
+      reset({ stage: values.stage, duration: values.duration, durationUnit: values.durationUnit });
       setOptions(["", ""]);
       setSelectedBookIds([]);
     } catch (err: unknown) {
@@ -139,10 +152,17 @@ export function VoteRoundManager() {
           </div>
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-medium uppercase tracking-wide text-[var(--rd-text-muted)]">
-              Duration (hours)
+              Duration
             </label>
-            <input type="number" step="0.5" className={inputBase} {...register("durationHours")} />
-            {errors.durationHours && <p className="text-[11px] text-red-400">{errors.durationHours.message}</p>}
+            <div className="flex gap-2">
+              <input type="number" step="any" min="1" className={inputBase} {...register("duration")} />
+              <select className={`${inputBase} w-32 shrink-0`} {...register("durationUnit")}>
+                <option value="seconds">seconds</option>
+                <option value="minutes">minutes</option>
+                <option value="hours">hours</option>
+              </select>
+            </div>
+            {errors.duration && <p className="text-[11px] text-red-400">{errors.duration.message}</p>}
           </div>
         </div>
 
