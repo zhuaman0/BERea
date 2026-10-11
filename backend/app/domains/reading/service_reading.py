@@ -814,11 +814,20 @@ def _time_left_ms(session: ReadingQuizSession, now: datetime) -> int:
     return max(0, int((deadline - now).total_seconds() * 1000))
 
 
-def _team_scores(session: ReadingQuizSession) -> list[ReadingLiveTeamScore]:
+def _visible_scores(
+    session: ReadingQuizSession, phase: str, responses: list[ReadingQuizSubmission]
+) -> dict[uuid.UUID, int]:
+    """Scores as players should see them: points from a still-running question stay hidden
+    until the reveal, otherwise a jump in your score would give the answer away."""
+    pending = {r.participant_id: r.points for r in responses} if phase == "question" else {}
+    return {p.id: p.score - pending.get(p.id, 0) for p in session.participants}
+
+
+def _team_scores(session: ReadingQuizSession, scores: dict[uuid.UUID, int]) -> list[ReadingLiveTeamScore]:
     totals: dict[str, int] = {}
     for p in session.participants:
         team_name = p.team.name if p.team else p.user.full_name
-        totals[team_name] = totals.get(team_name, 0) + p.score
+        totals[team_name] = totals.get(team_name, 0) + scores[p.id]
     return [
         ReadingLiveTeamScore(team_name=name, score=score)
         for name, score in sorted(totals.items(), key=lambda item: (-item[1], item[0]))
@@ -914,19 +923,20 @@ async def get_live_host_state_for_admin(user_id: str, session_id: str, db: Async
     now = datetime.now(UTC)
     phase = _live_phase(session, now)
     question, responses = await _live_question(session, phase, now, True, db)
-    players = sorted(session.participants, key=lambda p: (-p.score, p.joined_at))
+    scores = _visible_scores(session, phase, responses)
+    players = sorted(session.participants, key=lambda p: (-scores[p.id], p.joined_at))
     return ReadingLiveHostState(
         id=session.id,
         pin=session.pin,
         quiz_title=session.quiz.title,
         phase=phase,  # type: ignore[arg-type]
         players=[
-            ReadingLivePlayer(name=p.user.full_name, team_name=p.team.name if p.team else None, score=p.score)
+            ReadingLivePlayer(name=p.user.full_name, team_name=p.team.name if p.team else None, score=scores[p.id])
             for p in players
         ],
         question=question,
         answered_count=len(responses),
-        team_scores=_team_scores(session),
+        team_scores=_team_scores(session, scores),
     )
 
 
@@ -982,7 +992,8 @@ async def get_live_player_state(user_id: str, session_id: str, db: AsyncSession)
     phase = _live_phase(session, now)
     question, responses = await _live_question(session, phase, now, False, db)
     mine = next((r for r in responses if r.participant_id == participant.id), None)
-    ranking = sorted(session.participants, key=lambda p: (-p.score, p.joined_at))
+    scores = _visible_scores(session, phase, responses)
+    ranking = sorted(session.participants, key=lambda p: (-scores[p.id], p.joined_at))
     return ReadingLivePlayerState(
         id=session.id,
         quiz_title=session.quiz.title,
@@ -991,9 +1002,9 @@ async def get_live_player_state(user_id: str, session_id: str, db: AsyncSession)
         question=question,
         your_answer_id=mine.answer_id if mine else None,
         your_points_this_question=(mine.points if mine else 0) if phase == "reveal" else None,
-        your_score=participant.score,
+        your_score=scores[participant.id],
         your_rank=ranking.index(participant) + 1,
-        team_scores=_team_scores(session),
+        team_scores=_team_scores(session, scores),
     )
 
 
