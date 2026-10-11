@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import uuid
-from decimal import Decimal
 from datetime import datetime
+from decimal import Decimal
 
-from sqlalchemy import String, Text, Numeric, Boolean, DateTime, ForeignKey, func, JSON
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Numeric, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base

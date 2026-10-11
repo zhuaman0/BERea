@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-import uuid
-from decimal import Decimal
-from datetime import datetime
-
-from sqlalchemy import String, Text, Numeric, DateTime, ForeignKey, func, Enum as SAEnum
-from sqlalchemy.orm import Mapped, mapped_column
 import enum
+import uuid
+from datetime import datetime
+from decimal import Decimal
+
+from sqlalchemy import DateTime, ForeignKey, Numeric, String, Text, func
+from sqlalchemy import Enum as SAEnum
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
 

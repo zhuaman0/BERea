@@ -1,0 +1,13 @@
+target-version = "py312"
+line-length = 120
+extend-exclude = ["alembic/versions"]
+
+[lint]
+select = ["E", "F", "I", "B", "UP"]
+# B008: FastAPI dependency injection (`= Depends(...)`, `= File(...)`) is the idiomatic default-argument call.
+# E501: line length is left to formatting, not linting. UP042: StrEnum migration changes enum behavior.
+ignore = ["B008", "E501", "UP042"]
+
+[lint.isort]
+# backend/alembic/ is the migrations folder, not the package; keep the real library sorted as third-party.
+known-third-party = ["alembic"]

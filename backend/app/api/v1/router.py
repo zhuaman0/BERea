@@ -3,12 +3,12 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from app.domains.auth.router_auth import router as auth_router
-from app.domains.users.router_users import router as users_router
 from app.domains.catalog.router_catalog import router as catalog_router
 from app.domains.categories.router_categories import router as categories_router
-from app.domains.orders.router_orders import router as orders_router
 from app.domains.configurator.router_configurator import router as configurator_router
+from app.domains.orders.router_orders import router as orders_router
 from app.domains.reading.router_reading import router as reading_router
+from app.domains.users.router_users import router as users_router
 
 api_v1_router = APIRouter()
 
