@@ -1,58 +1,180 @@
-import { Check, Crown } from "lucide-react";
+"use client";
+
+import { useEffect } from "react";
+import { AnimatePresence, motion, useSpring, useTransform } from "framer-motion";
+import { Check, Crown, Loader2 } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import type { VoteOptionResult } from "@/features/reading/types";
 
-interface VoteOptionCardProps {
-  option:     VoteOptionResult;
-  isYourVote: boolean;
-  isWinner:   boolean;
-  canVote:    boolean;
-  onVote:     () => void;
+const EASE = [0.16, 1, 0.3, 1] as const;
+
+interface AnimatedNumberProps {
+  value: number;
 }
 
-export function VoteOptionCard({ option, isYourVote, isWinner, canVote, onVote }: VoteOptionCardProps) {
+/** Springs from the previous value to the new one, so tallies visibly count when votes land. */
+function AnimatedNumber({ value }: AnimatedNumberProps) {
+  const spring = useSpring(0, { stiffness: 140, damping: 22 });
+  const display = useTransform(spring, (v) => Math.round(v));
+
+  useEffect(() => {
+    spring.set(value);
+  }, [spring, value]);
+
+  return <motion.span>{display}</motion.span>;
+}
+
+interface VoteOptionCardProps {
+  option:      VoteOptionResult;
+  index:       number;
+  isYourVote:  boolean;
+  isWinner:    boolean;
+  canVote:     boolean;
+  isPending:   boolean;
+  isLocked:    boolean;
+  justVoted:   boolean;
+  onVote:      () => void;
+}
+
+export function VoteOptionCard({
+  option,
+  index,
+  isYourVote,
+  isWinner,
+  canVote,
+  isPending,
+  isLocked,
+  justVoted,
+  onVote,
+}: VoteOptionCardProps) {
+  const isInteractive = canVote && !isLocked;
+
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 18, scale: 0.97 }}
+      animate={{ opacity: isLocked && !isPending ? 0.55 : 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.45, delay: index * 0.07, ease: EASE }}
+      whileHover={isInteractive ? { y: -4 } : undefined}
       className={cn(
-        "relative flex flex-col rounded-xl border p-4",
+        "group relative flex flex-col rounded-xl border p-4 transition-[border-color,box-shadow,background-color] duration-300",
         isWinner
-          ? "border-[var(--rd-accent-from)] bg-[var(--rd-accent-from)]/[0.08]"
+          ? "border-[var(--rd-accent-from)] bg-[var(--rd-accent-from)]/[0.08] shadow-[0_0_40px_-12px_var(--rd-accent-from)]"
           : isYourVote
-          ? "border-[var(--rd-accent-from)]/60 bg-[var(--rd-accent-from)]/[0.04]"
-          : "border-[var(--rd-border)] bg-[var(--rd-panel)]"
+            ? "border-transparent bg-[var(--rd-accent-from)]/[0.05]"
+            : "border-[var(--rd-border)] bg-[var(--rd-panel)]",
+        isInteractive && !isYourVote && !isWinner &&
+          "hover:border-[var(--rd-accent-from)]/45 hover:shadow-[0_18px_40px_-20px_rgba(255,107,44,0.55)]"
       )}
     >
-      {isWinner && (
-        <span className="rd-accent-gradient absolute -top-2.5 right-3 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-black/80">
-          <Crown size={11} />
-          Winner
-        </span>
+      {isYourVote && !isWinner && (
+        <motion.span
+          layoutId="vote-selection-ring"
+          transition={{ type: "spring", stiffness: 380, damping: 32 }}
+          className="pointer-events-none absolute inset-0 rounded-xl border-2 border-[var(--rd-accent-from)]"
+        />
       )}
 
-      <div className="flex items-center justify-between gap-2">
+      <AnimatePresence>
+        {justVoted && (
+          <motion.span
+            key="ripple"
+            initial={{ opacity: 0.7, scale: 1 }}
+            animate={{ opacity: 0, scale: 1.12 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.9, ease: "easeOut" }}
+            className="pointer-events-none absolute inset-0 rounded-xl border-2 border-[var(--rd-accent-to)]"
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isWinner && (
+          <motion.span
+            initial={{ opacity: 0, y: -10, scale: 0.6 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ type: "spring", stiffness: 420, damping: 18 }}
+            className="rd-accent-gradient absolute -top-2.5 right-3 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-black/80"
+          >
+            <Crown size={11} />
+            Winner
+          </motion.span>
+        )}
+      </AnimatePresence>
+
+      <div className="relative flex items-center justify-between gap-2">
         <p className="font-display text-[15px] font-semibold text-[var(--rd-text)]">{option.label}</p>
-        {isYourVote && !isWinner && <Check size={16} className="shrink-0 text-[var(--rd-accent-from)]" />}
+        <AnimatePresence>
+          {isYourVote && !isWinner && (
+            <motion.span
+              key="check"
+              initial={{ scale: 0, rotate: -45 }}
+              animate={{ scale: 1, rotate: 0 }}
+              exit={{ scale: 0, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 500, damping: 20 }}
+              className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--rd-accent-from)] text-black/85"
+            >
+              <Check size={12} strokeWidth={3} />
+            </motion.span>
+          )}
+        </AnimatePresence>
       </div>
 
-      <div className="mt-3 flex items-center justify-between text-[12px]">
-        <span className="font-medium text-[var(--rd-text)]">{option.percent}%</span>
-        <span className="text-[var(--rd-text-muted)]">{option.vote_count} votes</span>
+      <div className="relative mt-3 flex items-center justify-between text-[12px]">
+        <span className="font-medium text-[var(--rd-text)]">
+          <AnimatedNumber value={option.percent} />%
+        </span>
+        <span className="text-[var(--rd-text-muted)]">
+          <AnimatedNumber value={option.vote_count} /> {option.vote_count === 1 ? "vote" : "votes"}
+        </span>
       </div>
-      <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-[var(--rd-border)]">
-        <div className="h-full rounded-full rd-accent-gradient" style={{ width: `${option.percent}%` }} />
+      <div className="relative mt-1 h-1.5 w-full overflow-hidden rounded-full bg-[var(--rd-border)]">
+        <motion.div
+          className="h-full rounded-full rd-accent-gradient"
+          initial={{ width: 0 }}
+          animate={{ width: `${option.percent}%` }}
+          transition={{ type: "spring", stiffness: 90, damping: 20, delay: 0.15 + index * 0.05 }}
+        />
       </div>
 
       {canVote && (
-        <button
+        <motion.button
+          type="button"
           onClick={onVote}
+          disabled={isLocked}
+          whileTap={isInteractive ? { scale: 0.96 } : undefined}
+          aria-busy={isPending}
           className={cn(
-            "mt-3 rounded-lg py-2 text-[12px] font-semibold transition-opacity hover:opacity-90",
-            isYourVote ? "border border-[var(--rd-accent-from)] text-[var(--rd-text)]" : "rd-accent-gradient text-black/85"
+            "relative mt-3 flex h-9 items-center justify-center overflow-hidden rounded-lg text-[12px] font-semibold transition-opacity disabled:cursor-not-allowed",
+            isYourVote ? "border border-[var(--rd-accent-from)] text-[var(--rd-text)]" : "rd-accent-gradient text-black/85",
+            isInteractive && "hover:opacity-90"
           )}
         >
-          {isYourVote ? "Voted · change" : "Vote"}
-        </button>
+          {!isYourVote && isInteractive && (
+            <span className="pointer-events-none absolute inset-y-0 -left-1/2 w-1/3 -skew-x-12 bg-white/30 opacity-0 transition-all duration-700 group-hover:left-[120%] group-hover:opacity-100" />
+          )}
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span
+              key={isPending ? "pending" : isYourVote ? "voted" : "vote"}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.18 }}
+              className="relative inline-flex items-center gap-1.5"
+            >
+              {isPending ? (
+                <>
+                  <Loader2 size={13} className="animate-spin" />
+                  Saving…
+                </>
+              ) : isYourVote ? (
+                "Voted · change"
+              ) : (
+                "Vote"
+              )}
+            </motion.span>
+          </AnimatePresence>
+        </motion.button>
       )}
-    </div>
+    </motion.div>
   );
 }
