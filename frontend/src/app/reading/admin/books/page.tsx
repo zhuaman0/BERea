@@ -1,18 +1,26 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { ImageIcon, Pencil, Plus, Trash2 } from "lucide-react";
-import { useReadingBookStore } from "@/features/reading/store/useReadingBookStore";
-import type { AdminBook } from "@/features/reading/bookTypes";
+import { isApiError } from "@/features/auth/utils";
+import { bookCoverSrc, readingBookApi } from "@/features/reading/bookApi";
+import type { ReadingBook } from "@/features/reading/bookTypes";
 
-function BookCard({ book, onDelete }: { book: AdminBook; onDelete: (id: string) => void }) {
+interface BookCardProps {
+  book:     ReadingBook;
+  onDelete: (book: ReadingBook) => void;
+}
+
+function BookCard({ book, onDelete }: BookCardProps) {
+  const coverSrc = bookCoverSrc(book.cover_url);
   return (
     <div className="group relative flex w-56 shrink-0 flex-col gap-3 rounded-2xl border border-[var(--rd-border)] bg-[var(--rd-panel)] p-4">
       <div className="flex h-40 items-center justify-center overflow-hidden rounded-xl bg-[var(--rd-ink)]">
-        {book.coverUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- arbitrary admin-supplied cover (data URL or external URL)
-          <img src={book.coverUrl} alt="" className="h-full w-full object-cover" />
+        {coverSrc ? (
+          // eslint-disable-next-line @next/next/no-img-element -- admin-supplied cover from our API or an external URL
+          <img src={coverSrc} alt="" className="h-full w-full object-cover" />
         ) : (
           <ImageIcon size={24} className="text-[var(--rd-text-muted)]" />
         )}
@@ -33,7 +41,7 @@ function BookCard({ book, onDelete }: { book: AdminBook; onDelete: (id: string) 
           <Pencil size={13} />
         </Link>
         <button
-          onClick={() => onDelete(book.id)}
+          onClick={() => onDelete(book)}
           aria-label="Delete book"
           className="flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--rd-border)] bg-[var(--rd-ink)] text-[var(--rd-text-muted)] transition-colors hover:text-red-400"
         >
@@ -45,11 +53,30 @@ function BookCard({ book, onDelete }: { book: AdminBook; onDelete: (id: string) 
 }
 
 export default function ReadingAdminBooksPage() {
-  const books = useReadingBookStore((s) => s.books);
-  const deleteBook = useReadingBookStore((s) => s.deleteBook);
+  const [books, setBooks] = useState<ReadingBook[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    readingBookApi
+      .list()
+      .then(setBooks)
+      .catch((err) => setError(isApiError(err) ? err.detail : "Couldn't load books."))
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  async function handleDelete(book: ReadingBook) {
+    if (!window.confirm(`Delete "${book.title}"? This can't be undone.`)) return;
+    try {
+      await readingBookApi.remove(book.id);
+      setBooks((prev) => prev.filter((b) => b.id !== book.id));
+    } catch (err) {
+      setError(isApiError(err) ? err.detail : "Couldn't delete that book.");
+    }
+  }
 
   return (
-    <div className="mx-auto w-full max-w-[1600px] px-8 py-10 lg:px-12">
+    <div className="w-full px-4 py-6 sm:px-8 sm:py-10 lg:px-12">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-2xl font-semibold text-[var(--rd-text)]">Books</h1>
@@ -66,14 +93,26 @@ export default function ReadingAdminBooksPage() {
         </Link>
       </div>
 
-      {books.length === 0 ? (
+      {error && (
+        <p role="alert" className="mt-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm text-red-400">
+          {error}
+        </p>
+      )}
+
+      {isLoading ? (
+        <div className="mt-8 flex flex-wrap gap-5">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-64 w-56 animate-pulse rounded-2xl border border-[var(--rd-border)] bg-[var(--rd-panel)]" />
+          ))}
+        </div>
+      ) : books.length === 0 ? (
         <div className="mt-8 rounded-2xl border border-dashed border-[var(--rd-border)] p-10 text-center">
           <p className="text-sm text-[var(--rd-text-muted)]">No books yet — add one to get started.</p>
         </div>
       ) : (
         <div className="mt-8 flex flex-wrap gap-5">
           {books.map((book) => (
-            <BookCard key={book.id} book={book} onDelete={deleteBook} />
+            <BookCard key={book.id} book={book} onDelete={handleDelete} />
           ))}
         </div>
       )}

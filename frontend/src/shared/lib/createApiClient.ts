@@ -1,6 +1,6 @@
 import type { ApiError } from "@/types/api";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost/api";
+export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost/api";
 
 interface SessionShape {
   accessToken:  string | null;
@@ -88,8 +88,10 @@ function createApiClient(config: ApiClientConfig) {
   class ApiClient {
     private async request<T>(path: string, init: RequestInit = {}, retry = true): Promise<T> {
       const { accessToken } = readSession();
+      // FormData needs the browser to set its own multipart boundary header.
+      const isJson = !(init.body instanceof FormData);
       const headers = new Headers(init.headers);
-      headers.set("Content-Type", "application/json");
+      if (isJson) headers.set("Content-Type", "application/json");
       if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
 
       const res = await fetch(`${API_BASE}${path}`, { ...init, headers });
@@ -98,7 +100,7 @@ function createApiClient(config: ApiClientConfig) {
         try {
           const newToken = await refreshAccessToken();
           const retryHeaders = new Headers(init.headers);
-          retryHeaders.set("Content-Type", "application/json");
+          if (isJson) retryHeaders.set("Content-Type", "application/json");
           retryHeaders.set("Authorization", `Bearer ${newToken}`);
           const retryRes = await fetch(`${API_BASE}${path}`, { ...init, headers: retryHeaders });
           if (!retryRes.ok) {
@@ -128,6 +130,10 @@ function createApiClient(config: ApiClientConfig) {
 
     post<T>(path: string, body: unknown): Promise<T> {
       return this.request<T>(path, { method: "POST", body: JSON.stringify(body) });
+    }
+
+    putForm<T>(path: string, form: FormData): Promise<T> {
+      return this.request<T>(path, { method: "PUT", body: form });
     }
 
     put<T>(path: string, body: unknown): Promise<T> {
