@@ -25,6 +25,10 @@ export const metadata: Metadata = {
   description:
     "A semester-long reading league for students: teams of 2–3, one book a month, live Kahoot-style quiz nights, and bonus challenges — the top team wins a scholarship or internship.",
   keywords: ["reading", "gamification", "university", "book club", "quiz", "students"],
+  icons: {
+    icon:  "/logo_451.png",
+    apple: "/logo_451.png",
+  },
   openGraph: {
     type: "website",
     siteName: "NATS Spirea",

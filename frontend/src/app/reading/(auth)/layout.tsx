@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { BookOpen, Flame, Trophy } from "lucide-react";
 
 const FLAME_PATH =
@@ -18,9 +19,12 @@ export default function ReadingAuthLayout({ children }: { children: React.ReactN
       {/* Form side */}
       <div className="flex w-full flex-col justify-center px-6 py-12 sm:px-12 lg:w-1/2 lg:px-20">
         <div className="mx-auto w-full max-w-[380px]">
-          <span className="font-display text-[13px] font-semibold tracking-[0.28em] text-[var(--rd-text-muted)]">
-            NATS SPIREA
-          </span>
+          <div className="flex items-center gap-3">
+            <Image src="/logo_451.png" alt="451° gradus" width={40} height={40} priority className="h-10 w-10 rounded-full" />
+            <span className="font-display text-[13px] font-semibold tracking-[0.28em] text-[var(--rd-text-muted)]">
+              NATS SPIREA
+            </span>
+          </div>
           {children}
         </div>
       </div>
