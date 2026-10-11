@@ -10,7 +10,7 @@ import { OpenSpotCard } from "@/features/reading/components/team/OpenSpotCard";
 import { PlayerCard } from "@/features/reading/components/team/PlayerCard";
 import { SeasonClock } from "@/features/reading/components/team/SeasonClock";
 import { TeamHero } from "@/features/reading/components/team/TeamHero";
-import { teamKit } from "@/features/reading/components/team/teamKit";
+import { TEAM_KIT } from "@/features/reading/components/team/teamKit";
 import { readingAuthApi } from "@/features/reading/authApi";
 import { readingSemesterApi } from "@/features/reading/semesterApi";
 import { isApiError } from "@/features/auth/utils";
@@ -66,7 +66,6 @@ export default function ReadingTeamPage() {
     setTeam(updated);
   }
 
-  const kit = team ? teamKit(team.name) : null;
   const currentStreak = user?.current_streak ?? 0;
   const booksFinished = rounds.filter((r) => r.status === "done").length;
   const activeRound = rounds.find((r) => r.status === "in_progress");
@@ -86,7 +85,7 @@ export default function ReadingTeamPage() {
     },
     {
       icon: Flame, label: "Your streak",
-      value: `${currentStreak} days`,
+      value: `${currentStreak} ${currentStreak === 1 ? "day" : "days"}`,
       note: "+5 pts per 7-day streak",
       accent: true,
     },
@@ -97,13 +96,13 @@ export default function ReadingTeamPage() {
       <div className="w-full px-4 py-6 sm:px-8 sm:py-10 lg:px-12">
         {isLoading ? (
           <TeamPageSkeleton />
-        ) : loadError || !team || !kit ? (
+        ) : loadError || !team ? (
           <p className="text-sm text-[var(--rd-text-muted)]">{loadError ?? "You haven't joined a team yet."}</p>
         ) : (
           <>
             <TeamHero
               team={team}
-              kit={kit}
+              kit={TEAM_KIT}
               roundLabel={activeRound ? `${activeRound.label} in play` : null}
               onRename={handleRename}
               onAddStudents={openAddModal}
@@ -127,7 +126,7 @@ export default function ReadingTeamPage() {
                       key={member.id}
                       member={member}
                       rosterSlot={i + 1}
-                      kit={kit}
+                      kit={TEAM_KIT}
                       isMe={member.id === user?.id}
                       index={i}
                     />

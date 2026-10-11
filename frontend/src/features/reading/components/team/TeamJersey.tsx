@@ -22,6 +22,7 @@ export function TeamJersey({ kit, monogram, className }: TeamJerseyProps) {
   const baseId = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const clipId = `jersey-clip-${baseId}`;
   const sheenId = `jersey-sheen-${baseId}`;
+  const fireId = `jersey-fire-${baseId}`;
 
   return (
     <svg viewBox="0 0 200 200" role="img" aria-label={`${monogram} team jersey`} className={cn("overflow-visible", className)}>
@@ -29,6 +30,10 @@ export function TeamJersey({ kit, monogram, className }: TeamJerseyProps) {
         <clipPath id={clipId}>
           <path d={JERSEY_PATH} />
         </clipPath>
+        <linearGradient id={fireId} x1="0" y1="1" x2="0.6" y2="0">
+          <stop offset="0%" className="[stop-color:var(--rd-accent-from)]" />
+          <stop offset="100%" className="[stop-color:var(--rd-accent-to)]" />
+        </linearGradient>
         <linearGradient id={sheenId} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="white" stopOpacity="0.28" />
           <stop offset="45%" stopColor="white" stopOpacity="0" />
@@ -38,7 +43,7 @@ export function TeamJersey({ kit, monogram, className }: TeamJerseyProps) {
 
       <ellipse cx="100" cy="194" rx="58" ry="5" className="fill-black/40" />
 
-      <path d={JERSEY_PATH} className={kit.jersey} />
+      <path d={JERSEY_PATH} fill={`url(#${fireId})`} />
 
       <g clipPath={`url(#${clipId})`}>
         {STRIPE_XS.map((x) => (
@@ -65,7 +70,7 @@ export function TeamJersey({ kit, monogram, className }: TeamJerseyProps) {
         x="100"
         y="134"
         textAnchor="middle"
-        className="fill-white font-display text-[52px] font-bold tracking-tight"
+        className="fill-black/80 font-display text-[52px] font-bold tracking-tight"
       >
         {monogram}
       </text>

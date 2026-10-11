@@ -65,7 +65,7 @@ export default function ReadingHomePage() {
     },
     {
       icon: Flame, label: "Reading streak",
-      value: `${currentStreak} days`,
+      value: `${currentStreak} ${currentStreak === 1 ? "day" : "days"}`,
       note: "+5 pts per 7-day streak",
       accent: true,
     },
