@@ -10,6 +10,7 @@ from sqlalchemy.orm import selectinload, undefer
 from app.domains.reading.model_reading import (
     ReadingAppSettings,
     ReadingBook,
+    ReadingProgress,
     ReadingQuiz,
     ReadingQuizAnswer,
     ReadingQuizQuestion,
@@ -22,7 +23,7 @@ from app.domains.reading.model_reading import (
     ReadingVoteOption,
     ReadingVoteRound,
 )
-from app.domains.reading.schema_reading import ReadingQuizQuestionWrite, ReadingQuizWrite
+from app.domains.reading.schema_reading import ReadingBookWrite, ReadingQuizQuestionWrite, ReadingQuizWrite
 
 APP_SETTINGS_ROW_ID = 1
 
@@ -207,12 +208,16 @@ async def create_team_registration(
 
 
 async def create_vote_round(
-    stage: str, opens_at: datetime, closes_at: datetime, option_labels: list[str], db: AsyncSession
+    stage: str,
+    opens_at: datetime,
+    closes_at: datetime,
+    options: list[tuple[str, uuid.UUID | None]],
+    db: AsyncSession,
 ) -> ReadingVoteRound:
     round_ = ReadingVoteRound(stage=stage, opens_at=opens_at, closes_at=closes_at)
     db.add(round_)
     await db.flush()
-    db.add_all([ReadingVoteOption(round_id=round_.id, label=label) for label in option_labels])
+    db.add_all([ReadingVoteOption(round_id=round_.id, label=label, book_id=book_id) for label, book_id in options])
     await db.commit()
     await db.refresh(round_, attribute_names=["options"])
     return round_
@@ -339,21 +344,29 @@ async def get_book_with_cover(book_id: uuid.UUID, db: AsyncSession) -> ReadingBo
     return result.scalar_one_or_none()
 
 
-async def create_book(title: str, description: str, cover_url: str | None, db: AsyncSession) -> ReadingBook:
-    book = ReadingBook(title=title, description=description, cover_url=cover_url)
+async def create_book(payload: ReadingBookWrite, db: AsyncSession) -> ReadingBook:
+    book = ReadingBook(
+        title=payload.title,
+        description=payload.description,
+        cover_url=payload.cover_url,
+        language=payload.language,
+        genre=payload.genre,
+        page_count=payload.page_count,
+    )
     db.add(book)
     await db.commit()
     await db.refresh(book)
     return book
 
 
-async def update_book(
-    book: ReadingBook, *, title: str, description: str, cover_url: str | None, db: AsyncSession
-) -> ReadingBook:
-    book.title = title
-    book.description = description
-    if cover_url is not None:
-        book.cover_url = cover_url
+async def update_book(book: ReadingBook, payload: ReadingBookWrite, db: AsyncSession) -> ReadingBook:
+    book.title = payload.title
+    book.description = payload.description
+    book.language = payload.language
+    book.genre = payload.genre
+    book.page_count = payload.page_count
+    if payload.cover_url is not None:
+        book.cover_url = payload.cover_url
         book.cover_image = None
         book.cover_mime = None
     await db.commit()
@@ -431,4 +444,42 @@ async def save_quiz(quiz: ReadingQuiz | None, payload: ReadingQuizWrite, db: Asy
 
 async def delete_quiz(quiz: ReadingQuiz, db: AsyncSession) -> None:
     await db.delete(quiz)
+    await db.commit()
+
+
+async def get_books_by_ids(book_ids: list[uuid.UUID], db: AsyncSession) -> list[ReadingBook]:
+    result = await db.execute(select(ReadingBook).where(ReadingBook.id.in_(book_ids)))
+    return list(result.scalars().all())
+
+
+async def list_closed_book_rounds(now: datetime, db: AsyncSession) -> list[ReadingVoteRound]:
+    result = await db.execute(
+        select(ReadingVoteRound)
+        .where(ReadingVoteRound.stage == "book", ReadingVoteRound.closes_at <= now)
+        .options(selectinload(ReadingVoteRound.options))
+        .order_by(ReadingVoteRound.closes_at.desc())
+    )
+    return list(result.scalars().all())
+
+
+async def get_progress_for_users(
+    book_id: uuid.UUID, user_ids: list[uuid.UUID], db: AsyncSession
+) -> dict[uuid.UUID, int]:
+    result = await db.execute(
+        select(ReadingProgress.user_id, ReadingProgress.current_page).where(
+            ReadingProgress.book_id == book_id, ReadingProgress.user_id.in_(user_ids)
+        )
+    )
+    return {row[0]: row[1] for row in result.all()}
+
+
+async def set_progress(user_id: uuid.UUID, book_id: uuid.UUID, current_page: int, db: AsyncSession) -> None:
+    result = await db.execute(
+        select(ReadingProgress).where(ReadingProgress.user_id == user_id, ReadingProgress.book_id == book_id)
+    )
+    progress = result.scalar_one_or_none()
+    if progress is None:
+        db.add(ReadingProgress(user_id=user_id, book_id=book_id, current_page=current_page))
+    else:
+        progress.current_page = current_page
     await db.commit()

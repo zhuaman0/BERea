@@ -79,6 +79,9 @@ class ReadingVoteOption(Base):
         Uuid(as_uuid=True), ForeignKey("reading_vote_rounds.id", ondelete="CASCADE"), nullable=False, index=True
     )
     label: Mapped[str] = mapped_column(String(120), nullable=False)
+    book_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("reading_books.id", ondelete="SET NULL"), nullable=True
+    )
 
     round: Mapped[ReadingVoteRound] = relationship(back_populates="options")
     votes: Mapped[list[ReadingVote]] = relationship(back_populates="option", cascade="all, delete-orphan")
@@ -123,6 +126,25 @@ class ReadingBook(TimestampMixin, Base):
     # Uploaded covers are resized client-side to ~100 KB, small enough to keep in the row itself.
     cover_image: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True, deferred=True)
     cover_mime: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    language: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    genre: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    page_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+
+class ReadingProgress(TimestampMixin, Base):
+    """The page a student has reached in a given book — one row per (user, book)."""
+
+    __tablename__ = "reading_progress"
+    __table_args__ = (UniqueConstraint("user_id", "book_id", name="uq_reading_progress_user_book"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("reading_users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    book_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("reading_books.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    current_page: Mapped[int] = mapped_column(Integer, nullable=False)
 
 
 class ReadingQuiz(TimestampMixin, Base):

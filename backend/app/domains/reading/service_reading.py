@@ -28,9 +28,11 @@ from app.domains.reading.schema_reading import (
     TEAM_MAX_MEMBERS,
     ReadingAppSettingsResponse,
     ReadingAppSettingsUpdate,
+    ReadingBookOfMonthResponse,
     ReadingBookResponse,
     ReadingBookWrite,
     ReadingLoginRequest,
+    ReadingProgressUpdate,
     ReadingQuizAnswerResponse,
     ReadingQuizQuestionResponse,
     ReadingQuizResponse,
@@ -404,8 +406,24 @@ async def create_vote_round_for_admin(
     await _require_admin(user_id, db)
     opens_at = datetime.now(UTC)
     closes_at = opens_at + timedelta(hours=payload.duration_hours)
-    round_ = await create_vote_round(payload.stage, opens_at, closes_at, payload.options, db)
+    options = await _vote_round_options(payload, db)
+    round_ = await create_vote_round(payload.stage, opens_at, closes_at, options, db)
     return await _to_vote_round_response(round_, None, db)
+
+
+async def _vote_round_options(
+    payload: ReadingVoteRoundCreate, db: AsyncSession
+) -> list[tuple[str, uuid.UUID | None]]:
+    from app.domains.reading.repo_reading import get_books_by_ids
+
+    if payload.book_ids is None:
+        return [(label, None) for label in payload.options]
+
+    unique_ids = list(dict.fromkeys(payload.book_ids))
+    books = {book.id: book for book in await get_books_by_ids(unique_ids, db)}
+    if len(books) != len(unique_ids):
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Some of those books no longer exist")
+    return [(books[book_id].title[:120], book_id) for book_id in unique_ids]
 
 
 async def list_vote_rounds_for_user(user_id: str, db: AsyncSession) -> list[ReadingVoteRoundResponse]:
@@ -445,6 +463,7 @@ async def _to_vote_round_response(
         ReadingVoteOptionResult(
             id=option.id,
             label=option.label,
+            book_id=option.book_id,
             vote_count=tally.get(option.id, 0),
             percent=round((tally.get(option.id, 0) / total_votes) * 100) if total_votes else 0,
         )
@@ -535,7 +554,15 @@ def _to_book_response(book: ReadingBook) -> ReadingBookResponse:
     if book.cover_mime:
         # Version by updated_at so a replaced cover never shows a stale cached image.
         cover_url = f"/v1/reading/books/{book.id}/cover?v={int(book.updated_at.timestamp())}"
-    return ReadingBookResponse(id=book.id, title=book.title, description=book.description, cover_url=cover_url)
+    return ReadingBookResponse(
+        id=book.id,
+        title=book.title,
+        description=book.description,
+        cover_url=cover_url,
+        language=book.language,
+        genre=book.genre,
+        page_count=book.page_count,
+    )
 
 
 async def _get_book_or_404(book_id: str, db: AsyncSession) -> ReadingBook:
@@ -561,7 +588,7 @@ async def create_book_for_admin(user_id: str, payload: ReadingBookWrite, db: Asy
     from app.domains.reading.repo_reading import create_book
 
     await _require_admin(user_id, db)
-    book = await create_book(payload.title, payload.description, payload.cover_url, db)
+    book = await create_book(payload, db)
     return _to_book_response(book)
 
 
@@ -572,9 +599,7 @@ async def update_book_for_admin(
 
     await _require_admin(user_id, db)
     book = await _get_book_or_404(book_id, db)
-    book = await update_book(
-        book, title=payload.title, description=payload.description, cover_url=payload.cover_url, db=db
-    )
+    book = await update_book(book, payload, db)
     return _to_book_response(book)
 
 
@@ -690,3 +715,66 @@ async def delete_quiz_for_admin(user_id: str, quiz_id: str, db: AsyncSession) ->
 
     await _require_admin(user_id, db)
     await delete_quiz(await _get_quiz_or_404(quiz_id, db), db)
+
+
+
+async def _current_book_of_month(db: AsyncSession) -> tuple[ReadingBook, int] | None:
+    """The winner of the most recent closed book round that had votes, with its share of the vote."""
+    from app.domains.reading.repo_reading import get_book, get_vote_tally, list_closed_book_rounds
+
+    for round_ in await list_closed_book_rounds(datetime.now(UTC), db):
+        tally = await get_vote_tally(round_.id, db)
+        total_votes = sum(tally.values())
+        if not total_votes:
+            continue
+        winner = max(round_.options, key=lambda option: tally.get(option.id, 0))
+        if winner.book_id is None:
+            continue
+        book = await get_book(winner.book_id, db)
+        if book:
+            return book, round(tally.get(winner.id, 0) / total_votes * 100)
+    return None
+
+
+async def get_book_of_month_for_user(user_id: str, db: AsyncSession) -> ReadingBookOfMonthResponse | None:
+    from app.domains.reading.repo_reading import get_progress_for_users, get_team_members, get_user_by_id
+
+    user = await get_user_by_id(uuid.UUID(user_id), db)
+    current = await _current_book_of_month(db)
+    if not user or not current:
+        return None
+    book, chosen_by_percent = current
+
+    member_ids = [m.id for m in await get_team_members(user.team_id, db)] if user.team_id else [user.id]
+    pages = await get_progress_for_users(book.id, member_ids, db)
+    team_average_percent = 0
+    if book.page_count:
+        percents = [min(pages.get(member_id, 0), book.page_count) / book.page_count * 100 for member_id in member_ids]
+        team_average_percent = round(sum(percents) / len(percents))
+
+    return ReadingBookOfMonthResponse(
+        book=_to_book_response(book),
+        chosen_by_percent=chosen_by_percent,
+        your_page=pages.get(user.id, 0),
+        team_average_percent=team_average_percent,
+    )
+
+
+async def update_progress_for_user(
+    user_id: str, payload: ReadingProgressUpdate, db: AsyncSession
+) -> ReadingBookOfMonthResponse:
+    from app.domains.reading.repo_reading import set_progress
+
+    current = await _current_book_of_month(db)
+    if not current:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="There's no book of the month yet")
+    book, _ = current
+    if book.page_count and payload.current_page > book.page_count:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"This book only has {book.page_count} pages"
+        )
+
+    await set_progress(uuid.UUID(user_id), book.id, payload.current_page, db)
+    result = await get_book_of_month_for_user(user_id, db)
+    assert result is not None
+    return result

@@ -9,9 +9,11 @@ from app.dependencies import CurrentUserId, DbSession
 from app.domains.reading.schema_reading import (
     ReadingAppSettingsResponse,
     ReadingAppSettingsUpdate,
+    ReadingBookOfMonthResponse,
     ReadingBookResponse,
     ReadingBookWrite,
     ReadingLoginRequest,
+    ReadingProgressUpdate,
     ReadingQuizResponse,
     ReadingQuizWrite,
     ReadingRefreshRequest,
@@ -308,3 +310,19 @@ async def delete_quiz(quiz_id: str, user_id: CurrentUserId, db: DbSession) -> No
     from app.domains.reading.service_reading import delete_quiz_for_admin
 
     await delete_quiz_for_admin(user_id, quiz_id, db)
+
+
+@router.get("/book-of-the-month", response_model=ReadingBookOfMonthResponse | None)
+async def get_book_of_the_month(user_id: CurrentUserId, db: DbSession) -> ReadingBookOfMonthResponse | None:
+    from app.domains.reading.service_reading import get_book_of_month_for_user
+
+    return await get_book_of_month_for_user(user_id, db)
+
+
+@router.put("/book-of-the-month/progress", response_model=ReadingBookOfMonthResponse)
+async def update_reading_progress(
+    payload: ReadingProgressUpdate, user_id: CurrentUserId, db: DbSession
+) -> ReadingBookOfMonthResponse:
+    from app.domains.reading.service_reading import update_progress_for_user
+
+    return await update_progress_for_user(user_id, payload, db)

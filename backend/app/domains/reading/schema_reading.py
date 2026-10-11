@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, ValidationInfo, field_validator, model_validator
 
 
 class ReadingRegisterRequest(BaseModel):
@@ -146,16 +146,25 @@ VoteStage = Literal["language", "genre", "book"]
 
 class ReadingVoteRoundCreate(BaseModel):
     stage: VoteStage
-    options: list[str] = Field(min_length=2, max_length=12)
+    options: list[str] = Field(default_factory=list, max_length=12)
+    book_ids: list[uuid.UUID] | None = Field(default=None, max_length=12)
     duration_hours: float = Field(gt=0, le=168)
 
     @field_validator("options")
     @classmethod
     def _clean_options(cls, value: list[str]) -> list[str]:
-        cleaned = [option.strip() for option in value if option.strip()]
-        if len(cleaned) < 2:
+        return [option.strip() for option in value if option.strip()]
+
+    @model_validator(mode="after")
+    def _options_or_books(self) -> ReadingVoteRoundCreate:
+        if self.book_ids is not None:
+            if self.stage != "book":
+                raise ValueError("Catalog books can only be offered in a book round")
+            if len(set(self.book_ids)) < 2:
+                raise ValueError("Pick at least 2 books")
+        elif len(self.options) < 2:
             raise ValueError("Add at least 2 options")
-        return cleaned
+        return self
 
 
 class ReadingVoteCastRequest(BaseModel):
@@ -165,6 +174,7 @@ class ReadingVoteCastRequest(BaseModel):
 class ReadingVoteOptionResult(BaseModel):
     id: uuid.UUID
     label: str
+    book_id: uuid.UUID | None = None
     vote_count: int
     percent: int
 
@@ -224,6 +234,16 @@ class ReadingBookWrite(BaseModel):
     title: str = Field(min_length=1, max_length=200)
     description: str = Field(default="", max_length=4000)
     cover_url: str | None = Field(default=None, max_length=1024)
+    language: str | None = Field(default=None, max_length=40)
+    genre: str | None = Field(default=None, max_length=60)
+    page_count: int | None = Field(default=None, ge=1, le=5000)
+
+    @field_validator("language", "genre")
+    @classmethod
+    def _blank_is_none(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return value.strip() or None
 
     @field_validator("title", "description")
     @classmethod
@@ -246,6 +266,20 @@ class ReadingBookResponse(BaseModel):
     title: str
     description: str
     cover_url: str | None
+    language: str | None
+    genre: str | None
+    page_count: int | None
+
+
+class ReadingBookOfMonthResponse(BaseModel):
+    book: ReadingBookResponse
+    chosen_by_percent: int
+    your_page: int
+    team_average_percent: int
+
+
+class ReadingProgressUpdate(BaseModel):
+    current_page: int = Field(ge=0, le=5000)
 
 
 QuizStatus = Literal["draft", "scheduled"]
