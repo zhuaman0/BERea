@@ -18,6 +18,7 @@ from app.domains.auth.service_auth import (
 )
 from app.domains.reading.model_reading import (
     ReadingBook,
+    ReadingQuiz,
     ReadingSemesterRound,
     ReadingTeam,
     ReadingUser,
@@ -30,6 +31,10 @@ from app.domains.reading.schema_reading import (
     ReadingBookResponse,
     ReadingBookWrite,
     ReadingLoginRequest,
+    ReadingQuizAnswerResponse,
+    ReadingQuizQuestionResponse,
+    ReadingQuizResponse,
+    ReadingQuizWrite,
     ReadingRegisterRequest,
     ReadingSemesterRoundCreate,
     ReadingSemesterRoundResponse,
@@ -62,6 +67,7 @@ def _to_user_response(user: ReadingUser) -> ReadingUserResponse:
         team_name=user.team.name if user.team else None,
         token_balance=user.token_balance,
         current_streak=user.current_streak,
+        is_admin=user.is_admin,
         created_at=user.created_at,
     )
 
@@ -599,3 +605,74 @@ async def get_book_cover_image(book_id: str, db: AsyncSession) -> tuple[bytes, s
     if not book or not book.cover_image or not book.cover_mime:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cover not found")
     return book.cover_image, book.cover_mime
+
+
+async def _require_admin(user_id: str, db: AsyncSession) -> None:
+    from app.domains.reading.repo_reading import get_user_by_id
+
+    user = await get_user_by_id(uuid.UUID(user_id), db)
+    if not user or not user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admins only")
+
+
+def _to_quiz_response(quiz: ReadingQuiz) -> ReadingQuizResponse:
+    return ReadingQuizResponse(
+        id=quiz.id,
+        title=quiz.title,
+        month_label=quiz.month_label,
+        scheduled_for=quiz.scheduled_for,
+        status=quiz.status,  # type: ignore[arg-type]
+        questions=[
+            ReadingQuizQuestionResponse(
+                id=q.id,
+                text=q.text,
+                time_limit_seconds=q.time_limit_seconds,
+                points=q.points,
+                answers=[ReadingQuizAnswerResponse(id=a.id, text=a.text, is_correct=a.is_correct) for a in q.answers],
+            )
+            for q in quiz.questions
+        ],
+    )
+
+
+async def _get_quiz_or_404(quiz_id: str, db: AsyncSession) -> ReadingQuiz:
+    from app.domains.reading.repo_reading import get_quiz
+
+    quiz = await get_quiz(uuid.UUID(quiz_id), db)
+    if not quiz:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quiz not found")
+    return quiz
+
+
+async def list_quizzes_for_admin(user_id: str, db: AsyncSession) -> list[ReadingQuizResponse]:
+    from app.domains.reading.repo_reading import list_quizzes
+
+    await _require_admin(user_id, db)
+    return [_to_quiz_response(quiz) for quiz in await list_quizzes(db)]
+
+
+async def get_quiz_for_admin(user_id: str, quiz_id: str, db: AsyncSession) -> ReadingQuizResponse:
+    await _require_admin(user_id, db)
+    return _to_quiz_response(await _get_quiz_or_404(quiz_id, db))
+
+
+async def save_quiz_for_admin(
+    user_id: str, quiz_id: str | None, payload: ReadingQuizWrite, db: AsyncSession
+) -> ReadingQuizResponse:
+    from app.domains.reading.repo_reading import get_quiz, save_quiz
+
+    await _require_admin(user_id, db)
+    existing = await _get_quiz_or_404(quiz_id, db) if quiz_id else None
+    saved_id = await save_quiz(existing, payload, db)
+    # Re-read so the replaced question/answer lists come back fully loaded and ordered.
+    db.expire_all()
+    quiz = await get_quiz(saved_id, db)
+    assert quiz is not None
+    return _to_quiz_response(quiz)
+
+
+async def delete_quiz_for_admin(user_id: str, quiz_id: str, db: AsyncSession) -> None:
+    from app.domains.reading.repo_reading import delete_quiz
+
+    await _require_admin(user_id, db)
+    await delete_quiz(await _get_quiz_or_404(quiz_id, db), db)

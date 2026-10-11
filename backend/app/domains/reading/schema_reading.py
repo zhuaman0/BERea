@@ -46,6 +46,7 @@ class ReadingUserResponse(BaseModel):
     team_name: str | None
     token_balance: int
     current_streak: int
+    is_admin: bool
     created_at: datetime
 
 
@@ -245,3 +246,56 @@ class ReadingBookResponse(BaseModel):
     title: str
     description: str
     cover_url: str | None
+
+
+QuizStatus = Literal["draft", "scheduled"]
+
+
+class ReadingQuizAnswerWrite(BaseModel):
+    text: str = Field(min_length=1, max_length=300)
+    is_correct: bool
+
+
+class ReadingQuizQuestionWrite(BaseModel):
+    text: str = Field(min_length=1, max_length=1000)
+    time_limit_seconds: int = Field(ge=5, le=300)
+    points: int = Field(ge=0, le=5000)
+    answers: list[ReadingQuizAnswerWrite] = Field(min_length=2, max_length=4)
+
+    @field_validator("answers")
+    @classmethod
+    def _one_correct(cls, answers: list[ReadingQuizAnswerWrite]) -> list[ReadingQuizAnswerWrite]:
+        if sum(a.is_correct for a in answers) != 1:
+            raise ValueError("Mark exactly one answer as correct")
+        return answers
+
+
+class ReadingQuizWrite(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+    month_label: str = Field(min_length=1, max_length=60)
+    scheduled_for: datetime | None = None
+    status: QuizStatus = "draft"
+    questions: list[ReadingQuizQuestionWrite] = Field(min_length=1, max_length=100)
+
+
+class ReadingQuizAnswerResponse(BaseModel):
+    id: uuid.UUID
+    text: str
+    is_correct: bool
+
+
+class ReadingQuizQuestionResponse(BaseModel):
+    id: uuid.UUID
+    text: str
+    time_limit_seconds: int
+    points: int
+    answers: list[ReadingQuizAnswerResponse]
+
+
+class ReadingQuizResponse(BaseModel):
+    id: uuid.UUID
+    title: str
+    month_label: str
+    scheduled_for: datetime | None
+    status: QuizStatus
+    questions: list[ReadingQuizQuestionResponse]

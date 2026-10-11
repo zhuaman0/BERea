@@ -3,13 +3,16 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, date, datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import Select, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, undefer
 
 from app.domains.reading.model_reading import (
     ReadingAppSettings,
     ReadingBook,
+    ReadingQuiz,
+    ReadingQuizAnswer,
+    ReadingQuizQuestion,
     ReadingRefreshToken,
     ReadingSemesterRound,
     ReadingTeam,
@@ -19,6 +22,7 @@ from app.domains.reading.model_reading import (
     ReadingVoteOption,
     ReadingVoteRound,
 )
+from app.domains.reading.schema_reading import ReadingQuizQuestionWrite, ReadingQuizWrite
 
 APP_SETTINGS_ROW_ID = 1
 
@@ -377,4 +381,54 @@ async def clear_book_cover(book: ReadingBook, db: AsyncSession) -> ReadingBook:
 
 async def delete_book(book: ReadingBook, db: AsyncSession) -> None:
     await db.delete(book)
+    await db.commit()
+
+
+def _quiz_query() -> Select[tuple[ReadingQuiz]]:
+    return select(ReadingQuiz).options(
+        selectinload(ReadingQuiz.questions).selectinload(ReadingQuizQuestion.answers)
+    )
+
+
+async def list_quizzes(db: AsyncSession) -> list[ReadingQuiz]:
+    result = await db.execute(_quiz_query().order_by(ReadingQuiz.created_at.desc()))
+    return list(result.scalars().all())
+
+
+async def get_quiz(quiz_id: uuid.UUID, db: AsyncSession) -> ReadingQuiz | None:
+    result = await db.execute(_quiz_query().where(ReadingQuiz.id == quiz_id))
+    return result.scalar_one_or_none()
+
+
+def _build_questions(questions: list[ReadingQuizQuestionWrite]) -> list[ReadingQuizQuestion]:
+    return [
+        ReadingQuizQuestion(
+            position=i,
+            text=q.text,
+            time_limit_seconds=q.time_limit_seconds,
+            points=q.points,
+            answers=[
+                ReadingQuizAnswer(position=j, text=a.text, is_correct=a.is_correct) for j, a in enumerate(q.answers)
+            ],
+        )
+        for i, q in enumerate(questions)
+    ]
+
+
+async def save_quiz(quiz: ReadingQuiz | None, payload: ReadingQuizWrite, db: AsyncSession) -> uuid.UUID:
+    """Creates the quiz or replaces an existing one's fields and full question list."""
+    if quiz is None:
+        quiz = ReadingQuiz()
+        db.add(quiz)
+    quiz.title = payload.title
+    quiz.month_label = payload.month_label
+    quiz.scheduled_for = payload.scheduled_for
+    quiz.status = payload.status
+    quiz.questions = _build_questions(payload.questions)
+    await db.commit()
+    return quiz.id
+
+
+async def delete_quiz(quiz: ReadingQuiz, db: AsyncSession) -> None:
+    await db.delete(quiz)
     await db.commit()

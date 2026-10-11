@@ -12,6 +12,8 @@ from app.domains.reading.schema_reading import (
     ReadingBookResponse,
     ReadingBookWrite,
     ReadingLoginRequest,
+    ReadingQuizResponse,
+    ReadingQuizWrite,
     ReadingRefreshRequest,
     ReadingRegisterRequest,
     ReadingSemesterRoundCreate,
@@ -269,3 +271,40 @@ async def get_book_cover(book_id: str, db: DbSession) -> Response:
 
     image, mime = await get_book_cover_image(book_id, db)
     return Response(content=image, media_type=mime, headers={"Cache-Control": "public, max-age=31536000, immutable"})
+
+
+@router.get("/quizzes", response_model=list[ReadingQuizResponse])
+async def list_quizzes(user_id: CurrentUserId, db: DbSession) -> list[ReadingQuizResponse]:
+    from app.domains.reading.service_reading import list_quizzes_for_admin
+
+    return await list_quizzes_for_admin(user_id, db)
+
+
+@router.post("/quizzes", response_model=ReadingQuizResponse, status_code=201)
+async def create_quiz(payload: ReadingQuizWrite, user_id: CurrentUserId, db: DbSession) -> ReadingQuizResponse:
+    from app.domains.reading.service_reading import save_quiz_for_admin
+
+    return await save_quiz_for_admin(user_id, None, payload, db)
+
+
+@router.get("/quizzes/{quiz_id}", response_model=ReadingQuizResponse)
+async def get_quiz(quiz_id: str, user_id: CurrentUserId, db: DbSession) -> ReadingQuizResponse:
+    from app.domains.reading.service_reading import get_quiz_for_admin
+
+    return await get_quiz_for_admin(user_id, quiz_id, db)
+
+
+@router.put("/quizzes/{quiz_id}", response_model=ReadingQuizResponse)
+async def update_quiz(
+    quiz_id: str, payload: ReadingQuizWrite, user_id: CurrentUserId, db: DbSession
+) -> ReadingQuizResponse:
+    from app.domains.reading.service_reading import save_quiz_for_admin
+
+    return await save_quiz_for_admin(user_id, quiz_id, payload, db)
+
+
+@router.delete("/quizzes/{quiz_id}", status_code=204)
+async def delete_quiz(quiz_id: str, user_id: CurrentUserId, db: DbSession) -> None:
+    from app.domains.reading.service_reading import delete_quiz_for_admin
+
+    await delete_quiz_for_admin(user_id, quiz_id, db)

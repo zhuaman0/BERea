@@ -35,6 +35,7 @@ class ReadingUser(TimestampMixin, Base):
     )
     token_balance: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     current_streak: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    is_admin: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False)
     last_active_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     team: Mapped[ReadingTeam | None] = relationship(back_populates="members")
@@ -122,6 +123,52 @@ class ReadingBook(TimestampMixin, Base):
     # Uploaded covers are resized client-side to ~100 KB, small enough to keep in the row itself.
     cover_image: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True, deferred=True)
     cover_mime: Mapped[str | None] = mapped_column(String(32), nullable=True)
+
+
+class ReadingQuiz(TimestampMixin, Base):
+    __tablename__ = "reading_quizzes"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    month_label: Mapped[str] = mapped_column(String(60), nullable=False)
+    scheduled_for: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), default="draft", server_default="draft", nullable=False)
+
+    questions: Mapped[list[ReadingQuizQuestion]] = relationship(
+        back_populates="quiz", cascade="all, delete-orphan", order_by="ReadingQuizQuestion.position"
+    )
+
+
+class ReadingQuizQuestion(Base):
+    __tablename__ = "reading_quiz_questions"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    quiz_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("reading_quizzes.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    time_limit_seconds: Mapped[int] = mapped_column(Integer, nullable=False)
+    points: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    quiz: Mapped[ReadingQuiz] = relationship(back_populates="questions")
+    answers: Mapped[list[ReadingQuizAnswer]] = relationship(
+        back_populates="question", cascade="all, delete-orphan", order_by="ReadingQuizAnswer.position"
+    )
+
+
+class ReadingQuizAnswer(Base):
+    __tablename__ = "reading_quiz_answers"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    question_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("reading_quiz_questions.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+    text: Mapped[str] = mapped_column(String(300), nullable=False)
+    is_correct: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    question: Mapped[ReadingQuizQuestion] = relationship(back_populates="answers")
 
 
 class ReadingAppSettings(TimestampMixin, Base):
