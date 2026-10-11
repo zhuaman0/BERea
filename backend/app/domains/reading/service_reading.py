@@ -7,6 +7,7 @@ from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 from fastapi import HTTPException, UploadFile, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -19,6 +20,9 @@ from app.domains.auth.service_auth import (
 from app.domains.reading.model_reading import (
     ReadingBook,
     ReadingQuiz,
+    ReadingQuizParticipant,
+    ReadingQuizSession,
+    ReadingQuizSubmission,
     ReadingSemesterRound,
     ReadingTeam,
     ReadingUser,
@@ -31,6 +35,16 @@ from app.domains.reading.schema_reading import (
     ReadingBookOfMonthResponse,
     ReadingBookResponse,
     ReadingBookWrite,
+    ReadingLiveAnswerOption,
+    ReadingLiveAnswerRequest,
+    ReadingLiveHostState,
+    ReadingLiveJoinRequest,
+    ReadingLivePlayer,
+    ReadingLivePlayerState,
+    ReadingLiveQuestion,
+    ReadingLiveSessionCreate,
+    ReadingLiveSummary,
+    ReadingLiveTeamScore,
     ReadingLoginRequest,
     ReadingProgressUpdate,
     ReadingQuizAnswerResponse,
@@ -778,3 +792,233 @@ async def update_progress_for_user(
     result = await get_book_of_month_for_user(user_id, db)
     assert result is not None
     return result
+
+
+SPEED_BONUS_SHARE = 0.5
+
+
+def _live_phase(session: ReadingQuizSession, now: datetime) -> str:
+    """A running question becomes "reveal" on its own once the time limit passes."""
+    if session.status == "question" and session.question_started_at is not None:
+        question = session.quiz.questions[session.current_index]
+        if now >= session.question_started_at + timedelta(seconds=question.time_limit_seconds):
+            return "reveal"
+    return session.status
+
+
+def _time_left_ms(session: ReadingQuizSession, now: datetime) -> int:
+    if session.status != "question" or session.question_started_at is None:
+        return 0
+    question = session.quiz.questions[session.current_index]
+    deadline = session.question_started_at + timedelta(seconds=question.time_limit_seconds)
+    return max(0, int((deadline - now).total_seconds() * 1000))
+
+
+def _team_scores(session: ReadingQuizSession) -> list[ReadingLiveTeamScore]:
+    totals: dict[str, int] = {}
+    for p in session.participants:
+        team_name = p.team.name if p.team else p.user.full_name
+        totals[team_name] = totals.get(team_name, 0) + p.score
+    return [
+        ReadingLiveTeamScore(team_name=name, score=score)
+        for name, score in sorted(totals.items(), key=lambda item: (-item[1], item[0]))
+    ]
+
+
+async def _live_question(
+    session: ReadingQuizSession, phase: str, now: datetime, for_host: bool, db: AsyncSession
+) -> tuple[ReadingLiveQuestion | None, list[ReadingQuizSubmission]]:
+    from app.domains.reading.repo_reading import get_question_responses
+
+    if phase not in ("question", "reveal") or session.current_index < 0:
+        return None, []
+    question = session.quiz.questions[session.current_index]
+    responses = await get_question_responses(session.id, question.id, db)
+    revealed = phase == "reveal"
+    answers = [
+        ReadingLiveAnswerOption(
+            id=a.id,
+            text=a.text,
+            is_correct=a.is_correct if (revealed or for_host) else None,
+            picked_count=sum(r.answer_id == a.id for r in responses) if for_host else None,
+        )
+        for a in question.answers
+    ]
+    return (
+        ReadingLiveQuestion(
+            index=session.current_index,
+            total=len(session.quiz.questions),
+            text=question.text,
+            points=question.points,
+            time_limit_seconds=question.time_limit_seconds,
+            time_left_ms=_time_left_ms(session, now) if phase == "question" else 0,
+            answers=answers,
+        ),
+        responses,
+    )
+
+
+async def _get_session_or_404(session_id: str, db: AsyncSession) -> ReadingQuizSession:
+    from app.domains.reading.repo_reading import get_quiz_session
+
+    session = await get_quiz_session(uuid.UUID(session_id), db)
+    if not session:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quiz session not found")
+    return session
+
+
+async def start_live_session_for_admin(
+    user_id: str, payload: ReadingLiveSessionCreate, db: AsyncSession
+) -> ReadingLiveSummary:
+    from app.domains.reading.repo_reading import create_quiz_session, finish_active_sessions, get_quiz_session
+
+    await _require_admin(user_id, db)
+    quiz = await _get_quiz_or_404(str(payload.quiz_id), db)
+    if not quiz.questions:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Add questions before going live")
+
+    # One live quiz at a time keeps "join the live quiz" unambiguous for students.
+    await finish_active_sessions(db)
+    pin = f"{secrets.randbelow(1_000_000):06d}"
+    session_id = await create_quiz_session(quiz.id, pin, db)
+    session = await get_quiz_session(session_id, db)
+    assert session is not None
+    return ReadingLiveSummary(id=session.id, pin=session.pin, quiz_title=quiz.title, phase="lobby")
+
+
+async def advance_live_session_for_admin(user_id: str, session_id: str, db: AsyncSession) -> ReadingLiveHostState:
+    from app.domains.reading.repo_reading import set_quiz_session_phase
+
+    await _require_admin(user_id, db)
+    session = await _get_session_or_404(session_id, db)
+    now = datetime.now(UTC)
+    phase = _live_phase(session, now)
+    total = len(session.quiz.questions)
+
+    if phase == "lobby":
+        await set_quiz_session_phase(session, "question", 0, now, db)
+    elif phase == "question":
+        await set_quiz_session_phase(session, "reveal", session.current_index, session.question_started_at, db)
+    elif phase == "reveal" and session.current_index + 1 < total:
+        await set_quiz_session_phase(session, "question", session.current_index + 1, now, db)
+    elif phase == "reveal":
+        await set_quiz_session_phase(session, "finished", session.current_index, None, db)
+
+    return await get_live_host_state_for_admin(user_id, session_id, db)
+
+
+async def get_live_host_state_for_admin(user_id: str, session_id: str, db: AsyncSession) -> ReadingLiveHostState:
+    await _require_admin(user_id, db)
+    db.expire_all()
+    session = await _get_session_or_404(session_id, db)
+    now = datetime.now(UTC)
+    phase = _live_phase(session, now)
+    question, responses = await _live_question(session, phase, now, True, db)
+    players = sorted(session.participants, key=lambda p: (-p.score, p.joined_at))
+    return ReadingLiveHostState(
+        id=session.id,
+        pin=session.pin,
+        quiz_title=session.quiz.title,
+        phase=phase,  # type: ignore[arg-type]
+        players=[
+            ReadingLivePlayer(name=p.user.full_name, team_name=p.team.name if p.team else None, score=p.score)
+            for p in players
+        ],
+        question=question,
+        answered_count=len(responses),
+        team_scores=_team_scores(session),
+    )
+
+
+async def get_active_live_session(db: AsyncSession) -> ReadingLiveSummary | None:
+    from app.domains.reading.repo_reading import get_active_quiz_session
+
+    session = await get_active_quiz_session(db)
+    if not session:
+        return None
+    return ReadingLiveSummary(
+        id=session.id,
+        pin=session.pin,
+        quiz_title=session.quiz.title,
+        phase=_live_phase(session, datetime.now(UTC)),  # type: ignore[arg-type]
+    )
+
+
+async def join_live_session(user_id: str, payload: ReadingLiveJoinRequest, db: AsyncSession) -> ReadingLiveSummary:
+    from app.domains.reading.repo_reading import add_quiz_participant, get_active_quiz_session, get_user_by_id
+
+    session = await get_active_quiz_session(db, pin=payload.pin)
+    if not session:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No live quiz with that PIN")
+    user = await get_user_by_id(uuid.UUID(user_id), db)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    if not any(p.user_id == user.id for p in session.participants):
+        try:
+            await add_quiz_participant(session.id, user.id, user.team_id, db)
+        except IntegrityError:
+            await db.rollback()  # joined twice at the same moment — already in, carry on
+    return ReadingLiveSummary(
+        id=session.id,
+        pin=session.pin,
+        quiz_title=session.quiz.title,
+        phase=_live_phase(session, datetime.now(UTC)),  # type: ignore[arg-type]
+    )
+
+
+def _find_participant(session: ReadingQuizSession, user_id: str) -> ReadingQuizParticipant:
+    participant = next((p for p in session.participants if str(p.user_id) == user_id), None)
+    if not participant:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Join the quiz with its PIN first")
+    return participant
+
+
+async def get_live_player_state(user_id: str, session_id: str, db: AsyncSession) -> ReadingLivePlayerState:
+    db.expire_all()
+    session = await _get_session_or_404(session_id, db)
+    participant = _find_participant(session, user_id)
+    now = datetime.now(UTC)
+    phase = _live_phase(session, now)
+    question, responses = await _live_question(session, phase, now, False, db)
+    mine = next((r for r in responses if r.participant_id == participant.id), None)
+    ranking = sorted(session.participants, key=lambda p: (-p.score, p.joined_at))
+    return ReadingLivePlayerState(
+        id=session.id,
+        quiz_title=session.quiz.title,
+        phase=phase,  # type: ignore[arg-type]
+        player_count=len(session.participants),
+        question=question,
+        your_answer_id=mine.answer_id if mine else None,
+        your_points_this_question=(mine.points if mine else 0) if phase == "reveal" else None,
+        your_score=participant.score,
+        your_rank=ranking.index(participant) + 1,
+        team_scores=_team_scores(session),
+    )
+
+
+async def answer_live_question(
+    user_id: str, session_id: str, payload: ReadingLiveAnswerRequest, db: AsyncSession
+) -> ReadingLivePlayerState:
+    from app.domains.reading.repo_reading import record_quiz_response
+
+    session = await _get_session_or_404(session_id, db)
+    participant = _find_participant(session, user_id)
+    now = datetime.now(UTC)
+    if _live_phase(session, now) != "question" or session.question_started_at is None:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Time's up for this question")
+
+    question = session.quiz.questions[session.current_index]
+    answer = next((a for a in question.answers if a.id == payload.answer_id), None)
+    if not answer:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="That answer isn't part of this question")
+
+    elapsed = (now - session.question_started_at).total_seconds()
+    speed = max(0.0, 1 - elapsed / question.time_limit_seconds)
+    points = round(question.points * ((1 - SPEED_BONUS_SHARE) + SPEED_BONUS_SHARE * speed)) if answer.is_correct else 0
+    try:
+        await record_quiz_response(participant, question.id, answer.id, answer.is_correct, points, db)
+    except IntegrityError as exc:
+        await db.rollback()
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="You already answered this question") from exc
+    return await get_live_player_state(user_id, session_id, db)

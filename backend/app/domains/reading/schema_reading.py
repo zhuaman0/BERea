@@ -333,3 +333,79 @@ class ReadingQuizResponse(BaseModel):
     scheduled_for: datetime | None
     status: QuizStatus
     questions: list[ReadingQuizQuestionResponse]
+
+
+LiveQuizPhase = Literal["lobby", "question", "reveal", "finished"]
+
+
+class ReadingLiveSessionCreate(BaseModel):
+    quiz_id: uuid.UUID
+
+
+class ReadingLiveJoinRequest(BaseModel):
+    pin: str = Field(pattern=r"^\d{6}$")
+
+
+class ReadingLiveAnswerRequest(BaseModel):
+    answer_id: uuid.UUID
+
+
+class ReadingLiveAnswerOption(BaseModel):
+    id: uuid.UUID
+    text: str
+    # Only sent once the question is revealed (always to the host).
+    is_correct: bool | None
+    # Host-only: how many players picked this answer.
+    picked_count: int | None
+
+
+class ReadingLiveQuestion(BaseModel):
+    index: int
+    total: int
+    text: str
+    points: int
+    time_limit_seconds: int
+    time_left_ms: int
+    answers: list[ReadingLiveAnswerOption]
+
+
+class ReadingLivePlayer(BaseModel):
+    name: str
+    team_name: str | None
+    score: int
+
+
+class ReadingLiveTeamScore(BaseModel):
+    team_name: str
+    score: int
+
+
+class ReadingLiveSummary(BaseModel):
+    id: uuid.UUID
+    pin: str
+    quiz_title: str
+    phase: LiveQuizPhase
+
+
+class ReadingLiveHostState(BaseModel):
+    id: uuid.UUID
+    pin: str
+    quiz_title: str
+    phase: LiveQuizPhase
+    players: list[ReadingLivePlayer]
+    question: ReadingLiveQuestion | None
+    answered_count: int
+    team_scores: list[ReadingLiveTeamScore]
+
+
+class ReadingLivePlayerState(BaseModel):
+    id: uuid.UUID
+    quiz_title: str
+    phase: LiveQuizPhase
+    player_count: int
+    question: ReadingLiveQuestion | None
+    your_answer_id: uuid.UUID | None
+    your_points_this_question: int | None
+    your_score: int
+    your_rank: int
+    team_scores: list[ReadingLiveTeamScore]
