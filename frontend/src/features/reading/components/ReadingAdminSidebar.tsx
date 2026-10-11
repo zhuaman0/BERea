@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import type { Route } from "next";
 import { usePathname } from "next/navigation";
@@ -47,9 +48,7 @@ export function ReadingAdminSidebar() {
   return (
     <aside className="hidden w-56 shrink-0 flex-col border-r border-[var(--rd-border)] bg-[var(--rd-panel)] md:flex">
       <div className="flex items-center gap-2.5 px-5 pt-5">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full rd-accent-gradient text-sm">
-          🔥
-        </span>
+        <Image src="/logo_451.png" alt="451° gradus" width={36} height={36} priority className="h-9 w-9 shrink-0 rounded-full" />
         <div className="min-w-0">
           <p className="font-display truncate text-sm font-semibold text-[var(--rd-text)]">451 GRADUS</p>
           <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--rd-text-muted)]">Admin panel</p>
