@@ -4,7 +4,7 @@ import uuid
 
 from fastapi import APIRouter, Query
 
-from app.dependencies import DbSession, CurrentUserId
+from app.dependencies import CurrentUserId, DbSession
 from app.domains.orders import service_orders
 from app.domains.orders.schema_orders import OrderCreate, OrderOut, OrderStatusUpdate
 

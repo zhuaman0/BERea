@@ -12,10 +12,9 @@ from app.config import settings
 from app.database import Base
 
 # Import all models so Alembic can see them for autogenerate
-from app.domains.users.model_users import User  # noqa: F401
 from app.domains.auth.model_auth import RefreshToken  # noqa: F401
-from app.domains.categories.model_categories import Category  # noqa: F401
 from app.domains.catalog.model_catalog import FurnitureItem  # noqa: F401
+from app.domains.categories.model_categories import Category  # noqa: F401
 from app.domains.configurator.model_configurator import SavedDesign  # noqa: F401
 from app.domains.orders.model_orders import Order  # noqa: F401
 from app.domains.reading.model_reading import (  # noqa: F401
@@ -30,6 +29,7 @@ from app.domains.reading.model_reading import (  # noqa: F401
     ReadingVoteOption,
     ReadingVoteRound,
 )
+from app.domains.users.model_users import User  # noqa: F401
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.database_url)

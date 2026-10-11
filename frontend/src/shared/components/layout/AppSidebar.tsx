@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useSyncExternalStore } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { usePathname, useRouter } from "next/navigation";
@@ -31,21 +31,33 @@ interface NavGroup {
   items:   NavItem[];
 }
 
+const COLLAPSED_KEY = "sidebar-collapsed";
+const collapsedListeners = new Set<() => void>();
+
+function subscribeCollapsed(onChange: () => void): () => void {
+  collapsedListeners.add(onChange);
+  return () => collapsedListeners.delete(onChange);
+}
+
+function readCollapsed(): boolean {
+  return localStorage.getItem(COLLAPSED_KEY) === "true";
+}
+
+function readCollapsedOnServer(): boolean {
+  return false;
+}
+
+function setCollapsed(value: boolean): void {
+  localStorage.setItem(COLLAPSED_KEY, String(value));
+  collapsedListeners.forEach((notify) => notify());
+}
+
 export function AppSidebar() {
   const t        = useTranslations("nav");
   const pathname = usePathname();
   const router   = useRouter();
   const { user, refreshToken, clearSession } = useAuthStore();
-  const [collapsed, setCollapsed] = useState(false);
-
-  useEffect(() => {
-    const saved = localStorage.getItem("sidebar-collapsed");
-    if (saved === "true") setCollapsed(true);
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem("sidebar-collapsed", String(collapsed));
-  }, [collapsed]);
+  const collapsed = useSyncExternalStore(subscribeCollapsed, readCollapsed, readCollapsedOnServer);
 
   const NAV_GROUPS: NavGroup[] = [
     {

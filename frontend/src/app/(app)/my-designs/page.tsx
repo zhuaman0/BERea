@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Plus, Search, ArrowRight, Sofa, Trash2, Share2, Calendar, Loader2 } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
@@ -41,19 +41,13 @@ export default function MyDesignsPage() {
   const [loading,      setLoading]      = useState(true);
   const [deletingId,   setDeletingId]   = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await configuratorApi.list();
-      setDesigns(data);
-    } catch {
-      // stays empty on error
-    } finally {
-      setLoading(false);
-    }
+  useEffect(() => {
+    configuratorApi
+      .list()
+      .then(setDesigns)
+      .catch(() => { /* stays empty on error */ })
+      .finally(() => setLoading(false));
   }, []);
-
-  useEffect(() => { load(); }, [load]);
 
   async function handleDelete(id: string) {
     setDeletingId(id);

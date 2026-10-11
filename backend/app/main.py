@@ -1,23 +1,22 @@
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
+import app.domains.auth.model_auth  # noqa: F401
+import app.domains.catalog.model_catalog  # noqa: F401
+import app.domains.categories.model_categories  # noqa: F401
+import app.domains.configurator.model_configurator  # noqa: F401
+import app.domains.orders.model_orders  # noqa: F401
+import app.domains.reading.model_reading  # noqa: F401
+import app.domains.users.model_users  # noqa: F401
 from app.api.v1.router import api_v1_router
 from app.config import settings
 from app.database import engine
-
-import app.domains.auth.model_auth  # noqa: F401
-import app.domains.users.model_users  # noqa: F401
-import app.domains.catalog.model_catalog  # noqa: F401
-import app.domains.categories.model_categories  # noqa: F401
-import app.domains.orders.model_orders  # noqa: F401
-import app.domains.configurator.model_configurator  # noqa: F401
-import app.domains.reading.model_reading  # noqa: F401
 
 
 @asynccontextmanager

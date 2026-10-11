@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -159,7 +159,7 @@ async def save_refresh_token(user_id: uuid.UUID, token_hash: str, expires_at: da
         user_id=user_id,
         token_hash=token_hash,
         expires_at=expires_at,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     db.add(record)
     await db.commit()
@@ -252,13 +252,13 @@ async def cast_vote(round_id: uuid.UUID, option_id: uuid.UUID, user_id: uuid.UUI
     existing = await get_user_vote(round_id, user_id, db)
     if existing:
         existing.option_id = option_id
-        existing.created_at = datetime.now(timezone.utc)
+        existing.created_at = datetime.now(UTC)
         await db.commit()
         await db.refresh(existing)
         return existing
 
     vote = ReadingVote(
-        round_id=round_id, option_id=option_id, user_id=user_id, created_at=datetime.now(timezone.utc)
+        round_id=round_id, option_id=option_id, user_id=user_id, created_at=datetime.now(UTC)
     )
     db.add(vote)
     await db.commit()

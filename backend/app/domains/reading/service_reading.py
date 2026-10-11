@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import secrets
 import uuid
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 from fastapi import HTTPException, UploadFile, status
@@ -99,7 +99,7 @@ async def refresh_tokens(refresh_token: str, db: AsyncSession) -> ReadingTokenRe
 
     token_hash = hashlib.sha256(refresh_token.encode()).hexdigest()
     record = await get_refresh_token_record(token_hash, db)
-    if not record or record.revoked or record.expires_at < datetime.now(timezone.utc):
+    if not record or record.revoked or record.expires_at < datetime.now(UTC):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired refresh token")
 
     await revoke_token(record, db)
@@ -250,7 +250,7 @@ async def get_team_member_profile(
 
 
 def _today() -> date:
-    return datetime.now(timezone.utc).date()
+    return datetime.now(UTC).date()
 
 
 def _effective_streak(user: ReadingUser, today: date) -> int:
@@ -386,14 +386,14 @@ async def _store_refresh_token(user_id: uuid.UUID, token: str, db: AsyncSession)
     from app.domains.reading.repo_reading import save_refresh_token
 
     token_hash = hashlib.sha256(token.encode()).hexdigest()
-    expires_at = datetime.now(timezone.utc) + timedelta(days=settings.refresh_token_expire_days)
+    expires_at = datetime.now(UTC) + timedelta(days=settings.refresh_token_expire_days)
     await save_refresh_token(user_id, token_hash, expires_at, db)
 
 
 async def create_vote_round_for_admin(payload: ReadingVoteRoundCreate, db: AsyncSession) -> ReadingVoteRoundResponse:
     from app.domains.reading.repo_reading import create_vote_round
 
-    opens_at = datetime.now(timezone.utc)
+    opens_at = datetime.now(UTC)
     closes_at = opens_at + timedelta(hours=payload.duration_hours)
     round_ = await create_vote_round(payload.stage, opens_at, closes_at, payload.options, db)
     return await _to_vote_round_response(round_, None, db)
@@ -414,7 +414,7 @@ async def cast_vote_for_user(
     round_ = await get_vote_round_by_id(uuid.UUID(round_id), db)
     if not round_:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vote round not found")
-    if datetime.now(timezone.utc) >= round_.closes_at:
+    if datetime.now(UTC) >= round_.closes_at:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Voting has closed for this round")
     if payload.option_id not in {option.id for option in round_.options}:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="That option isn't part of this round")
@@ -430,7 +430,7 @@ async def _to_vote_round_response(
 
     tally = await get_vote_tally(round_.id, db)
     total_votes = sum(tally.values())
-    is_open = datetime.now(timezone.utc) < round_.closes_at
+    is_open = datetime.now(UTC) < round_.closes_at
 
     options = [
         ReadingVoteOptionResult(
@@ -481,7 +481,7 @@ async def list_semester_rounds_for_user(db: AsyncSession) -> list[ReadingSemeste
 
 
 def _to_semester_round_response(round_: ReadingSemesterRound) -> ReadingSemesterRoundResponse:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if now < round_.starts_at:
         status_ = "locked"
     elif now > round_.ends_at:

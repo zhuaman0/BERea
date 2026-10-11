@@ -4,7 +4,7 @@ import uuid
 
 from fastapi import APIRouter
 
-from app.dependencies import DbSession, CurrentUserId
+from app.dependencies import CurrentUserId, DbSession
 from app.domains.configurator import service_configurator
 from app.domains.configurator.schema_configurator import SavedDesignCreate, SavedDesignOut, SavedDesignUpdate
 

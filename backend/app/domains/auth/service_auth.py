@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from urllib.parse import urlencode
 
 import httpx
@@ -25,12 +25,12 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 
 def create_access_token(user_id: str) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
+    expire = datetime.now(UTC) + timedelta(minutes=settings.access_token_expire_minutes)
     return jwt.encode({"sub": user_id, "exp": expire}, settings.secret_key, algorithm=settings.algorithm)
 
 
 def create_refresh_token(user_id: str) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(days=settings.refresh_token_expire_days)
+    expire = datetime.now(UTC) + timedelta(days=settings.refresh_token_expire_days)
     return jwt.encode({"sub": user_id, "exp": expire, "type": "refresh"}, settings.secret_key, algorithm=settings.algorithm)
 
 
@@ -76,7 +76,7 @@ async def refresh_tokens(refresh_token: str, db: AsyncSession) -> TokenResponse:
     from app.domains.auth.repo_auth import get_refresh_token_record, revoke_token
 
     record = await get_refresh_token_record(refresh_token, db)
-    if not record or record.revoked or record.expires_at < datetime.now(timezone.utc):
+    if not record or record.revoked or record.expires_at < datetime.now(UTC):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired refresh token")
 
     await revoke_token(record, db)
@@ -96,11 +96,11 @@ async def revoke_refresh_token(refresh_token: str, db: AsyncSession) -> None:
 
 
 async def _store_refresh_token(user_id: str, token: str, db: AsyncSession) -> None:
-    from app.domains.auth.repo_auth import save_refresh_token
-
     import hashlib
+
+    from app.domains.auth.repo_auth import save_refresh_token
     token_hash = hashlib.sha256(token.encode()).hexdigest()
-    expires_at = datetime.now(timezone.utc) + timedelta(days=settings.refresh_token_expire_days)
+    expires_at = datetime.now(UTC) + timedelta(days=settings.refresh_token_expire_days)
     await save_refresh_token(user_id, token_hash, expires_at, db)
 
 

@@ -5,7 +5,13 @@ from fastapi.responses import RedirectResponse
 
 from app.config import settings
 from app.dependencies import DbSession
-from app.domains.auth.schema_auth import GoogleAuthorizeResponse, LoginRequest, RefreshRequest, RegisterRequest, TokenResponse
+from app.domains.auth.schema_auth import (
+    GoogleAuthorizeResponse,
+    LoginRequest,
+    RefreshRequest,
+    RegisterRequest,
+    TokenResponse,
+)
 
 router = APIRouter()
 

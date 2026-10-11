@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Menu, X, Moon, Sun } from "lucide-react";
 
@@ -13,19 +13,28 @@ const NAV_LINKS = [
 const LANGS = ["EN", "KK", "RU"] as const;
 type Lang = (typeof LANGS)[number];
 
+function subscribeToTheme(onChange: () => void): () => void {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+  return () => observer.disconnect();
+}
+
+function readIsLight(): boolean {
+  return document.documentElement.classList.contains("light");
+}
+
+function readIsLightOnServer(): boolean {
+  return false;
+}
+
 export function LandingNav() {
   const [menuOpen, setMenuOpen] = useState(false);
   // Dark is default — track when user has opted into LIGHT
-  const [isLight, setIsLight]   = useState(false);
+  const isLight = useSyncExternalStore(subscribeToTheme, readIsLight, readIsLightOnServer);
   const [lang, setLang]         = useState<Lang>("EN");
-
-  useEffect(() => {
-    setIsLight(document.documentElement.classList.contains("light"));
-  }, []);
 
   function toggleTheme() {
     const next = !isLight;
-    setIsLight(next);
     document.documentElement.classList.toggle("light", next);
     localStorage.setItem("berea-theme", next ? "light" : "dark");
   }

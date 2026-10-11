@@ -7,7 +7,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domains.orders import repo_orders
 from app.domains.orders.schema_orders import OrderCreate, OrderOut, OrderStatusUpdate
-from app.domains.orders.model_orders import OrderStatus
 
 
 async def place_order(db: AsyncSession, data: OrderCreate, user_id: uuid.UUID | None = None) -> OrderOut:

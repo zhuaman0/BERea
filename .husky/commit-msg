@@ -1,0 +1,19 @@
+msg_file="$1"
+subject=$(head -n 1 "$msg_file")
+
+case "$subject" in
+  Merge\ *|Revert\ *|fixup!\ *|squash!\ *) exit 0 ;;
+esac
+
+pattern='^(feat|fix|refactor|chore|docs|test|style)(\([a-z0-9-]+\))?: .+'
+if ! printf '%s' "$subject" | grep -Eq "$pattern"; then
+  echo "✖ Commit message must look like: <type>(<scope>): <short description>"
+  echo "  types: feat, fix, refactor, chore, docs, test, style — e.g. feat(reading): add cover builder"
+  echo "  got:   $subject"
+  exit 1
+fi
+
+if [ "${#subject}" -gt 72 ]; then
+  echo "✖ Commit subject is ${#subject} characters; keep it at 72 or fewer."
+  exit 1
+fi
