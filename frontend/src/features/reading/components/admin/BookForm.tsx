@@ -2,78 +2,131 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ImageIcon, Upload, X } from "lucide-react";
-import { useReadingBookStore } from "@/features/reading/store/useReadingBookStore";
-import type { AdminBook } from "@/features/reading/bookTypes";
-
-function genId(): string {
-  return typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : Math.random().toString(36).slice(2);
-}
+import { ImageIcon, Loader2, Upload, X } from "lucide-react";
+import { isApiError } from "@/features/auth/utils";
+import { bookCoverSrc, readingBookApi } from "@/features/reading/bookApi";
+import { resizeImage } from "@/features/reading/lib/resizeImage";
+import type { ReadingBook } from "@/features/reading/bookTypes";
 
 const inputBase =
   "w-full rounded-lg border border-[var(--rd-border)] bg-[var(--rd-ink)] px-3 py-2.5 text-sm text-[var(--rd-text)] placeholder:text-[var(--rd-text-muted)] transition-colors focus:outline-none focus:border-[var(--rd-accent-from)]";
 
+function isUploadedCover(coverUrl: string | null): boolean {
+  return coverUrl?.startsWith("/") ?? false;
+}
+
 interface BookFormProps {
-  initialBook?: AdminBook;
+  initialBook?: ReadingBook;
 }
 
 export function BookForm({ initialBook }: BookFormProps) {
   const router = useRouter();
-  const upsertBook = useReadingBookStore((s) => s.upsertBook);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const previewObjectUrl = useRef<string | null>(null);
 
+  const initialCover = initialBook?.cover_url ?? null;
   const [title, setTitle] = useState(initialBook?.title ?? "");
   const [description, setDescription] = useState(initialBook?.description ?? "");
-  const [coverUrl, setCoverUrl] = useState<string | null>(initialBook?.coverUrl ?? null);
+  const [externalUrl, setExternalUrl] = useState(initialCover && !isUploadedCover(initialCover) ? initialCover : "");
+  const [previewSrc, setPreviewSrc] = useState<string | null>(bookCoverSrc(initialCover));
+  const [pendingImage, setPendingImage] = useState<Blob | null>(null);
+  const [coverCleared, setCoverCleared] = useState(false);
+  const [previewFailed, setPreviewFailed] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function showPreview(src: string | null) {
+    if (previewObjectUrl.current) URL.revokeObjectURL(previewObjectUrl.current);
+    previewObjectUrl.current = src?.startsWith("blob:") ? src : null;
+    setPreviewSrc(src);
+    setPreviewFailed(false);
+  }
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       setError("That file isn't an image.");
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => setCoverUrl(typeof reader.result === "string" ? reader.result : null);
-    reader.readAsDataURL(file);
+    setError(null);
+    setIsProcessing(true);
+    try {
+      const resized = await resizeImage(file);
+      setPendingImage(resized);
+      setExternalUrl("");
+      setCoverCleared(false);
+      showPreview(URL.createObjectURL(resized));
+    } catch {
+      setError("Couldn't read that image. Try a JPEG or PNG.");
+    } finally {
+      setIsProcessing(false);
+    }
   }
 
-  function handleSave() {
+  function handleUrlChange(value: string) {
+    setExternalUrl(value);
+    setPendingImage(null);
+    setCoverCleared(!value.trim());
+    showPreview(value.trim() || null);
+  }
+
+  function handleRemoveCover() {
+    setExternalUrl("");
+    setPendingImage(null);
+    setCoverCleared(true);
+    showPreview(null);
+  }
+
+  async function handleSave() {
     if (!title.trim()) {
       setError("Give the book a title.");
       return;
     }
+    if (externalUrl.trim() && previewFailed) {
+      setError("That cover URL doesn't load an image. Paste a direct image link or upload a file.");
+      return;
+    }
     setError(null);
+    setIsSaving(true);
+    try {
+      const body = { title: title.trim(), description: description.trim(), cover_url: externalUrl.trim() || null };
+      const saved = initialBook ? await readingBookApi.update(initialBook.id, body) : await readingBookApi.create(body);
 
-    const book: AdminBook = {
-      id:          initialBook?.id ?? genId(),
-      title:       title.trim(),
-      description: description.trim(),
-      coverUrl,
-    };
-    upsertBook(book);
-    router.push("/reading/admin/books");
+      if (pendingImage) {
+        await readingBookApi.uploadCover(saved.id, pendingImage);
+      } else if (coverCleared && initialCover) {
+        await readingBookApi.removeCover(saved.id);
+      }
+      router.push("/reading/admin/books");
+    } catch (err) {
+      setError(isApiError(err) ? err.detail : "Couldn't save the book. Please try again.");
+      setIsSaving(false);
+    }
   }
 
+  const isBusy = isProcessing || isSaving;
+
   return (
-    <div className="mx-auto w-full max-w-2xl px-8 py-10 lg:px-12">
+    <div className="w-full max-w-3xl px-4 py-6 sm:px-8 sm:py-10 lg:px-12">
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-semibold text-[var(--rd-text)]">
           {initialBook ? "Edit book" : "Add a book"}
         </h1>
         <button
           onClick={handleSave}
-          className="rd-accent-gradient rounded-lg px-5 py-2.5 text-sm font-semibold text-black/85 transition-opacity hover:opacity-90"
+          disabled={isBusy}
+          className="rd-accent-gradient inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-black/85 transition-opacity hover:opacity-90 disabled:opacity-60"
         >
-          Save book
+          {isSaving && <Loader2 size={15} className="animate-spin" />}
+          {isSaving ? "Saving…" : "Save book"}
         </button>
       </div>
 
       {error && (
-        <p className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm text-red-400">
+        <p role="alert" className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm text-red-400">
           {error}
         </p>
       )}
@@ -82,16 +135,20 @@ export function BookForm({ initialBook }: BookFormProps) {
         <div className="shrink-0">
           <p className="mb-2 text-xs text-[var(--rd-text-muted)]">Cover</p>
           <div className="relative flex h-48 w-36 items-center justify-center overflow-hidden rounded-xl border border-[var(--rd-border)] bg-[var(--rd-ink)]">
-            {coverUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element -- arbitrary admin-supplied cover (data URL or external URL), not a static asset
-              <img src={coverUrl} alt="" className="h-full w-full object-cover" />
+            {isProcessing ? (
+              <Loader2 size={24} className="animate-spin text-[var(--rd-text-muted)]" />
+            ) : previewSrc && !previewFailed ? (
+              // eslint-disable-next-line @next/next/no-img-element -- admin-supplied cover from our API, a blob preview, or an external URL
+              <img src={previewSrc} alt="" onError={() => setPreviewFailed(true)} className="h-full w-full object-cover" />
+            ) : previewFailed ? (
+              <p className="px-3 text-center text-[11px] leading-snug text-red-400">Couldn&apos;t load that image</p>
             ) : (
               <ImageIcon size={28} className="text-[var(--rd-text-muted)]" />
             )}
-            {coverUrl && (
+            {previewSrc && !isProcessing && (
               <button
                 type="button"
-                onClick={() => setCoverUrl(null)}
+                onClick={handleRemoveCover}
                 aria-label="Remove cover"
                 className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80"
               >
@@ -110,11 +167,15 @@ export function BookForm({ initialBook }: BookFormProps) {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="mt-2 flex w-36 items-center justify-center gap-1.5 rounded-lg border border-[var(--rd-border)] px-3 py-1.5 text-xs font-medium text-[var(--rd-text)] transition-colors hover:border-[var(--rd-accent-from)]"
+            disabled={isBusy}
+            className="mt-2 flex w-36 items-center justify-center gap-1.5 rounded-lg border border-[var(--rd-border)] px-3 py-1.5 text-xs font-medium text-[var(--rd-text)] transition-colors hover:border-[var(--rd-accent-from)] disabled:opacity-60"
           >
             <Upload size={12} />
             Upload
           </button>
+          <p className="mt-1.5 w-36 text-[10px] leading-snug text-[var(--rd-text-muted)]">
+            Any size — it&apos;s shrunk automatically before saving.
+          </p>
         </div>
 
         <div className="flex flex-1 flex-col gap-4">
@@ -133,12 +194,12 @@ export function BookForm({ initialBook }: BookFormProps) {
 
           <div className="flex flex-col gap-1.5">
             <label htmlFor="book-cover-url" className="text-xs text-[var(--rd-text-muted)]">
-              Or paste a cover image URL
+              Or paste a direct cover image URL
             </label>
             <input
               id="book-cover-url"
-              value={coverUrl && !coverUrl.startsWith("data:") ? coverUrl : ""}
-              onChange={(e) => setCoverUrl(e.target.value || null)}
+              value={externalUrl}
+              onChange={(e) => handleUrlChange(e.target.value)}
               placeholder="https://example.com/cover.jpg"
               className={inputBase}
             />

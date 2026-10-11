@@ -2,13 +2,15 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile, status
 from pydantic import ValidationError
 
 from app.dependencies import CurrentUserId, DbSession
 from app.domains.reading.schema_reading import (
     ReadingAppSettingsResponse,
     ReadingAppSettingsUpdate,
+    ReadingBookResponse,
+    ReadingBookWrite,
     ReadingLoginRequest,
     ReadingRefreshRequest,
     ReadingRegisterRequest,
@@ -205,3 +207,65 @@ async def update_settings(
     from app.domains.reading.service_reading import update_app_settings_for_admin
 
     return await update_app_settings_for_admin(payload, db)
+
+
+@router.get("/books", response_model=list[ReadingBookResponse])
+async def list_books(user_id: CurrentUserId, db: DbSession) -> list[ReadingBookResponse]:
+    from app.domains.reading.service_reading import list_books_for_user
+
+    return await list_books_for_user(db)
+
+
+@router.post("/books", response_model=ReadingBookResponse, status_code=201)
+async def create_book(payload: ReadingBookWrite, user_id: CurrentUserId, db: DbSession) -> ReadingBookResponse:
+    from app.domains.reading.service_reading import create_book_for_admin
+
+    return await create_book_for_admin(payload, db)
+
+
+@router.get("/books/{book_id}", response_model=ReadingBookResponse)
+async def get_book(book_id: str, user_id: CurrentUserId, db: DbSession) -> ReadingBookResponse:
+    from app.domains.reading.service_reading import get_book_for_user
+
+    return await get_book_for_user(book_id, db)
+
+
+@router.patch("/books/{book_id}", response_model=ReadingBookResponse)
+async def update_book(
+    book_id: str, payload: ReadingBookWrite, user_id: CurrentUserId, db: DbSession
+) -> ReadingBookResponse:
+    from app.domains.reading.service_reading import update_book_for_admin
+
+    return await update_book_for_admin(book_id, payload, db)
+
+
+@router.delete("/books/{book_id}", status_code=204)
+async def delete_book(book_id: str, user_id: CurrentUserId, db: DbSession) -> None:
+    from app.domains.reading.service_reading import delete_book_for_admin
+
+    await delete_book_for_admin(book_id, db)
+
+
+@router.put("/books/{book_id}/cover", response_model=ReadingBookResponse)
+async def upload_book_cover(
+    book_id: str, user_id: CurrentUserId, db: DbSession, cover: UploadFile = File(...)
+) -> ReadingBookResponse:
+    from app.domains.reading.service_reading import upload_book_cover_for_admin
+
+    return await upload_book_cover_for_admin(book_id, cover, db)
+
+
+@router.delete("/books/{book_id}/cover", response_model=ReadingBookResponse)
+async def remove_book_cover(book_id: str, user_id: CurrentUserId, db: DbSession) -> ReadingBookResponse:
+    from app.domains.reading.service_reading import remove_book_cover_for_admin
+
+    return await remove_book_cover_for_admin(book_id, db)
+
+
+# Public: <img> tags can't send a bearer token, and book covers aren't sensitive.
+@router.get("/books/{book_id}/cover")
+async def get_book_cover(book_id: str, db: DbSession) -> Response:
+    from app.domains.reading.service_reading import get_book_cover_image
+
+    image, mime = await get_book_cover_image(book_id, db)
+    return Response(content=image, media_type=mime, headers={"Cache-Control": "public, max-age=31536000, immutable"})

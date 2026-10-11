@@ -5,10 +5,11 @@ from datetime import date, datetime, timezone
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, undefer
 
 from app.domains.reading.model_reading import (
     ReadingAppSettings,
+    ReadingBook,
     ReadingRefreshToken,
     ReadingSemesterRound,
     ReadingTeam,
@@ -315,3 +316,65 @@ async def set_leaderboard_enabled(enabled: bool, db: AsyncSession) -> ReadingApp
     await db.commit()
     await db.refresh(settings_row)
     return settings_row
+
+
+async def list_books(db: AsyncSession) -> list[ReadingBook]:
+    result = await db.execute(select(ReadingBook).order_by(ReadingBook.created_at.desc()))
+    return list(result.scalars().all())
+
+
+async def get_book(book_id: uuid.UUID, db: AsyncSession) -> ReadingBook | None:
+    result = await db.execute(select(ReadingBook).where(ReadingBook.id == book_id))
+    return result.scalar_one_or_none()
+
+
+async def get_book_with_cover(book_id: uuid.UUID, db: AsyncSession) -> ReadingBook | None:
+    result = await db.execute(
+        select(ReadingBook).where(ReadingBook.id == book_id).options(undefer(ReadingBook.cover_image))
+    )
+    return result.scalar_one_or_none()
+
+
+async def create_book(title: str, description: str, cover_url: str | None, db: AsyncSession) -> ReadingBook:
+    book = ReadingBook(title=title, description=description, cover_url=cover_url)
+    db.add(book)
+    await db.commit()
+    await db.refresh(book)
+    return book
+
+
+async def update_book(
+    book: ReadingBook, *, title: str, description: str, cover_url: str | None, db: AsyncSession
+) -> ReadingBook:
+    book.title = title
+    book.description = description
+    if cover_url is not None:
+        book.cover_url = cover_url
+        book.cover_image = None
+        book.cover_mime = None
+    await db.commit()
+    await db.refresh(book)
+    return book
+
+
+async def set_book_cover_image(book: ReadingBook, image: bytes, mime: str, db: AsyncSession) -> ReadingBook:
+    book.cover_image = image
+    book.cover_mime = mime
+    book.cover_url = None
+    await db.commit()
+    await db.refresh(book)
+    return book
+
+
+async def clear_book_cover(book: ReadingBook, db: AsyncSession) -> ReadingBook:
+    book.cover_image = None
+    book.cover_mime = None
+    book.cover_url = None
+    await db.commit()
+    await db.refresh(book)
+    return book
+
+
+async def delete_book(book: ReadingBook, db: AsyncSession) -> None:
+    await db.delete(book)
+    await db.commit()
