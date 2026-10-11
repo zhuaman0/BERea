@@ -5,6 +5,7 @@ export interface ReadingUser {
   team_name:      string | null;
   token_balance:  number;
   current_streak: number;
+  is_admin:       boolean;
   created_at:     string;
 }
 

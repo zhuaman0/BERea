@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { Pencil, Plus, Trash2 } from "lucide-react";
-import { useReadingQuizStore } from "@/features/reading/store/useReadingQuizStore";
+import { isApiError } from "@/features/auth/utils";
+import { readingQuizApi } from "@/features/reading/quizApi";
 import type { Quiz } from "@/features/reading/quizTypes";
 
 function countdownLabel(scheduledFor: string | null): string {
@@ -55,11 +57,31 @@ function QuizCard({ quiz, onDelete }: { quiz: Quiz; onDelete: (id: string) => vo
 }
 
 export default function ReadingAdminOverviewPage() {
-  const quizzes = useReadingQuizStore((s) => s.quizzes);
-  const deleteQuiz = useReadingQuizStore((s) => s.deleteQuiz);
+  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    readingQuizApi
+      .list()
+      .then(setQuizzes)
+      .catch((err) => setError(isApiError(err) ? err.detail : "Couldn't load quizzes."))
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  async function deleteQuiz(id: string) {
+    const quiz = quizzes.find((q) => q.id === id);
+    if (!window.confirm(`Delete "${quiz?.title ?? "this quiz"}"? This can't be undone.`)) return;
+    try {
+      await readingQuizApi.remove(id);
+      setQuizzes((prev) => prev.filter((q) => q.id !== id));
+    } catch (err) {
+      setError(isApiError(err) ? err.detail : "Couldn't delete that quiz.");
+    }
+  }
 
   return (
-    <div className="mx-auto w-full max-w-[1600px] px-8 py-10 lg:px-12">
+    <div className="w-full px-4 py-6 sm:px-8 sm:py-10 lg:px-12">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-2xl font-semibold text-[var(--rd-text)]">Quizzes</h1>
@@ -76,7 +98,19 @@ export default function ReadingAdminOverviewPage() {
         </Link>
       </div>
 
-      {quizzes.length === 0 ? (
+      {error && (
+        <p role="alert" className="mt-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm text-red-400">
+          {error}
+        </p>
+      )}
+
+      {isLoading ? (
+        <div className="mt-8 flex flex-wrap gap-5">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-44 w-64 animate-pulse rounded-2xl border border-[var(--rd-border)] bg-[var(--rd-panel)]" />
+          ))}
+        </div>
+      ) : quizzes.length === 0 ? (
         <div className="mt-8 rounded-2xl border border-dashed border-[var(--rd-border)] p-10 text-center">
           <p className="text-sm text-[var(--rd-text-muted)]">
             No quizzes yet — create one to start building questions.

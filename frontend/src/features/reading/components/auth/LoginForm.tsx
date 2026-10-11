@@ -57,7 +57,7 @@ export function ReadingLoginForm() {
 
       const placeholder: ReadingUser = {
         id: "", email: result.data.email, full_name: "",
-        team_name: null, token_balance: 0, current_streak: 0, created_at: new Date().toISOString(),
+        team_name: null, token_balance: 0, current_streak: 0, is_admin: false, created_at: new Date().toISOString(),
       };
       setSession(placeholder, access_token, refresh_token);
       document.cookie = "nats-session=1; path=/; SameSite=Lax";
