@@ -13,8 +13,8 @@ import {
 import { Flame, Mail, UserRound } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import type { ReadingTeamMember } from "@/features/reading/authTypes";
-import { KitPattern } from "./KitPattern";
-import { initials, type TeamKit } from "./teamKit";
+import { PagePattern } from "./PagePattern";
+import { initials, toRoman, type TeamTheme } from "./teamTheme";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 const TILT_SPRING = { stiffness: 220, damping: 18, mass: 0.6 };
@@ -32,12 +32,12 @@ function streakStatus(member: ReadingTeamMember): string {
 interface PlayerCardProps {
   member:     ReadingTeamMember;
   rosterSlot: number;
-  kit:        TeamKit;
+  theme:      TeamTheme;
   isMe:       boolean;
   index:      number;
 }
 
-export function PlayerCard({ member, rosterSlot, kit, isMe, index }: PlayerCardProps) {
+export function PlayerCard({ member, rosterSlot, theme, isMe, index }: PlayerCardProps) {
   const reduceMotion = useReducedMotion();
   const pointerX = useMotionValue(0.5);
   const pointerY = useMotionValue(0.5);
@@ -74,7 +74,7 @@ export function PlayerCard({ member, rosterSlot, kit, isMe, index }: PlayerCardP
         style={reduceMotion ? undefined : { rotateX, rotateY }}
         className={cn(
           "group relative flex h-full flex-col overflow-hidden rounded-2xl border bg-[var(--rd-ink)] transition-shadow duration-300 [transform-style:preserve-3d] hover:shadow-[0_24px_60px_-20px_rgba(0,0,0,0.8)]",
-          isMe ? kit.border : "border-[var(--rd-border)]"
+          isMe ? theme.border : "border-[var(--rd-border)]"
         )}
       >
         <motion.div
@@ -83,13 +83,16 @@ export function PlayerCard({ member, rosterSlot, kit, isMe, index }: PlayerCardP
           className="pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
         />
 
-        <div className={cn("relative h-24 overflow-hidden", kit.bandSoft)}>
-          <KitPattern kit={kit} className="inset-0 h-full w-full" />
-          <span aria-hidden="true" className="absolute -bottom-5 right-4 select-none font-display text-[88px] font-bold leading-none text-transparent [-webkit-text-stroke:1.5px_rgba(255,255,255,0.14)]">
-            {String(rosterSlot).padStart(2, "0")}
+        <div className={cn("relative h-24 overflow-hidden", theme.bandSoft)}>
+          <PagePattern theme={theme} className="inset-0 h-full w-full" />
+          <span aria-hidden="true" className="absolute right-5 top-3 select-none text-right">
+            <span className="block text-[9px] font-semibold uppercase tracking-[0.3em] text-[var(--rd-text-muted)]/70">Chapter</span>
+            <span className="block font-serif text-[52px] font-bold italic leading-none text-transparent [-webkit-text-stroke:1.2px_rgba(255,255,255,0.22)]">
+              {toRoman(rosterSlot)}
+            </span>
           </span>
           {isMe && (
-            <span className={cn("absolute left-4 top-4 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.15em] text-black/80", kit.band)}>
+            <span className={cn("absolute left-4 top-4 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.15em] text-black/80", theme.band)}>
               You
             </span>
           )}
@@ -99,7 +102,7 @@ export function PlayerCard({ member, rosterSlot, kit, isMe, index }: PlayerCardP
           <span
             className={cn(
               "-mt-7 flex h-14 w-14 items-center justify-center rounded-full text-base font-bold text-black/80 ring-4 ring-[var(--rd-ink)]",
-              kit.band
+              theme.band
             )}
           >
             {initials(member.full_name)}

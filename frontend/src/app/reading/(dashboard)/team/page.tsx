@@ -10,7 +10,7 @@ import { OpenSpotCard } from "@/features/reading/components/team/OpenSpotCard";
 import { PlayerCard } from "@/features/reading/components/team/PlayerCard";
 import { SeasonClock } from "@/features/reading/components/team/SeasonClock";
 import { TeamHero } from "@/features/reading/components/team/TeamHero";
-import { TEAM_KIT } from "@/features/reading/components/team/teamKit";
+import { TEAM_THEME } from "@/features/reading/components/team/teamTheme";
 import { readingAuthApi } from "@/features/reading/authApi";
 import { readingSemesterApi } from "@/features/reading/semesterApi";
 import { isApiError } from "@/features/auth/utils";
@@ -102,7 +102,7 @@ export default function ReadingTeamPage() {
           <>
             <TeamHero
               team={team}
-              kit={TEAM_KIT}
+              theme={TEAM_THEME}
               roundLabel={activeRound ? `${activeRound.label} in play` : null}
               onRename={handleRename}
               onAddStudents={openAddModal}
@@ -115,7 +115,7 @@ export default function ReadingTeamPage() {
             <div className="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
               <section>
                 <div className="mb-4 flex items-baseline justify-between">
-                  <h2 className="font-display text-xl font-semibold text-[var(--rd-text)]">The lineup</h2>
+                  <h2 className="font-display text-xl font-semibold text-[var(--rd-text)]">The reading circle</h2>
                   <span className="text-sm text-[var(--rd-text-muted)]">
                     {team.members.length}/{team.max_members} players
                   </span>
@@ -126,7 +126,7 @@ export default function ReadingTeamPage() {
                       key={member.id}
                       member={member}
                       rosterSlot={i + 1}
-                      kit={TEAM_KIT}
+                      theme={TEAM_THEME}
                       isMe={member.id === user?.id}
                       index={i}
                     />
