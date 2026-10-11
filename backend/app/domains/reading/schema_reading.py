@@ -63,6 +63,36 @@ class ReadingTeamMemberResponse(BaseModel):
     created_at: datetime
 
 
+CoverColor = Literal["ember", "crimson", "ocean", "forest", "plum", "midnight", "parchment"]
+CoverPattern = Literal["plain", "stripes", "dots", "lines"]
+CoverEmblem = Literal["monogram", "flame", "star", "feather", "crown", "moon"]
+CoverAnimation = Literal["float", "glow", "still"]
+
+
+class ReadingTeamCover(BaseModel):
+    title: str | None
+    color: CoverColor
+    pattern: CoverPattern
+    emblem: CoverEmblem
+    animation: CoverAnimation
+
+
+class ReadingTeamCoverUpdate(BaseModel):
+    title: str | None = Field(default=None, max_length=24)
+    color: CoverColor
+    pattern: CoverPattern
+    emblem: CoverEmblem
+    animation: CoverAnimation
+
+    @field_validator("title")
+    @classmethod
+    def _blank_title_is_none(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        stripped = value.strip()
+        return stripped or None
+
+
 class ReadingTeamResponse(BaseModel):
     id: uuid.UUID
     name: str
@@ -70,12 +100,14 @@ class ReadingTeamResponse(BaseModel):
     max_members: int = TEAM_MAX_MEMBERS
     place: int
     teams_total: int
+    cover: ReadingTeamCover
 
 
 class ReadingTeamSummaryResponse(BaseModel):
     id: uuid.UUID
     name: str
     member_count: int
+    cover: ReadingTeamCover
 
 
 class ReadingTeamMemberProfileResponse(BaseModel):

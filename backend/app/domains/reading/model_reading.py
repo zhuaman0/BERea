@@ -14,6 +14,11 @@ class ReadingTeam(TimestampMixin, Base):
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(120), unique=True, nullable=False, index=True)
+    cover_title: Mapped[str | None] = mapped_column(String(24), nullable=True)
+    cover_color: Mapped[str] = mapped_column(String(20), default="ember", server_default="ember", nullable=False)
+    cover_pattern: Mapped[str] = mapped_column(String(20), default="plain", server_default="plain", nullable=False)
+    cover_emblem: Mapped[str] = mapped_column(String(20), default="monogram", server_default="monogram", nullable=False)
+    cover_animation: Mapped[str] = mapped_column(String(20), default="float", server_default="float", nullable=False)
 
     members: Mapped[list[ReadingUser]] = relationship(back_populates="team")
 
