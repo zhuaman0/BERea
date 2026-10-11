@@ -27,6 +27,9 @@ export function BookForm({ initialBook }: BookFormProps) {
   const initialCover = initialBook?.cover_url ?? null;
   const [title, setTitle] = useState(initialBook?.title ?? "");
   const [description, setDescription] = useState(initialBook?.description ?? "");
+  const [language, setLanguage] = useState(initialBook?.language ?? "");
+  const [genre, setGenre] = useState(initialBook?.genre ?? "");
+  const [pageCount, setPageCount] = useState(initialBook?.page_count ? String(initialBook.page_count) : "");
   const [externalUrl, setExternalUrl] = useState(initialCover && !isUploadedCover(initialCover) ? initialCover : "");
   const [previewSrc, setPreviewSrc] = useState<string | null>(bookCoverSrc(initialCover));
   const [pendingImage, setPendingImage] = useState<Blob | null>(null);
@@ -85,6 +88,10 @@ export function BookForm({ initialBook }: BookFormProps) {
       setError("Give the book a title.");
       return;
     }
+    if (pageCount.trim() && !(Number.isInteger(Number(pageCount)) && Number(pageCount) > 0)) {
+      setError("Pages must be a whole number above 0.");
+      return;
+    }
     if (externalUrl.trim() && previewFailed) {
       setError("That cover URL doesn't load an image. Paste a direct image link or upload a file.");
       return;
@@ -92,7 +99,15 @@ export function BookForm({ initialBook }: BookFormProps) {
     setError(null);
     setIsSaving(true);
     try {
-      const body = { title: title.trim(), description: description.trim(), cover_url: externalUrl.trim() || null };
+      const pages = pageCount.trim() ? Number(pageCount) : null;
+      const body = {
+        title:       title.trim(),
+        description: description.trim(),
+        cover_url:   externalUrl.trim() || null,
+        language:    language.trim() || null,
+        genre:       genre.trim() || null,
+        page_count:  pages,
+      };
       const saved = initialBook ? await readingBookApi.update(initialBook.id, body) : await readingBookApi.create(body);
 
       if (pendingImage) {
@@ -191,6 +206,51 @@ export function BookForm({ initialBook }: BookFormProps) {
               className={inputBase}
             />
           </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_120px]">
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="book-language" className="text-xs text-[var(--rd-text-muted)]">
+                Language
+              </label>
+              <input
+                id="book-language"
+                value={language}
+                onChange={(e) => setLanguage(e.target.value)}
+                placeholder="e.g. Kazakh"
+                className={inputBase}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="book-genre" className="text-xs text-[var(--rd-text-muted)]">
+                Genre
+              </label>
+              <input
+                id="book-genre"
+                value={genre}
+                onChange={(e) => setGenre(e.target.value)}
+                placeholder="e.g. Classic"
+                className={inputBase}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="book-pages" className="text-xs text-[var(--rd-text-muted)]">
+                Pages
+              </label>
+              <input
+                id="book-pages"
+                type="number"
+                min={1}
+                inputMode="numeric"
+                value={pageCount}
+                onChange={(e) => setPageCount(e.target.value)}
+                placeholder="312"
+                className={inputBase}
+              />
+            </div>
+          </div>
+          <p className="-mt-2 text-[11px] text-[var(--rd-text-muted)]">
+            Language and genre should match the vote options exactly, so this book shows up in the right book round.
+          </p>
 
           <div className="flex flex-col gap-1.5">
             <label htmlFor="book-cover-url" className="text-xs text-[var(--rd-text-muted)]">

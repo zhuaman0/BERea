@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Trophy, Flame, BookOpen, Zap } from "lucide-react";
 import { BookOfMonthCard } from "@/features/reading/components/BookOfMonthCard";
+import { LogPagesModal } from "@/features/reading/components/LogPagesModal";
+import { readingBookOfMonthApi, type BookOfMonthResult } from "@/features/reading/bookApi";
 import { QuizNightCard } from "@/features/reading/components/QuizNightCard";
 import { StatStrip, type StatStripItem } from "@/features/reading/components/StatStrip";
 import { MOCK_DASHBOARD } from "@/features/reading/mockData";
@@ -28,11 +30,19 @@ export default function ReadingHomePage() {
   const { user, updateUser } = useReadingAuthStore();
   const [team, setTeam] = useState<ReadingTeam | null>(null);
   const [rounds, setRounds] = useState<SemesterRound[]>([]);
+  const [bookOfMonth, setBookOfMonth] = useState<BookOfMonthResult | null>(null);
+  const [isBookLoading, setIsBookLoading] = useState(true);
+  const [isLogOpen, setIsLogOpen] = useState(false);
 
   useEffect(() => {
     readingAuthApi.me().then(updateUser).catch(() => { /* keep whatever we already have */ });
     readingAuthApi.myTeam().then(setTeam).catch(() => { /* stat tile shows a dash until it loads */ });
     readingSemesterApi.listRounds().then(setRounds).catch(() => { /* same */ });
+    readingBookOfMonthApi
+      .get()
+      .then(setBookOfMonth)
+      .catch(() => { /* card shows its "not chosen yet" state */ })
+      .finally(() => setIsBookLoading(false));
   }, [updateUser]);
 
   // Book of the month and quiz night have no backend yet. Everything in the
@@ -104,10 +114,13 @@ export default function ReadingHomePage() {
           <p className="mt-2 text-base text-[var(--rd-text-muted)]">{dashboard.greetingNote}</p>
         </div>
         <div className="relative flex shrink-0 gap-3">
-          <button className="rd-accent-gradient rounded-lg px-5 py-2.5 text-sm font-semibold text-black/85">
-            Continue reading
-          </button>
-          <button className="rounded-lg border border-[var(--rd-border)] px-5 py-2.5 text-sm text-[var(--rd-text)]">
+          <button
+            type="button"
+            onClick={() => setIsLogOpen(true)}
+            disabled={!bookOfMonth}
+            title={bookOfMonth ? undefined : "Available once the book of the month is chosen"}
+            className="rd-accent-gradient rounded-lg px-5 py-2.5 text-sm font-semibold text-black/85 transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+          >
             Log pages
           </button>
         </div>
@@ -115,7 +128,7 @@ export default function ReadingHomePage() {
 
       <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-[1.6fr_1fr]">
         <motion.div {...fadeUp(0.08)} whileHover={HOVER_LIFT}>
-          <BookOfMonthCard book={dashboard.book} />
+          <BookOfMonthCard result={bookOfMonth} isLoading={isBookLoading} onLogPages={() => setIsLogOpen(true)} />
         </motion.div>
         <motion.div {...fadeUp(0.14)} whileHover={HOVER_LIFT}>
           <QuizNightCard quizNight={dashboard.quizNight} />
@@ -125,6 +138,9 @@ export default function ReadingHomePage() {
       <motion.div {...fadeUp(0.22)}>
         <StatStrip items={statItems} />
       </motion.div>
+      {isLogOpen && bookOfMonth && (
+        <LogPagesModal current={bookOfMonth} onClose={() => setIsLogOpen(false)} onSaved={setBookOfMonth} />
+      )}
     </div>
   );
 }

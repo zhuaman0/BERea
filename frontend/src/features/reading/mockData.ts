@@ -12,16 +12,6 @@ import type {
 export const MOCK_DASHBOARD: ReadingDashboard = {
   greetingName: "Alish",
   greetingNote: "Keep reading — every page you log adds to your team's score.",
-  book: {
-    id:                  "book-oct",
-    title:               "Шоко әлем 2",
-    monthLabel:          "October",
-    chosenByPercent:     41,
-    pageCount:           312,
-    yourPage:            150,
-    yourProgressPercent: 48,
-    teamAveragePercent:  51,
-  },
   quizNight: {
     daysLeft:    6,
     hoursLeft:   23,

@@ -2,8 +2,9 @@ import { readingApiClient } from "@/features/reading/lib/readingApiClient";
 import type { VoteRound, VoteStage } from "@/features/reading/types";
 
 export interface VoteRoundCreateInput {
-  stage: VoteStage;
-  options: string[];
+  stage:          VoteStage;
+  options?:       string[];
+  book_ids?:      string[];
   duration_hours: number;
 }
 
