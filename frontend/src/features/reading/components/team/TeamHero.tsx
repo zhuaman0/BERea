@@ -6,21 +6,21 @@ import { Pencil, UserPlus } from "lucide-react";
 import { isApiError } from "@/features/auth/utils";
 import { cn } from "@/shared/lib/utils";
 import type { ReadingTeam } from "@/features/reading/authTypes";
-import { KitPattern } from "./KitPattern";
-import { TeamJersey } from "./TeamJersey";
-import { initials, type TeamKit } from "./teamKit";
+import { PagePattern } from "./PagePattern";
+import { TeamBook } from "./TeamBook";
+import { initials, type TeamTheme } from "./teamTheme";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 interface TeamHeroProps {
   team:          ReadingTeam;
-  kit:           TeamKit;
+  theme:      TeamTheme;
   roundLabel:    string | null;
   onRename:      (name: string) => Promise<void>;
   onAddStudents: () => void;
 }
 
-export function TeamHero({ team, kit, roundLabel, onRename, onAddStudents }: TeamHeroProps) {
+export function TeamHero({ team, theme, roundLabel, onRename, onAddStudents }: TeamHeroProps) {
   const [isRenaming, setIsRenaming] = useState(false);
   const [draftName, setDraftName] = useState(team.name);
   const [renameError, setRenameError] = useState<string | null>(null);
@@ -54,11 +54,11 @@ export function TeamHero({ team, kit, roundLabel, onRename, onAddStudents }: Tea
       initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: EASE }}
-      className={cn("relative overflow-hidden rounded-[28px] border bg-[var(--rd-panel)]", kit.border)}
+      className={cn("relative overflow-hidden rounded-[28px] border bg-[var(--rd-panel)]", theme.border)}
     >
-      <KitPattern kit={kit} className="inset-y-0 right-0 h-full w-2/3 [mask-image:linear-gradient(to_left,black,transparent)]" />
-      <div className={cn("pointer-events-none absolute -left-24 -top-32 h-96 w-96 rounded-full blur-3xl", kit.glow)} />
-      <div className={cn("pointer-events-none absolute -bottom-40 right-10 h-80 w-80 rounded-full opacity-60 blur-3xl", kit.glow)} />
+      <PagePattern theme={theme} className="inset-y-0 right-0 h-full w-2/3 [mask-image:linear-gradient(to_left,black,transparent)]" />
+      <div className={cn("pointer-events-none absolute -left-24 -top-32 h-96 w-96 rounded-full blur-3xl", theme.glow)} />
+      <div className={cn("pointer-events-none absolute -bottom-40 right-10 h-80 w-80 rounded-full opacity-60 blur-3xl", theme.glow)} />
 
       <div className="relative flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:gap-8 sm:p-8 lg:gap-12 lg:p-10">
         <motion.div
@@ -71,7 +71,7 @@ export function TeamHero({ team, kit, roundLabel, onRename, onAddStudents }: Tea
             animate={{ y: [0, -8, 0], rotate: [-1.5, 1.5, -1.5] }}
             transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
           >
-            <TeamJersey kit={kit} monogram={initials(team.name)} className="w-full drop-shadow-2xl" />
+            <TeamBook theme={theme} monogram={initials(team.name)} className="w-full drop-shadow-2xl" />
           </motion.div>
         </motion.div>
 
@@ -80,9 +80,9 @@ export function TeamHero({ team, kit, roundLabel, onRename, onAddStudents }: Tea
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2, ease: EASE }}
-            className={cn("text-[11px] font-semibold uppercase tracking-[0.28em]", kit.text)}
+            className={cn("text-[11px] font-semibold uppercase tracking-[0.28em]", theme.text)}
           >
-            Your team{roundLabel ? ` · ${roundLabel}` : ""}
+            Your reading team{roundLabel ? ` · ${roundLabel}` : ""}
           </motion.p>
 
           {isRenaming ? (
@@ -146,7 +146,7 @@ export function TeamHero({ team, kit, roundLabel, onRename, onAddStudents }: Tea
                   title={member.full_name}
                   className={cn(
                     "-ml-1.5 flex h-10 w-10 items-center justify-center rounded-full text-xs font-bold text-black/80 ring-[3px] ring-[var(--rd-panel)] first:ml-0",
-                    kit.band
+                    theme.band
                   )}
                 >
                   {initials(member.full_name)}
@@ -183,7 +183,7 @@ export function TeamHero({ team, kit, roundLabel, onRename, onAddStudents }: Tea
         >
           <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--rd-text-muted)]">Place</p>
           <p className="font-display text-[112px] font-bold leading-none tracking-tighter text-[var(--rd-text)]">
-            <span className={kit.text}>#</span>
+            <span className={theme.text}>#</span>
             {team.place}
           </p>
           <p className="mt-1 text-sm text-[var(--rd-text-muted)]">
