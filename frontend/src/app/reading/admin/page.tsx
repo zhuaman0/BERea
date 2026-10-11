@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { Route } from "next";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Loader2, Pencil, Plus, Radio, Trash2 } from "lucide-react";
 import { isApiError } from "@/features/auth/utils";
 import { readingQuizApi } from "@/features/reading/quizApi";
+import { readingLiveQuizApi } from "@/features/reading/liveQuizApi";
 import type { Quiz } from "@/features/reading/quizTypes";
 
 function countdownLabel(scheduledFor: string | null): string {
@@ -19,7 +21,14 @@ function countdownLabel(scheduledFor: string | null): string {
   return days > 0 ? `${days}d ${hours}h ${minutes}min` : `${hours}h ${minutes}min`;
 }
 
-function QuizCard({ quiz, onDelete }: { quiz: Quiz; onDelete: (id: string) => void }) {
+interface QuizCardProps {
+  quiz:       Quiz;
+  onDelete:   (id: string) => void;
+  onGoLive:   (id: string) => void;
+  isStarting: boolean;
+}
+
+function QuizCard({ quiz, onDelete, onGoLive, isStarting }: QuizCardProps) {
   return (
     <div className="group relative flex w-64 shrink-0 flex-col justify-between rounded-2xl border border-[var(--rd-border)] bg-[var(--rd-panel)] p-6">
       <div>
@@ -34,6 +43,16 @@ function QuizCard({ quiz, onDelete }: { quiz: Quiz; onDelete: (id: string) => vo
         <p className="text-xs text-[var(--rd-text-muted)]">
           {quiz.status === "scheduled" ? "Until next game" : "Draft"}
         </p>
+        <button
+          type="button"
+          onClick={() => onGoLive(quiz.id)}
+          disabled={isStarting || quiz.questions.length === 0}
+          title={quiz.questions.length === 0 ? "Add questions first" : undefined}
+          className="rd-accent-gradient mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold text-black/85 transition-opacity hover:opacity-90 disabled:opacity-50"
+        >
+          {isStarting ? <Loader2 size={14} className="animate-spin" /> : <Radio size={14} />}
+          Go live
+        </button>
       </div>
 
       <div className="absolute right-3 top-3 hidden items-center gap-1 group-hover:flex">
@@ -60,6 +79,8 @@ export default function ReadingAdminOverviewPage() {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [startingId, setStartingId] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     readingQuizApi
@@ -68,6 +89,18 @@ export default function ReadingAdminOverviewPage() {
       .catch((err) => setError(isApiError(err) ? err.detail : "Couldn't load quizzes."))
       .finally(() => setIsLoading(false));
   }, []);
+
+  async function goLive(id: string) {
+    setStartingId(id);
+    setError(null);
+    try {
+      const session = await readingLiveQuizApi.start(id);
+      router.push(`/reading/admin/live/${session.id}` as Route);
+    } catch (err) {
+      setError(isApiError(err) ? err.detail : "Couldn't start the live quiz.");
+      setStartingId(null);
+    }
+  }
 
   async function deleteQuiz(id: string) {
     const quiz = quizzes.find((q) => q.id === id);
@@ -119,7 +152,7 @@ export default function ReadingAdminOverviewPage() {
       ) : (
         <div className="mt-8 flex flex-wrap gap-5">
           {quizzes.map((quiz) => (
-            <QuizCard key={quiz.id} quiz={quiz} onDelete={deleteQuiz} />
+            <QuizCard key={quiz.id} quiz={quiz} onDelete={deleteQuiz} onGoLive={goLive} isStarting={startingId === quiz.id} />
           ))}
         </div>
       )}

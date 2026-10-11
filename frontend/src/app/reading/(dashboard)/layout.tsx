@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ReadingTopbar } from "@/features/reading/components/ReadingTopbar";
+import { LiveQuizBanner } from "@/features/reading/components/quiz/LiveQuizBanner";
 import { ReadingSidebar } from "@/features/reading/components/ReadingSidebar";
 import { ReadingStageGuard } from "@/features/reading/components/auth/ReadingStageGuard";
 import { readingAuthApi } from "@/features/reading/authApi";
@@ -28,6 +29,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="flex h-screen flex-col overflow-hidden">
       <ReadingStageGuard mode="require-team" />
       <ReadingTopbar seasonLabel={SEASON_LABEL} roundIndex={roundIndex} roundTotal={roundTotal} totalPoints={0} />
+      <LiveQuizBanner />
 
       <div className="flex min-h-0 flex-1">
         <ReadingSidebar team={team} />
