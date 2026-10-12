@@ -1,4 +1,4 @@
-import type { ApiError } from "@/types/api";
+import type { ApiError } from "@berea/core";
 
 export function isApiError(err: unknown): err is ApiError {
   return (

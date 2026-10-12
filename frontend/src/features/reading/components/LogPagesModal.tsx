@@ -5,9 +5,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
-import { Modal } from "@/features/reading/components/Modal";
+import { Modal } from "@berea/ui-kit";
 import { isApiError } from "@/features/auth/utils";
-import { readingBookOfMonthApi, type BookOfMonthResult } from "@/features/reading/bookApi";
+import { readingBookOfMonthApi, type BookOfMonthResult } from "@berea/api";
 
 interface LogPagesModalProps {
   current: BookOfMonthResult;

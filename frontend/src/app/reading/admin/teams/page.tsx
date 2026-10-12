@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { readingAuthApi } from "@/features/reading/authApi";
+import { readingAuthApi } from "@berea/api";
 import { isApiError } from "@/features/auth/utils";
-import type { ReadingTeamSummary } from "@/features/reading/authTypes";
+import type { ReadingTeamSummary } from "@berea/api";
 
 export default function ReadingAdminTeamsPage() {
   const [teams, setTeams] = useState<ReadingTeamSummary[]>([]);

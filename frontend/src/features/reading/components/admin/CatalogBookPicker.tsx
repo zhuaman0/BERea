@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { Check, ImageIcon } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
-import { bookCoverSrc } from "@/features/reading/bookApi";
-import type { ReadingBook } from "@/features/reading/bookTypes";
+import { bookCoverSrc } from "@berea/api";
+import type { ReadingBook } from "@berea/api";
 
 function matches(value: string | null, winner: string | null): boolean {
   return !winner || value?.trim().toLowerCase() === winner.trim().toLowerCase();

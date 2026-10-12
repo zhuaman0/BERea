@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { MotionConfig } from "framer-motion";
 import { BookOpen, Flame, Trophy } from "lucide-react";
-import { StatStrip, type StatStripItem } from "@/features/reading/components/StatStrip";
+import { StatStrip, type StatStripItem } from "@berea/ui-kit";
 import { AddStudentsModal } from "@/features/reading/components/team/AddStudentsModal";
 import { CoverBuilderModal } from "@/features/reading/components/team/CoverBuilderModal";
 import { CheckInPanel } from "@/features/reading/components/team/CheckInPanel";
@@ -12,12 +12,12 @@ import { PlayerCard } from "@/features/reading/components/team/PlayerCard";
 import { SeasonClock } from "@/features/reading/components/team/SeasonClock";
 import { TeamHero } from "@/features/reading/components/team/TeamHero";
 import { TEAM_THEME } from "@/features/reading/components/team/teamTheme";
-import { readingAuthApi } from "@/features/reading/authApi";
-import { readingSemesterApi } from "@/features/reading/semesterApi";
+import { readingAuthApi } from "@berea/api";
+import { readingSemesterApi } from "@berea/api";
 import { isApiError } from "@/features/auth/utils";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
-import type { ReadingTeam } from "@/features/reading/authTypes";
-import type { SemesterRound } from "@/features/reading/types";
+import type { ReadingTeam } from "@berea/api";
+import type { SemesterRound } from "@berea/api";
 
 function TeamPageSkeleton() {
   return (

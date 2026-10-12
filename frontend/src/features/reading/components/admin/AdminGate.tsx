@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ShieldAlert } from "lucide-react";
-import { readingAuthApi } from "@/features/reading/authApi";
+import { readingAuthApi } from "@berea/api";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
 
 type GateStatus = "checking" | "allowed" | "denied";

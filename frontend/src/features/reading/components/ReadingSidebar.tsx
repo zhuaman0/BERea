@@ -15,8 +15,8 @@ import {
   LogOut,
   type LucideIcon,
 } from "lucide-react";
-import type { ReadingTeam } from "@/features/reading/authTypes";
-import { readingSettingsApi } from "@/features/reading/settingsApi";
+import type { ReadingTeam } from "@berea/api";
+import { readingSettingsApi } from "@berea/api";
 
 interface NavItem {
   href:  string;

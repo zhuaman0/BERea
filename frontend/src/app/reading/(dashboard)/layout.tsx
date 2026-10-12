@@ -5,10 +5,10 @@ import { ReadingTopbar } from "@/features/reading/components/ReadingTopbar";
 import { LiveQuizBanner } from "@/features/reading/components/quiz/LiveQuizBanner";
 import { ReadingSidebar } from "@/features/reading/components/ReadingSidebar";
 import { ReadingStageGuard } from "@/features/reading/components/auth/ReadingStageGuard";
-import { readingAuthApi } from "@/features/reading/authApi";
-import { readingSemesterApi } from "@/features/reading/semesterApi";
-import type { ReadingTeam } from "@/features/reading/authTypes";
-import type { SemesterRound } from "@/features/reading/types";
+import { readingAuthApi } from "@berea/api";
+import { readingSemesterApi } from "@berea/api";
+import type { ReadingTeam } from "@berea/api";
+import type { SemesterRound } from "@berea/api";
 
 const SEASON_LABEL = "Fall semester 2026";
 

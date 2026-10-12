@@ -3,9 +3,9 @@
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { isApiError } from "@/features/auth/utils";
-import { readingQuizApi } from "@/features/reading/quizApi";
+import { readingQuizApi } from "@berea/api";
 import { QuizBuilder } from "@/features/reading/components/admin/QuizBuilder";
-import type { Quiz } from "@/features/reading/quizTypes";
+import type { Quiz } from "@berea/api";
 
 interface PageProps {
   params: Promise<{ id: string }>;

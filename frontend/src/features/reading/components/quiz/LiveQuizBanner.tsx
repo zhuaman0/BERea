@@ -6,8 +6,8 @@ import type { Route } from "next";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Radio } from "lucide-react";
-import { readingLiveQuizApi } from "@/features/reading/liveQuizApi";
-import { usePolling } from "./liveQuizUi";
+import { readingLiveQuizApi } from "@berea/api";
+import { usePolling } from "@berea/core";
 
 const LIVE_CHECK_INTERVAL_MS = 5000;
 

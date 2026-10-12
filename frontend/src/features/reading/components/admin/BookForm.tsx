@@ -3,13 +3,14 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ImageIcon, Loader2, Upload, X } from "lucide-react";
+import { Button, Input } from "@berea/ui-kit";
 import { isApiError } from "@/features/auth/utils";
-import { bookCoverSrc, readingBookApi } from "@/features/reading/bookApi";
+import { bookCoverSrc, readingBookApi } from "@berea/api";
 import { resizeImage } from "@/features/reading/lib/resizeImage";
-import type { ReadingBook } from "@/features/reading/bookTypes";
+import type { ReadingBook } from "@berea/api";
 
-const inputBase =
-  "w-full rounded-lg border border-[var(--rd-border)] bg-[var(--rd-ink)] px-3 py-2.5 text-sm text-[var(--rd-text)] placeholder:text-[var(--rd-text-muted)] transition-colors focus:outline-none focus:border-[var(--rd-accent-from)]";
+const textareaBase =
+  "h-12 w-full rounded-xl border border-[var(--rd-border)] bg-[var(--rd-panel)] px-3.5 py-3 text-sm text-[var(--rd-text)] placeholder:text-[var(--rd-text-muted)] outline-none transition-colors focus:border-[var(--rd-accent-from)] resize-none";
 
 function isUploadedCover(coverUrl: string | null): boolean {
   return coverUrl?.startsWith("/") ?? false;
@@ -130,14 +131,9 @@ export function BookForm({ initialBook }: BookFormProps) {
         <h1 className="font-display text-2xl font-semibold text-[var(--rd-text)]">
           {initialBook ? "Edit book" : "Add a book"}
         </h1>
-        <button
-          onClick={handleSave}
-          disabled={isBusy}
-          className="rd-accent-gradient inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-black/85 transition-opacity hover:opacity-90 disabled:opacity-60"
-        >
-          {isSaving && <Loader2 size={15} className="animate-spin" />}
+        <Button onClick={handleSave} disabled={isBusy} loading={isSaving}>
           {isSaving ? "Saving…" : "Save book"}
-        </button>
+        </Button>
       </div>
 
       {error && (
@@ -179,94 +175,66 @@ export function BookForm({ initialBook }: BookFormProps) {
             onChange={handleFileChange}
             className="hidden"
           />
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            size="sm"
             onClick={() => fileInputRef.current?.click()}
             disabled={isBusy}
-            className="mt-2 flex w-36 items-center justify-center gap-1.5 rounded-lg border border-[var(--rd-border)] px-3 py-1.5 text-xs font-medium text-[var(--rd-text)] transition-colors hover:border-[var(--rd-accent-from)] disabled:opacity-60"
+            className="mt-2 w-36 text-xs"
           >
             <Upload size={12} />
             Upload
-          </button>
+          </Button>
           <p className="mt-1.5 w-36 text-[10px] leading-snug text-[var(--rd-text-muted)]">
             Any size — it&apos;s shrunk automatically before saving.
           </p>
         </div>
 
         <div className="flex flex-1 flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="book-title" className="text-xs text-[var(--rd-text-muted)]">
-              Title
-            </label>
-            <input
-              id="book-title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Шоко әлем 2"
-              className={inputBase}
-            />
-          </div>
+          <Input
+            label="Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="e.g. Шоко әлем 2"
+          />
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_120px]">
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="book-language" className="text-xs text-[var(--rd-text-muted)]">
-                Language
-              </label>
-              <input
-                id="book-language"
-                value={language}
-                onChange={(e) => setLanguage(e.target.value)}
-                placeholder="e.g. Kazakh"
-                className={inputBase}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="book-genre" className="text-xs text-[var(--rd-text-muted)]">
-                Genre
-              </label>
-              <input
-                id="book-genre"
-                value={genre}
-                onChange={(e) => setGenre(e.target.value)}
-                placeholder="e.g. Classic"
-                className={inputBase}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="book-pages" className="text-xs text-[var(--rd-text-muted)]">
-                Pages
-              </label>
-              <input
-                id="book-pages"
-                type="number"
-                min={1}
-                inputMode="numeric"
-                value={pageCount}
-                onChange={(e) => setPageCount(e.target.value)}
-                placeholder="312"
-                className={inputBase}
-              />
-            </div>
+            <Input
+              label="Language"
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+              placeholder="e.g. Kazakh"
+            />
+            <Input
+              label="Genre"
+              value={genre}
+              onChange={(e) => setGenre(e.target.value)}
+              placeholder="e.g. Classic"
+            />
+            <Input
+              label="Pages"
+              type="number"
+              min={1}
+              inputMode="numeric"
+              value={pageCount}
+              onChange={(e) => setPageCount(e.target.value)}
+              placeholder="312"
+            />
           </div>
           <p className="-mt-2 text-[11px] text-[var(--rd-text-muted)]">
             Language and genre should match the vote options exactly, so this book shows up in the right book round.
           </p>
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="book-cover-url" className="text-xs text-[var(--rd-text-muted)]">
-              Or paste a direct cover image URL
-            </label>
-            <input
-              id="book-cover-url"
-              value={externalUrl}
-              onChange={(e) => handleUrlChange(e.target.value)}
-              placeholder="https://example.com/cover.jpg"
-              className={inputBase}
-            />
-          </div>
+          <Input
+            label="Or paste a direct cover image URL"
+            value={externalUrl}
+            onChange={(e) => handleUrlChange(e.target.value)}
+            placeholder="https://example.com/cover.jpg"
+          />
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="book-description" className="text-xs text-[var(--rd-text-muted)]">
+            <label htmlFor="book-description" className="text-sm font-medium text-[var(--rd-text)]">
               Description
             </label>
             <textarea
@@ -275,7 +243,7 @@ export function BookForm({ initialBook }: BookFormProps) {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="What's this book about?"
               rows={6}
-              className={`${inputBase} resize-none`}
+              className={textareaBase}
             />
           </div>
         </div>

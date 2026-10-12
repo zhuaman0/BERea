@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 import type { Route } from "next";
 import { Loader2, Pencil, Plus, Radio, Trash2 } from "lucide-react";
 import { isApiError } from "@/features/auth/utils";
-import { readingQuizApi } from "@/features/reading/quizApi";
-import { readingLiveQuizApi } from "@/features/reading/liveQuizApi";
-import type { Quiz } from "@/features/reading/quizTypes";
+import { readingQuizApi } from "@berea/api";
+import { readingLiveQuizApi } from "@berea/api";
+import type { Quiz } from "@berea/api";
 
 function countdownLabel(scheduledFor: string | null): string {
   if (!scheduledFor) return "Not scheduled";

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import type { TeamCover } from "@/features/reading/authTypes";
+import type { TeamCover } from "@berea/api";
 import { COVER_COLORS } from "./coverOptions";
 import { TeamBook } from "./TeamBook";
 

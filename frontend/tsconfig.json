@@ -23,7 +23,9 @@
       "@berea/core":   ["../packages/core/src/index.ts"],
       "@berea/core/*": ["../packages/core/src/*"],
       "@berea/ui-kit":   ["../packages/ui-kit/src/index.ts"],
-      "@berea/ui-kit/*": ["../packages/ui-kit/src/*"]
+      "@berea/ui-kit/*": ["../packages/ui-kit/src/*"],
+      "@berea/api":      ["../packages/api/src/index.ts"],
+      "@berea/api/*":    ["../packages/api/src/*"]
     }
   },
   "include": [

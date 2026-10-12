@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { readingSettingsApi } from "@/features/reading/settingsApi";
+import { readingSettingsApi } from "@berea/api";
 import { isApiError } from "@/features/auth/utils";
 
 export default function ReadingAdminSettingsPage() {

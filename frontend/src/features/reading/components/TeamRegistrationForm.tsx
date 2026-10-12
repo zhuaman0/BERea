@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { CheckCircle2, FileText, Loader2, Upload } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
-import { readingRegistrationApi } from "@/features/reading/registrationApi";
+import { readingRegistrationApi } from "@berea/api";
 import { isApiError } from "@/features/auth/utils";
 
 const REGISTRATION_FEE = "3 000 ₸";

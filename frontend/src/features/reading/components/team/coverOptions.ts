@@ -1,5 +1,5 @@
 import { Crown, Feather, Flame, Moon, Star, Type, type LucideIcon } from "lucide-react";
-import type { CoverAnimation, CoverColor, CoverEmblem, CoverPattern } from "@/features/reading/authTypes";
+import type { CoverAnimation, CoverColor, CoverEmblem, CoverPattern } from "@berea/api";
 
 interface CoverInk {
   fill:    string;

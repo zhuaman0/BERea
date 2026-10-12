@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { MOCK_PROFILE } from "@/features/reading/mockData";
-import { readingAuthApi } from "@/features/reading/authApi";
-import { readingSemesterApi } from "@/features/reading/semesterApi";
+import { readingAuthApi } from "@berea/api";
+import { readingSemesterApi } from "@berea/api";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
-import type { ReadingTeam } from "@/features/reading/authTypes";
-import type { SemesterRound } from "@/features/reading/types";
+import type { ReadingTeam } from "@berea/api";
+import type { SemesterRound } from "@berea/api";
 
 const MATE_COLORS = ["var(--rd-mate-1)", "var(--rd-mate-2)", "var(--rd-mate-3)", "var(--rd-mate-4)"];
 

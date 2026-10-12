@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import type { ReadingUser } from "@/features/reading/authTypes";
+import type { ReadingUser } from "@berea/api";
 
 interface ReadingAuthState {
   user:            ReadingUser | null;

@@ -3,9 +3,9 @@
 import { useId } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/shared/lib/utils";
-import type { TeamCover } from "@/features/reading/authTypes";
+import type { TeamCover } from "@berea/api";
 import { COVER_COLORS, COVER_EMBLEMS } from "./coverOptions";
-import { initials } from "./teamTheme";
+import { initials } from "@berea/core";
 
 export const BOOK_COVER = { x: 40, y: 20, width: 116, height: 152, radius: 8 } as const;
 export const BOOK_SPINE_WIDTH = 16;
