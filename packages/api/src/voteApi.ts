@@ -1,5 +1,5 @@
-import { readingApiClient } from "@/features/reading/lib/readingApiClient";
-import type { VoteRound, VoteStage } from "@/features/reading/types";
+import { readingApiClient } from "./readingApiClient";
+import type { VoteRound, VoteStage } from "./types";
 
 export interface VoteRoundCreateInput {
   stage:          VoteStage;

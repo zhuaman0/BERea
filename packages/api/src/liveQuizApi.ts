@@ -1,4 +1,4 @@
-import { readingApiClient } from "@/features/reading/lib/readingApiClient";
+import { readingApiClient } from "./readingApiClient";
 
 export type LivePhase = "lobby" | "question" | "reveal" | "finished";
 

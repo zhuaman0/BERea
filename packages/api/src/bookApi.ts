@@ -1,6 +1,6 @@
-import { API_BASE } from "@/shared/lib/createApiClient";
-import { readingApiClient } from "@/features/reading/lib/readingApiClient";
-import type { ReadingBook, ReadingBookWrite } from "@/features/reading/bookTypes";
+import { API_BASE } from "@berea/core";
+import { readingApiClient } from "./readingApiClient";
+import type { ReadingBook, ReadingBookWrite } from "./bookTypes";
 
 export const readingBookApi = {
   list: () => readingApiClient.get<ReadingBook[]>("/v1/reading/books"),

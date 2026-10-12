@@ -1,4 +1,4 @@
-import { readingApiClient } from "@/features/reading/lib/readingApiClient";
+import { readingApiClient } from "./readingApiClient";
 import type {
   ReadingLoginRequest,
   ReadingRegisterRequest,
@@ -10,7 +10,7 @@ import type {
   ReadingTokenResponse,
   ReadingUser,
   TeamCover,
-} from "@/features/reading/authTypes";
+} from "./authTypes";
 
 export const readingAuthApi = {
   login: (body: ReadingLoginRequest) =>

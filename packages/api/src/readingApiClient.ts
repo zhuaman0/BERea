@@ -1,6 +1,6 @@
 "use client";
 
-import { createApiClient } from "@/shared/lib/createApiClient";
+import { createApiClient } from "@berea/core";
 
 export const readingApiClient = createApiClient({
   sessionStorageKey: "nats-auth",

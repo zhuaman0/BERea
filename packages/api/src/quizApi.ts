@@ -1,5 +1,5 @@
-import { readingApiClient } from "@/features/reading/lib/readingApiClient";
-import type { Quiz, QuizStatus } from "@/features/reading/quizTypes";
+import { readingApiClient } from "./readingApiClient";
+import type { Quiz, QuizStatus } from "./quizTypes";
 
 interface QuizAnswerDto {
   id:         string;
