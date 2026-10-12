@@ -4,9 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, LayoutGroup, MotionConfig, motion } from "framer-motion";
 import { Check, Clock, Globe, Tags, BookOpen } from "lucide-react";
 import { VoteOptionCard } from "@/features/reading/components/VoteOptionCard";
-import { readingVoteApi } from "@/features/reading/voteApi";
+import { readingVoteApi } from "@berea/api";
 import { isApiError } from "@/features/auth/utils";
-import type { VoteRound, VoteStage } from "@/features/reading/types";
+import type { VoteRound, VoteStage } from "@berea/api";
 
 const STAGE_META: Record<VoteStage, { label: string; icon: typeof Globe }> = {
   language: { label: "Language", icon: Globe },

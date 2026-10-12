@@ -4,7 +4,7 @@ import { useSyncExternalStore } from "react";
 import { motion } from "framer-motion";
 import { Hourglass } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
-import type { SemesterRound } from "@/features/reading/types";
+import type { SemesterRound } from "@berea/api";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 const MINUTE_MS = 60_000;

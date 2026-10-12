@@ -5,8 +5,8 @@ import { motion } from "framer-motion";
 import { SemesterMapCard } from "@/features/reading/components/SemesterMapCard";
 import { BonusTasksCard } from "@/features/reading/components/BonusTasksCard";
 import { MOCK_DASHBOARD } from "@/features/reading/mockData";
-import { readingSemesterApi } from "@/features/reading/semesterApi";
-import type { SemesterRound } from "@/features/reading/types";
+import { readingSemesterApi } from "@berea/api";
+import type { SemesterRound } from "@berea/api";
 
 const RULES = [
   {

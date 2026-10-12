@@ -16,13 +16,3 @@ export const TEAM_THEME: TeamTheme = {
   border:      "border-[var(--rd-accent-from)]/25",
   patternLine: "stroke-[var(--rd-accent-from)]/[0.10]",
 };
-
-export function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase();
-}

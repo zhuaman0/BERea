@@ -1,28 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
-import { AnimatePresence, motion, useSpring, useTransform } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { AnimatedNumber, ProgressBar } from "@berea/ui-kit";
 import { Check, Crown, Loader2 } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
-import type { VoteOptionResult } from "@/features/reading/types";
+import type { VoteOptionResult } from "@berea/api";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
-
-interface AnimatedNumberProps {
-  value: number;
-}
-
-/** Springs from the previous value to the new one, so tallies visibly count when votes land. */
-function AnimatedNumber({ value }: AnimatedNumberProps) {
-  const spring = useSpring(0, { stiffness: 140, damping: 22 });
-  const display = useTransform(spring, (v) => Math.round(v));
-
-  useEffect(() => {
-    spring.set(value);
-  }, [spring, value]);
-
-  return <motion.span>{display}</motion.span>;
-}
 
 interface VoteOptionCardProps {
   option:      VoteOptionResult;
@@ -127,14 +111,7 @@ export function VoteOptionCard({
           <AnimatedNumber value={option.vote_count} /> {option.vote_count === 1 ? "vote" : "votes"}
         </span>
       </div>
-      <div className="relative mt-1 h-1.5 w-full overflow-hidden rounded-full bg-[var(--rd-border)]">
-        <motion.div
-          className="h-full rounded-full rd-accent-gradient"
-          initial={{ width: 0 }}
-          animate={{ width: `${option.percent}%` }}
-          transition={{ type: "spring", stiffness: 90, damping: 20, delay: 0.15 + index * 0.05 }}
-        />
-      </div>
+      <ProgressBar percent={option.percent} size="sm" delay={0.15 + index * 0.05} className="relative mt-1" />
 
       {canVote && (
         <motion.button

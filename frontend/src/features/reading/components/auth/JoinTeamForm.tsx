@@ -4,7 +4,7 @@ import { useState } from "react";
 import { z } from "zod";
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/shared/lib/utils";
-import { readingAuthApi } from "@/features/reading/authApi";
+import { readingAuthApi } from "@berea/api";
 import { isApiError } from "@/features/auth/utils";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
 

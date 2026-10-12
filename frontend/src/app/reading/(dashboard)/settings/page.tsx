@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
-import { readingAuthApi } from "@/features/reading/authApi";
+import { readingAuthService } from "@berea/api";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
 
 export default function ReadingSettingsPage() {
@@ -10,13 +10,8 @@ export default function ReadingSettingsPage() {
   const { user, refreshToken, clearSession } = useReadingAuthStore();
 
   async function handleLogout() {
-    try {
-      if (refreshToken) await readingAuthApi.logout(refreshToken);
-    } catch {
-      // clear local session even if server revocation fails
-    }
+    await readingAuthService.logout(refreshToken);
     clearSession();
-    document.cookie = "nats-session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
     router.push("/reading/login");
   }
 

@@ -6,8 +6,11 @@
   "types": "./src/index.ts",
   "exports": {
     ".": {
-      "import":  "./src/index.ts",
+      "import": "./src/index.ts",
       "default": "./src/index.ts"
     }
+  },
+  "peerDependencies": {
+    "react": "^19"
   }
 }

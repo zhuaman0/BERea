@@ -2,13 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Crown, Medal, Trophy, Users } from "lucide-react";
-import { readingAuthApi } from "@/features/reading/authApi";
-import { readingSettingsApi } from "@/features/reading/settingsApi";
+import { readingAuthApi } from "@berea/api";
+import { readingSettingsApi } from "@berea/api";
 import { isApiError } from "@/features/auth/utils";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
 import { CoverShowcase } from "@/features/reading/components/team/CoverShowcase";
 import { TeamBook } from "@/features/reading/components/team/TeamBook";
-import type { ReadingTeamSummary } from "@/features/reading/authTypes";
+import type { ReadingTeamSummary } from "@berea/api";
 
 const MEDAL_STYLE: Record<number, { icon: typeof Trophy; ring: string; iconColor: string }> = {
   1: { icon: Crown,  ring: "ring-2 ring-[var(--rd-accent-from)]", iconColor: "text-[var(--rd-accent-from)]" },

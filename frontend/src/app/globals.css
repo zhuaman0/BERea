@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* Shared packages live outside frontend/, so Tailwind must be told to scan them for classes. */
+@source "../../../packages/ui-kit/src";
 
 /* ─── BERea Design Tokens (dark-first) ────────────────────────────────────── */
 @theme inline {

@@ -4,9 +4,10 @@ import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { ArrowLeft, Flame, Mail } from "lucide-react";
-import { readingAuthApi } from "@/features/reading/authApi";
+import { readingAuthApi } from "@berea/api";
+import { initials } from "@berea/core";
 import { isApiError } from "@/features/auth/utils";
-import type { ReadingTeamMemberProfile } from "@/features/reading/authTypes";
+import type { ReadingTeamMemberProfile } from "@berea/api";
 
 function memberSinceLabel(iso: string): string {
   if (!iso) return "";
@@ -14,15 +15,6 @@ function memberSinceLabel(iso: string): string {
   return date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
 }
 
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase();
-}
 
 interface PageProps {
   params: Promise<{ memberId: string }>;

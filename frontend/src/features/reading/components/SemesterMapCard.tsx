@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { cn } from "@/shared/lib/utils";
-import type { SemesterRound } from "@/features/reading/types";
+import type { SemesterRound } from "@berea/api";
 
 interface SemesterMapCardProps {
   rounds: SemesterRound[];

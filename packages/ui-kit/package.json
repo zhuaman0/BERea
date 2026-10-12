@@ -6,12 +6,14 @@
   "types": "./src/index.ts",
   "exports": {
     ".": {
-      "import":  "./src/index.ts",
+      "import": "./src/index.ts",
       "default": "./src/index.ts"
     }
   },
   "peerDependencies": {
     "clsx": "^2",
+    "framer-motion": "^12",
+    "lucide-react": "^1",
     "react": "^19",
     "react-dom": "^19",
     "tailwind-merge": "^3"

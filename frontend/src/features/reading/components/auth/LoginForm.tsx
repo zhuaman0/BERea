@@ -5,10 +5,10 @@ import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
-import { readingAuthApi } from "@/features/reading/authApi";
+import { readingAuthService } from "@berea/api";
 import { isApiError } from "@/features/auth/utils";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
-import type { ReadingUser } from "@/features/reading/authTypes";
+import type { ReadingUser } from "@berea/api";
 
 const loginSchema = z.object({
   email:    z.string().email("Enter a valid email address"),
@@ -53,18 +53,17 @@ export function ReadingLoginForm() {
 
     setIsSubmitting(true);
     try {
-      const { access_token, refresh_token } = await readingAuthApi.login(result.data);
+      const { access_token, refresh_token } = await readingAuthService.login(result.data);
 
       const placeholder: ReadingUser = {
         id: "", email: result.data.email, full_name: "",
         team_name: null, token_balance: 0, current_streak: 0, is_admin: false, created_at: new Date().toISOString(),
       };
       setSession(placeholder, access_token, refresh_token);
-      document.cookie = "nats-session=1; path=/; SameSite=Lax";
 
       let profile: ReadingUser = placeholder;
       try {
-        profile = await readingAuthApi.me();
+        profile = await readingAuthService.me();
         updateUser(profile);
       } catch { /* continue with placeholder */ }
 

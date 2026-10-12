@@ -5,8 +5,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Check, Crown, Loader2, Users } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { isApiError } from "@/features/auth/utils";
-import { readingLiveQuizApi, type LiveHostState } from "@/features/reading/liveQuizApi";
-import { ANSWER_TILES, useCountdownSeconds, usePolling } from "@/features/reading/components/quiz/liveQuizUi";
+import { readingLiveQuizApi, type LiveHostState } from "@berea/api";
+import { ANSWER_TILES } from "@/features/reading/components/quiz/answerTiles";
+import { useCountdownSeconds, usePolling } from "@berea/core";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 

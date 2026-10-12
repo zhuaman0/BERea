@@ -3,9 +3,9 @@
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { isApiError } from "@/features/auth/utils";
-import { readingBookApi } from "@/features/reading/bookApi";
+import { readingBookApi } from "@berea/api";
 import { BookForm } from "@/features/reading/components/admin/BookForm";
-import type { ReadingBook } from "@/features/reading/bookTypes";
+import type { ReadingBook } from "@berea/api";
 
 interface PageProps {
   params: Promise<{ id: string }>;

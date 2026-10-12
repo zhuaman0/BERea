@@ -3,7 +3,7 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { Flame } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
-import type { ReadingTeamMember } from "@/features/reading/authTypes";
+import type { ReadingTeamMember } from "@berea/api";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 

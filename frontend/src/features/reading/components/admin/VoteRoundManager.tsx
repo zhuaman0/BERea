@@ -6,12 +6,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Plus, Trash2, Crown } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
-import { readingVoteApi } from "@/features/reading/voteApi";
-import { readingBookApi } from "@/features/reading/bookApi";
-import type { ReadingBook } from "@/features/reading/bookTypes";
+import { readingVoteApi } from "@berea/api";
+import { readingBookApi } from "@berea/api";
+import type { ReadingBook } from "@berea/api";
 import { CatalogBookPicker } from "./CatalogBookPicker";
 import { isApiError } from "@/features/auth/utils";
-import type { VoteRound, VoteStage } from "@/features/reading/types";
+import type { VoteRound, VoteStage } from "@berea/api";
 
 const STAGES: { value: VoteStage; label: string }[] = [
   { value: "language", label: "Language" },

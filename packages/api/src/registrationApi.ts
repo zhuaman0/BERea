@@ -1,4 +1,4 @@
-import type { ApiError } from "@/types/api";
+import type { ApiError } from "@berea/core";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost/api";
 

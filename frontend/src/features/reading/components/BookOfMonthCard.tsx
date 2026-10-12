@@ -2,29 +2,9 @@
 
 import Link from "next/link";
 import type { Route } from "next";
-import { motion } from "framer-motion";
 import { BookOpen, PenLine, Vote } from "lucide-react";
-import { bookCoverSrc, type BookOfMonthResult } from "@/features/reading/bookApi";
-
-const EASE = [0.16, 1, 0.3, 1] as const;
-
-interface ProgressBarProps {
-  percent: number;
-  tone?:   "accent" | "muted";
-}
-
-function ProgressBar({ percent, tone = "accent" }: ProgressBarProps) {
-  return (
-    <div className="h-2.5 w-full overflow-hidden rounded-full bg-[var(--rd-border)]">
-      <motion.div
-        initial={{ width: 0 }}
-        animate={{ width: `${Math.min(percent, 100)}%` }}
-        transition={{ duration: 0.9, ease: EASE }}
-        className={`h-full rounded-full ${tone === "accent" ? "rd-accent-gradient" : "bg-[var(--rd-text-muted)]"}`}
-      />
-    </div>
-  );
-}
+import { ProgressBar } from "@berea/ui-kit";
+import { bookCoverSrc, type BookOfMonthResult } from "@berea/api";
 
 interface BookOfMonthCardProps {
   result:     BookOfMonthResult | null;

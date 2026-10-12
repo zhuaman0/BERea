@@ -5,8 +5,8 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Check } from "lucide-react";
-import { Modal } from "@/features/reading/components/Modal";
-import { readingAuthApi } from "@/features/reading/authApi";
+import { Modal } from "@berea/ui-kit";
+import { readingAuthApi } from "@berea/api";
 import { isApiError } from "@/features/auth/utils";
 import { cn } from "@/shared/lib/utils";
 import type {
@@ -16,7 +16,7 @@ import type {
   CoverPattern,
   ReadingTeam,
   TeamCover,
-} from "@/features/reading/authTypes";
+} from "@berea/api";
 import { COVER_ANIMATIONS, COVER_COLORS, COVER_EMBLEMS, COVER_PATTERNS, COVER_TITLE_MAX } from "./coverOptions";
 import { CoverShowcase } from "./CoverShowcase";
 

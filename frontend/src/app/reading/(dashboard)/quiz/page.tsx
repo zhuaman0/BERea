@@ -5,8 +5,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Check, Crown, Loader2, Lock, PartyPopper, X } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { isApiError } from "@/features/auth/utils";
-import { readingLiveQuizApi, type LivePlayerState } from "@/features/reading/liveQuizApi";
-import { ANSWER_TILES, useCountdownSeconds, usePolling } from "@/features/reading/components/quiz/liveQuizUi";
+import { readingLiveQuizApi, type LivePlayerState } from "@berea/api";
+import { ANSWER_TILES } from "@/features/reading/components/quiz/answerTiles";
+import { useCountdownSeconds, usePolling } from "@berea/core";
 
 const SESSION_KEY = "nats-live-quiz-session";
 

@@ -2,11 +2,11 @@
 
 import { Fragment, useState } from "react";
 import { Check, Copy, Send, UserPlus } from "lucide-react";
-import { Modal } from "@/features/reading/components/Modal";
-import { readingAuthApi } from "@/features/reading/authApi";
+import { Modal } from "@berea/ui-kit";
+import { readingAuthApi } from "@berea/api";
 import { isApiError } from "@/features/auth/utils";
 import { TEAM_INVITE_LINK_ENABLED } from "@/features/reading/teamInviteFeature";
-import type { ReadingTeam } from "@/features/reading/authTypes";
+import type { ReadingTeam } from "@berea/api";
 
 interface StudentDraft {
   firstName: string;

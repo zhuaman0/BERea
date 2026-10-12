@@ -1,17 +1,9 @@
-import type { ApiError } from "@/types/api";
+import type { ApiError } from "./types";
+import { createSessionStorage, type SessionStorageConfig } from "./storage";
 
 export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost/api";
 
-interface SessionShape {
-  accessToken:  string | null;
-  refreshToken: string | null;
-}
-
-interface ApiClientConfig {
-  /** sessionStorage key of the zustand-persisted auth store (`{state: {accessToken, refreshToken}}`) */
-  sessionStorageKey: string;
-  /** name of the lightweight boolean cookie the proxy reads to gate protected routes */
-  sessionCookieName: string;
+interface ApiClientConfig extends SessionStorageConfig {
   /** path to send the user to when the refresh token is invalid/expired */
   loginPath: string;
   /** path (relative to API_BASE) used to exchange a refresh token for a new access token */
@@ -19,36 +11,7 @@ interface ApiClientConfig {
 }
 
 function createApiClient(config: ApiClientConfig) {
-  function readSession(): SessionShape {
-    try {
-      const raw = sessionStorage.getItem(config.sessionStorageKey);
-      if (!raw) return { accessToken: null, refreshToken: null };
-      const parsed = JSON.parse(raw) as { state?: { accessToken?: string; refreshToken?: string } };
-      return {
-        accessToken:  parsed?.state?.accessToken  ?? null,
-        refreshToken: parsed?.state?.refreshToken ?? null,
-      };
-    } catch {
-      return { accessToken: null, refreshToken: null };
-    }
-  }
-
-  function writeAccessToken(newToken: string): void {
-    try {
-      const raw = sessionStorage.getItem(config.sessionStorageKey);
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as { state?: Record<string, unknown>; version?: number };
-      if (parsed.state) {
-        parsed.state.accessToken = newToken;
-        sessionStorage.setItem(config.sessionStorageKey, JSON.stringify(parsed));
-      }
-    } catch { /* no-op */ }
-  }
-
-  function clearSession(): void {
-    sessionStorage.removeItem(config.sessionStorageKey);
-    document.cookie = `${config.sessionCookieName}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
-  }
+  const { readSession, writeAccessToken, clearSession } = createSessionStorage(config);
 
   let refreshPromise: Promise<string> | null = null;
 

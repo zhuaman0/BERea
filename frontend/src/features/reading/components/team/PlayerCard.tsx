@@ -12,9 +12,10 @@ import {
 } from "framer-motion";
 import { Flame, Mail, UserRound } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
-import type { ReadingTeamMember } from "@/features/reading/authTypes";
+import type { ReadingTeamMember } from "@berea/api";
 import { PagePattern } from "./PagePattern";
-import { initials, type TeamTheme } from "./teamTheme";
+import { initials } from "@berea/core";
+import type { TeamTheme } from "./teamTheme";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 const TILT_SPRING = { stiffness: 220, damping: 18, mass: 0.6 };

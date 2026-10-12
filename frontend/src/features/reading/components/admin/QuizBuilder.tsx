@@ -4,8 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Circle, Clock, Diamond, Loader2, Plus, Square, Star, Trash2, Triangle } from "lucide-react";
 import { isApiError } from "@/features/auth/utils";
-import { readingQuizApi } from "@/features/reading/quizApi";
-import type { Quiz, QuizAnswerOption, QuizQuestion } from "@/features/reading/quizTypes";
+import { readingQuizApi } from "@berea/api";
+import type { Quiz, QuizAnswerOption, QuizQuestion } from "@berea/api";
 
 const ANSWER_STYLES = [
   { color: "#ef4444", icon: Triangle },

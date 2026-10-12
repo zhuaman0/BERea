@@ -19,3 +19,8 @@ export type PaginatedResponse<T> = {
   page:  number;
   size:  number;
 };
+
+export interface ApiError {
+  detail: string;
+  status: number;
+}

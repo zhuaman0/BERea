@@ -5,8 +5,8 @@ import Link from "next/link";
 import type { Route } from "next";
 import { ImageIcon, Pencil, Plus, Trash2 } from "lucide-react";
 import { isApiError } from "@/features/auth/utils";
-import { bookCoverSrc, readingBookApi } from "@/features/reading/bookApi";
-import type { ReadingBook } from "@/features/reading/bookTypes";
+import { bookCoverSrc, readingBookApi } from "@berea/api";
+import type { ReadingBook } from "@berea/api";
 
 interface BookCardProps {
   book:     ReadingBook;

@@ -5,10 +5,11 @@ import { motion } from "framer-motion";
 import { Paintbrush, Pencil, UserPlus } from "lucide-react";
 import { isApiError } from "@/features/auth/utils";
 import { cn } from "@/shared/lib/utils";
-import type { ReadingTeam } from "@/features/reading/authTypes";
+import type { ReadingTeam } from "@berea/api";
 import { PagePattern } from "./PagePattern";
 import { CoverShowcase } from "./CoverShowcase";
-import { initials, type TeamTheme } from "./teamTheme";
+import { initials } from "@berea/core";
+import type { TeamTheme } from "./teamTheme";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
