@@ -1,11 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { animate } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
-import { cn } from "@/shared/lib/utils";
-
-const EASE = [0.16, 1, 0.3, 1] as const;
+import { AnimatedNumber } from "./AnimatedNumber";
+import { cn } from "./cn";
 
 const SM_COLS: Record<number, string> = {
   2: "sm:grid-cols-2",
@@ -31,29 +28,11 @@ interface AnimatedStatValueProps {
  * number (a suffix, a "/14") is appended immediately since animating it adds nothing. */
 function AnimatedStatValue({ value, className }: AnimatedStatValueProps) {
   const match = value.match(/^(\d+)(.*)$/);
-  const target = match ? parseInt(match[1], 10) : null;
-  const suffix = match ? match[2] : "";
-  const ref = useRef<HTMLSpanElement>(null);
-
-  useEffect(() => {
-    if (target === null || !ref.current) return;
-    const node = ref.current;
-    const controls = animate(0, target, {
-      duration: 1,
-      delay: 0.3,
-      ease: EASE,
-      onUpdate: (v) => { node.textContent = String(Math.round(v)); },
-    });
-    return () => controls.stop();
-  }, [target]);
-
-  if (target === null) {
-    return <span className={className}>{value}</span>;
-  }
+  if (!match) return <span className={className}>{value}</span>;
   return (
     <span className={className}>
-      <span ref={ref}>0</span>
-      {suffix}
+      <AnimatedNumber value={parseInt(match[1], 10)} />
+      {match[2]}
     </span>
   );
 }

@@ -13,20 +13,19 @@ export function Input({ label, error, hint, id, className, ...props }: InputProp
   return (
     <div className="flex flex-col gap-1.5">
       {label && (
-        <label htmlFor={inputId} className="text-sm font-medium text-text-primary">
+        <label htmlFor={inputId} className="text-sm font-medium text-[var(--rd-text)]">
           {label}
         </label>
       )}
       <input
         id={inputId}
         className={clsx(
-          "w-full rounded-xl border px-3 py-2.5 text-sm",
-          "bg-surface text-text-primary placeholder:text-text-muted",
+          "h-12 w-full rounded-xl border px-3.5 text-sm",
+          "bg-[var(--rd-panel)] text-[var(--rd-text)] placeholder:text-[var(--rd-text-muted)]",
           "outline-none transition-colors",
-          "focus:ring-2 focus:ring-brand-500 focus:border-transparent",
           error
-            ? "border-red-400 focus:ring-red-400"
-            : "border-gray-200 hover:border-gray-300",
+            ? "border-red-400 focus:border-red-400"
+            : "border-[var(--rd-border)] focus:border-[var(--rd-accent-from)]",
           className,
         )}
         aria-invalid={error ? "true" : undefined}
@@ -34,12 +33,12 @@ export function Input({ label, error, hint, id, className, ...props }: InputProp
         {...props}
       />
       {error && (
-        <p id={`${inputId}-error`} className="text-xs text-red-500" role="alert">
+        <p id={`${inputId}-error`} className="text-xs text-red-400" role="alert">
           {error}
         </p>
       )}
       {hint && !error && (
-        <p id={`${inputId}-hint`} className="text-xs text-text-muted">
+        <p id={`${inputId}-hint`} className="text-xs text-[var(--rd-text-muted)]">
           {hint}
         </p>
       )}

@@ -2,9 +2,9 @@ import type { ButtonHTMLAttributes } from "react";
 import { clsx } from "clsx";
 
 const variants = {
-  primary:     "bg-brand-500 text-white hover:bg-brand-600 shadow-sm",
-  secondary:   "bg-surface border border-gray-200 text-text-primary hover:bg-surface-alt",
-  ghost:       "text-text-secondary hover:text-text-primary hover:bg-surface-alt",
+  primary:     "rd-accent-gradient text-black/85 hover:opacity-90",
+  secondary:   "border border-[var(--rd-border)] text-[var(--rd-text)] hover:border-[var(--rd-accent-from)]",
+  ghost:       "text-[var(--rd-text-muted)] hover:text-[var(--rd-text)] hover:bg-white/5",
   destructive: "bg-red-500 text-white hover:bg-red-600",
 } as const;
 
@@ -33,8 +33,8 @@ export function Button({
     <button
       disabled={disabled || loading}
       className={clsx(
-        "inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-colors",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2",
+        "inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-colors",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--rd-accent-from)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--rd-ink)]",
         "disabled:pointer-events-none disabled:opacity-50",
         variants[variant],
         sizes[size],
