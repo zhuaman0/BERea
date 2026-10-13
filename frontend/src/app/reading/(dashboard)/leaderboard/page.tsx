@@ -9,6 +9,7 @@ import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStor
 import { CoverShowcase } from "@/features/reading/components/team/CoverShowcase";
 import { TeamBook } from "@/features/reading/components/team/TeamBook";
 import type { ReadingTeamSummary } from "@berea/api";
+import { READING_PAGE_CONTAINER } from "@/features/reading/lib/pageContainer";
 
 const MEDAL_STYLE: Record<number, { icon: typeof Trophy; ring: string; iconColor: string }> = {
   1: { icon: Crown,  ring: "ring-2 ring-[var(--rd-accent-from)]", iconColor: "text-[var(--rd-accent-from)]" },
@@ -60,7 +61,7 @@ export default function ReadingLeaderboardPage() {
 
   if (!isCheckingAccess && !leaderboardEnabled) {
     return (
-      <div className="mx-auto w-full max-w-[1600px] px-8 py-10 lg:px-12">
+      <div className={READING_PAGE_CONTAINER}>
         <h1 className="font-display text-3xl font-semibold text-[var(--rd-text)]">Leaderboard</h1>
         <div className="mt-6 rounded-2xl border border-dashed border-[var(--rd-border)] p-10 text-center">
           <p className="text-sm text-[var(--rd-text-muted)]">
@@ -72,7 +73,7 @@ export default function ReadingLeaderboardPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1600px] px-8 py-10 lg:px-12">
+    <div className={READING_PAGE_CONTAINER}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="font-display text-3xl font-semibold text-[var(--rd-text)]">Leaderboard</h1>

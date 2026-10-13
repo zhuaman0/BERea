@@ -105,7 +105,7 @@ export default function ReadingAuthLayout({ children }: { children: React.ReactN
               Win the semester.
             </h2>
             <p className="max-w-[320px] text-[14px] leading-relaxed text-[var(--rd-text-muted)]">
-              Teams of 2–3, one book a month, live quiz nights, and bonus tasks — the
+              Teams of 3, one book a month, live quiz nights, and bonus tasks — the
               top team on the leaderboard takes the prize.
             </p>
           </div>

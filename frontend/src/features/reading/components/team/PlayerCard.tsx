@@ -10,10 +10,9 @@ import {
   useSpring,
   useTransform,
 } from "framer-motion";
-import { Flame, Mail, UserRound } from "lucide-react";
+import { BookOpen, Flame, Star, UserRound, type LucideIcon } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import type { ReadingTeamMember } from "@berea/api";
-import { PagePattern } from "./PagePattern";
 import { initials } from "@berea/core";
 import type { TeamTheme } from "./teamTheme";
 
@@ -30,6 +29,30 @@ function streakStatus(member: ReadingTeamMember): string {
   return "No active streak";
 }
 
+interface PlayerStatProps {
+  icon:     LucideIcon;
+  value:    number;
+  label:    string;
+  isLit?:   boolean;
+}
+
+function PlayerStat({ icon: Icon, value, label, isLit = false }: PlayerStatProps) {
+  return (
+    <div className="flex flex-col items-center gap-1 rounded-xl bg-[var(--rd-panel)] px-2 py-3">
+      <Icon
+        size={15}
+        className={cn(
+          isLit
+            ? "fill-[var(--rd-accent-from)]/35 text-[var(--rd-accent-from)] drop-shadow-[0_0_6px_rgba(255,107,44,0.6)]"
+            : "text-[var(--rd-text-muted)]"
+        )}
+      />
+      <span className="font-display text-lg font-semibold leading-none text-[var(--rd-text)]">{value}</span>
+      <span className="text-[10px] uppercase tracking-[0.12em] text-[var(--rd-text-muted)]">{label}</span>
+    </div>
+  );
+}
+
 interface PlayerCardProps {
   member:     ReadingTeamMember;
   theme:      TeamTheme;
@@ -41,11 +64,11 @@ export function PlayerCard({ member, theme, isMe, index }: PlayerCardProps) {
   const reduceMotion = useReducedMotion();
   const pointerX = useMotionValue(0.5);
   const pointerY = useMotionValue(0.5);
-  const rotateX = useSpring(useTransform(pointerY, [0, 1], [7, -7]), TILT_SPRING);
-  const rotateY = useSpring(useTransform(pointerX, [0, 1], [-9, 9]), TILT_SPRING);
+  const rotateX = useSpring(useTransform(pointerY, [0, 1], [5, -5]), TILT_SPRING);
+  const rotateY = useSpring(useTransform(pointerX, [0, 1], [-6, 6]), TILT_SPRING);
   const glareX = useTransform(pointerX, (v) => `${v * 100}%`);
   const glareY = useTransform(pointerY, (v) => `${v * 100}%`);
-  const glare = useMotionTemplate`radial-gradient(circle at ${glareX} ${glareY}, rgba(255,255,255,0.12), transparent 55%)`;
+  const glare = useMotionTemplate`radial-gradient(circle at ${glareX} ${glareY}, rgba(255,255,255,0.08), transparent 55%)`;
 
   function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
     if (reduceMotion) return;
@@ -73,8 +96,8 @@ export function PlayerCard({ member, theme, isMe, index }: PlayerCardProps) {
         onPointerLeave={handlePointerLeave}
         style={reduceMotion ? undefined : { rotateX, rotateY }}
         className={cn(
-          "group relative flex h-full flex-col overflow-hidden rounded-2xl border bg-[var(--rd-ink)] transition-shadow duration-300 [transform-style:preserve-3d] hover:shadow-[0_24px_60px_-20px_rgba(0,0,0,0.8)]",
-          isMe ? theme.border : "border-[var(--rd-border)]"
+          "group relative flex h-full flex-col overflow-hidden rounded-2xl border bg-[var(--rd-ink)] p-5 transition-[border-color,box-shadow] duration-300 [transform-style:preserve-3d] hover:shadow-[0_24px_60px_-20px_rgba(0,0,0,0.8)]",
+          isMe ? theme.border : "border-[var(--rd-border)] hover:border-white/15"
         )}
       >
         <motion.div
@@ -82,83 +105,64 @@ export function PlayerCard({ member, theme, isMe, index }: PlayerCardProps) {
           style={{ backgroundImage: glare }}
           className="pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
         />
+        {isMe && (
+          <div
+            aria-hidden="true"
+            className={cn("pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full blur-3xl", theme.glow)}
+          />
+        )}
 
-        <div className={cn("relative h-24 overflow-hidden", theme.bandSoft)}>
-          <PagePattern theme={theme} className="inset-0 h-full w-full" />
-          {isMe && (
-            <span className={cn("absolute left-4 top-4 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.15em] text-black/80", theme.band)}>
-              You
+        <div className="relative flex items-start gap-3.5">
+          <span className="relative shrink-0">
+            <span
+              className={cn(
+                "flex h-12 w-12 items-center justify-center rounded-full text-sm font-bold text-black/80",
+                theme.band
+              )}
+            >
+              {initials(member.full_name)}
             </span>
-          )}
-        </div>
-
-        <div className="relative flex flex-1 flex-col px-5 pb-5">
-          <span
-            className={cn(
-              "-mt-7 flex h-14 w-14 items-center justify-center rounded-full text-base font-bold text-black/80 ring-4 ring-[var(--rd-ink)]",
-              theme.band
+            {isMe && (
+              <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 rounded-full bg-[var(--rd-text)] px-1.5 py-px text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--rd-ink)] ring-2 ring-[var(--rd-ink)]">
+                You
+              </span>
             )}
-          >
-            {initials(member.full_name)}
           </span>
-
-          <p className="mt-3 truncate font-display text-lg font-semibold text-[var(--rd-text)]">{member.full_name}</p>
-          <p className="truncate text-xs text-[var(--rd-text-muted)]">
-            @{member.email.split("@")[0]} · joined {joinedLabel(member.created_at)}
-          </p>
-
-          <div className="mt-5 flex items-center gap-3 rounded-xl border border-[var(--rd-border)] bg-[var(--rd-panel)] px-3.5 py-3">
-            <motion.span
-              animate={isLit && !reduceMotion ? { scale: [1, 1.12, 0.96, 1], rotate: [0, -4, 3, 0] } : undefined}
-              transition={isLit ? { duration: 1.6, repeat: Infinity, ease: "easeInOut" } : undefined}
-              className="flex"
-            >
-              <Flame
-                size={22}
-                className={cn(
-                  isLit
-                    ? "fill-[var(--rd-accent-from)]/35 text-[var(--rd-accent-from)] drop-shadow-[0_0_8px_rgba(255,107,44,0.6)]"
-                    : "text-[var(--rd-text-muted)]/40"
-                )}
-              />
-            </motion.span>
-            <div className="min-w-0">
-              <p className="font-display text-base font-semibold leading-tight text-[var(--rd-text)]">
-                {member.current_streak}-day streak
-              </p>
-              <p className={cn("truncate text-[11px]", isLit ? "text-emerald-400" : "text-[var(--rd-text-muted)]")}>
-                {streakStatus(member)}
-              </p>
-            </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-display text-[17px] font-semibold leading-tight text-[var(--rd-text)]">
+              {member.full_name}
+            </p>
+            <p className="mt-1 truncate text-xs text-[var(--rd-text-muted)]">
+              @{member.email.split("@")[0]} · joined {joinedLabel(member.created_at)}
+            </p>
           </div>
-
-          {isMe ? (
-            <Link
-              href={"/reading/profile" as Route}
-              className="mt-4 flex items-center justify-center gap-1.5 rounded-lg border border-[var(--rd-border)] px-3 py-2 text-xs font-medium text-[var(--rd-text)] transition-colors hover:border-[var(--rd-accent-from)] hover:text-[var(--rd-accent-from)]"
-            >
-              <UserRound size={13} />
-              Your profile
-            </Link>
-          ) : (
-            <div className="mt-4 flex gap-2">
-              <a
-                href={`mailto:${member.email}`}
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[var(--rd-border)] px-3 py-2 text-xs font-medium text-[var(--rd-text)] transition-colors hover:border-[var(--rd-accent-from)] hover:text-[var(--rd-accent-from)]"
-              >
-                <Mail size={13} />
-                Message
-              </a>
-              <Link
-                href={`/reading/team/${member.id}` as Route}
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[var(--rd-border)] px-3 py-2 text-xs font-medium text-[var(--rd-text)] transition-colors hover:border-[var(--rd-accent-from)] hover:text-[var(--rd-accent-from)]"
-              >
-                <UserRound size={13} />
-                View profile
-              </Link>
-            </div>
-          )}
         </div>
+
+        <div className="relative mt-5 grid grid-cols-3 gap-2">
+          <PlayerStat icon={Flame} value={member.current_streak} label="Streak" isLit={isLit} />
+          <PlayerStat icon={Star} value={member.points} label="Points" />
+          <PlayerStat icon={BookOpen} value={member.books_finished} label="Books" />
+        </div>
+
+        <p className="relative mt-4 flex items-center gap-2 text-xs">
+          <span
+            className={cn("h-1.5 w-1.5 shrink-0 rounded-full", isLit ? "bg-emerald-400" : "bg-[var(--rd-text-muted)]/50")}
+            aria-hidden="true"
+          />
+          <span className={cn("truncate", isLit ? "text-emerald-400" : "text-[var(--rd-text-muted)]")}>
+            {streakStatus(member)}
+          </span>
+        </p>
+
+        <div className="min-h-4 flex-1" aria-hidden="true" />
+
+        <Link
+          href={`/reading/team/${member.id}` as Route}
+          className="relative flex items-center justify-center gap-1.5 rounded-lg border border-[var(--rd-border)] px-3 py-2 text-xs font-medium text-[var(--rd-text)] transition-colors hover:border-[var(--rd-accent-from)] hover:text-[var(--rd-accent-from)]"
+        >
+          <UserRound size={13} />
+          {isMe ? "Your profile" : "View profile"}
+        </Link>
       </motion.div>
     </motion.div>
   );

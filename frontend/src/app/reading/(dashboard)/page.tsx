@@ -14,6 +14,7 @@ import { readingSemesterApi } from "@berea/api";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
 import type { ReadingTeam } from "@berea/api";
 import type { SemesterRound } from "@berea/api";
+import { READING_PAGE_CONTAINER } from "@/features/reading/lib/pageContainer";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 const HOVER_LIFT = { y: -4, transition: { duration: 0.2, ease: EASE } };
@@ -82,7 +83,7 @@ export default function ReadingHomePage() {
   ];
 
   return (
-    <div className="w-full px-8 py-10 lg:px-12">
+    <div className={READING_PAGE_CONTAINER}>
       <motion.div
         {...fadeUp(0)}
         className="relative mb-8 flex flex-col gap-4 overflow-hidden rounded-[28px] border border-[var(--rd-accent-from)]/20 bg-[var(--rd-panel)] px-8 py-8 sm:flex-row sm:items-center sm:justify-between"

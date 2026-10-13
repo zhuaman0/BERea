@@ -7,6 +7,7 @@ import { VoteOptionCard } from "@/features/reading/components/VoteOptionCard";
 import { readingVoteApi } from "@berea/api";
 import { isApiError } from "@/features/auth/utils";
 import type { VoteRound, VoteStage } from "@berea/api";
+import { READING_PAGE_CONTAINER } from "@/features/reading/lib/pageContainer";
 
 const STAGE_META: Record<VoteStage, { label: string; icon: typeof Globe }> = {
   language: { label: "Language", icon: Globe },
@@ -93,7 +94,7 @@ export default function ReadingGamesPage() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="w-full px-4 py-6 sm:px-8 sm:py-10 lg:px-12">
+      <div className={READING_PAGE_CONTAINER}>
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: EASE }}>
           <h1 className="font-display text-2xl font-semibold text-[var(--rd-text)]">Choose the book</h1>
           <p className="mt-1 text-[13px] text-[var(--rd-text-muted)]">
