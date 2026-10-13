@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { Flame, HeartHandshake, Sparkles, TrendingUp, Trophy, type LucideIcon } from "lucide-react";
 import { SEASON_FACTS, SEASON_GOALS, SEASON_RULES } from "@/features/reading/lib/seasonRules";
@@ -105,17 +106,15 @@ export default function ReadingRulesPage() {
           {...revealOnScroll(0.05)}
           className="grid grid-cols-1 items-center gap-8 rounded-[28px] border border-[var(--rd-border)] bg-[var(--rd-panel)] p-6 sm:grid-cols-[auto_1fr] sm:p-10"
         >
-          <div className="relative mx-auto h-48 w-32 shrink-0 -rotate-3 overflow-hidden rounded-r-lg rounded-l-sm bg-gradient-to-br from-[#b3261e] via-[#7a1712] to-[#2a0a08] shadow-[0_30px_60px_-20px_rgba(255,107,44,0.45)] transition-transform duration-500 hover:rotate-0">
-            <span className="absolute inset-y-0 left-0 w-2 bg-black/30" aria-hidden="true" />
-            <div className="flex h-full flex-col justify-between px-4 py-5 text-left">
-              <span className="text-[9px] font-semibold uppercase tracking-[0.25em] text-[var(--rd-accent-to)]">
-                Ray Bradbury
-              </span>
-              <div>
-                <p className="font-display text-3xl font-bold leading-none text-[var(--rd-text)]">451°</p>
-                <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-[var(--rd-text)]/70">Fahrenheit</p>
-              </div>
-            </div>
+          <div className="relative mx-auto w-36 shrink-0 -rotate-3 transition-transform duration-500 hover:rotate-0 sm:w-40">
+            <Image
+              src="/fahrenheit-451-cover.png"
+              alt="Fahrenheit 451 by Ray Bradbury — book cover"
+              width={527}
+              height={828}
+              className="h-auto w-full rounded-r-lg rounded-l-sm shadow-[0_30px_60px_-20px_rgba(255,107,44,0.55)]"
+            />
+            <span className="pointer-events-none absolute inset-y-0 left-0 w-2 rounded-l-sm bg-black/30" aria-hidden="true" />
           </div>
 
           <div>
