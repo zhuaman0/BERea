@@ -8,6 +8,7 @@ import { ReadingSidebar } from "@/features/reading/components/ReadingSidebar";
 import { LockedSection } from "@/features/reading/components/LockedSection";
 import { ReadingStageGuard } from "@/features/reading/components/auth/ReadingStageGuard";
 import { isReadingRouteLocked } from "@/features/reading/lib/launchSections";
+import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
 import { readingAuthApi } from "@berea/api";
 import { readingSemesterApi } from "@berea/api";
 import type { ReadingTeam } from "@berea/api";
@@ -17,6 +18,7 @@ const SEASON_LABEL = "Fall semester 2026";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const userName = useReadingAuthStore((s) => s.user?.full_name ?? null);
   const [team, setTeam] = useState<ReadingTeam | null>(null);
   const [rounds, setRounds] = useState<SemesterRound[]>([]);
 
@@ -32,7 +34,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <ReadingStageGuard mode="require-team" />
-      <ReadingTopbar seasonLabel={SEASON_LABEL} roundIndex={roundIndex} roundTotal={roundTotal} totalPoints={0} />
+      <ReadingTopbar seasonLabel={SEASON_LABEL} roundIndex={roundIndex} roundTotal={roundTotal} totalPoints={team?.points ?? 0} userName={userName} />
       {!isReadingRouteLocked("/reading/quiz") && <LiveQuizBanner />}
 
       <div className="flex min-h-0 flex-1">

@@ -1,15 +1,17 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Route } from "next";
+import { initials } from "@berea/core";
 
 interface ReadingTopbarProps {
   seasonLabel: string;
   roundIndex:  number;
   roundTotal:  number;
   totalPoints: number;
+  userName:    string | null;
 }
 
-export function ReadingTopbar({ seasonLabel, roundIndex, roundTotal, totalPoints }: ReadingTopbarProps) {
+export function ReadingTopbar({ seasonLabel, roundIndex, roundTotal, totalPoints, userName }: ReadingTopbarProps) {
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-[var(--rd-border)] bg-[var(--rd-panel)] px-4 md:px-6">
       <Link href={"/reading" as Route} className="flex min-w-0 items-center gap-2.5">
@@ -25,10 +27,18 @@ export function ReadingTopbar({ seasonLabel, roundIndex, roundTotal, totalPoints
       </Link>
 
       <div className="flex shrink-0 items-center gap-3">
-        <span className="rd-accent-gradient rounded-full px-3 py-1 text-[12px] font-semibold text-black/80">
+        <span
+          title="Team points this season"
+          className="rd-accent-gradient rounded-full px-3 py-1 text-[12px] font-semibold text-black/80"
+        >
           {totalPoints} pts
         </span>
-        <div className="h-8 w-8 rounded-full bg-[var(--rd-border)]" />
+        <span
+          title={userName ?? undefined}
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--rd-border)] bg-[var(--rd-ink)] text-[11px] font-semibold text-[var(--rd-text)]"
+        >
+          {userName ? initials(userName) : ""}
+        </span>
       </div>
     </header>
   );

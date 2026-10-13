@@ -70,27 +70,27 @@ export default function ReadingTeamPage() {
     setTeam(updated);
   }
 
-  const currentStreak = user?.current_streak ?? 0;
-  const booksFinished = rounds.filter((r) => r.status === "done").length;
+  const me = team?.members.find((m) => m.id === user?.id);
+  const currentStreak = me?.current_streak ?? user?.current_streak ?? 0;
   const activeRound = rounds.find((r) => r.status === "in_progress");
 
   const statItems: StatStripItem[] = [
     {
       icon: Trophy, label: "Team place",
       value: team ? `${team.place}/${team.teams_total}` : "—",
-      note: "Ranked by roster size for now",
+      note: team ? `${team.points} ${team.points === 1 ? "point" : "points"} this season` : "",
       accent: false,
     },
     {
-      icon: BookOpen, label: "Books finished",
-      value: rounds.length > 0 ? `${booksFinished}/${rounds.length}` : "—",
+      icon: BookOpen, label: "Books you finished",
+      value: rounds.length > 0 ? `${me?.books_finished ?? 0}/${rounds.length}` : `${me?.books_finished ?? 0}`,
       note: activeRound ? `${activeRound.label} in progress` : "No active round",
       accent: false,
     },
     {
       icon: Flame, label: "Your streak",
       value: `${currentStreak} ${currentStreak === 1 ? "day" : "days"}`,
-      note: "+5 pts per 7-day streak",
+      note: me?.active_today ? "Checked in today" : "Check in today to keep it going",
       accent: true,
     },
   ];
@@ -117,32 +117,31 @@ export default function ReadingTeamPage() {
               <StatStrip items={statItems} />
             </div>
 
-            <div className="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-              <section>
-                <div className="mb-4 flex items-baseline justify-between">
-                  <h2 className="font-display text-xl font-semibold text-[var(--rd-text)]">The reading circle</h2>
-                  <span className="text-sm text-[var(--rd-text-muted)]">
-                    {team.members.length}/{team.max_members} players
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 2xl:grid-cols-3">
-                  {team.members.map((member, i) => (
-                    <PlayerCard
-                      key={member.id}
-                      member={member}
-                      theme={TEAM_THEME}
-                      isMe={member.id === user?.id}
-                      index={i}
-                    />
-                  ))}
-                  {Array.from({ length: team.max_members - team.members.length }).map((_, i) => (
-                    <OpenSpotCard
-                      key={`open-${i}`}
-                      index={team.members.length + i}
-                      onAdd={openAddModal}
-                    />
-                  ))}
-                </div>
+            <div className="mb-4 mt-10 flex items-baseline justify-between">
+              <h2 className="font-display text-xl font-semibold text-[var(--rd-text)]">The reading circle</h2>
+              <span className="text-sm text-[var(--rd-text-muted)]">
+                {team.members.length}/{team.max_members} players
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+              <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 2xl:grid-cols-3">
+                {team.members.map((member, i) => (
+                  <PlayerCard
+                    key={member.id}
+                    member={member}
+                    theme={TEAM_THEME}
+                    isMe={member.id === user?.id}
+                    index={i}
+                  />
+                ))}
+                {Array.from({ length: team.max_members - team.members.length }).map((_, i) => (
+                  <OpenSpotCard
+                    key={`open-${i}`}
+                    index={team.members.length + i}
+                    onAdd={openAddModal}
+                  />
+                ))}
               </section>
 
               <aside className="flex flex-col gap-6">

@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
-import { ArrowLeft, Flame, Mail } from "lucide-react";
+import { ArrowLeft, Flame } from "lucide-react";
 import { readingAuthApi } from "@berea/api";
 import { initials } from "@berea/core";
 import { isApiError } from "@/features/auth/utils";
@@ -59,13 +59,6 @@ export default function TeammateProfilePage({ params }: PageProps) {
               <div>
                 <h1 className="font-display text-2xl font-semibold text-[var(--rd-text)]">{profile.full_name}</h1>
                 <p className="mt-1 text-sm text-[var(--rd-text-muted)]">@{profile.email.split("@")[0]}</p>
-                <a
-                  href={`mailto:${profile.email}`}
-                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-[var(--rd-border)] px-4 py-2 text-sm text-[var(--rd-text)] transition-colors hover:border-[var(--rd-accent-from)]"
-                >
-                  <Mail size={14} />
-                  Message
-                </a>
               </div>
             </div>
           </div>
