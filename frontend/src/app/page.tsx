@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import "@/app/reading/reading.css";
 import { TeamRegistrationForm } from "@/features/reading/components/TeamRegistrationForm";
+import { SEASON_RULES } from "@/features/reading/lib/seasonRules";
 
 const spaceGrotesk = Space_Grotesk({ variable: "--font-space-grotesk", subsets: ["latin"], display: "swap" });
 const ibmPlexSans  = IBM_Plex_Sans({ variable: "--font-ibm-plex-sans", subsets: ["latin"], weight: ["400", "500", "600"], display: "swap" });
@@ -25,15 +26,6 @@ const FEATURES = [
   { icon: Trophy,    title: "Season Finale",           desc: "Culminate the semester with an epic battle of knowledge." },
   { icon: Users,     title: "Team Collaboration",      desc: "Work together with your teammates to conquer the challenges." },
   { icon: Brain,     title: "Intellectual Competition", desc: "Test your literary knowledge and strategic thinking." },
-] as const;
-
-const RULES = [
-  "Each team has 3 players.",
-  "Every player finishes reading the book within 1 month.",
-  "The book of the month is chosen by a vote between players.",
-  "Each game has 4 rounds with 5 questions each.",
-  "Once a round starts, the submission form closes to new answers.",
-  "Play by paying a fee per game, or get a semester subscription.",
 ] as const;
 
 const FLAME_PATH =
@@ -223,11 +215,11 @@ export default function LandingPage() {
               aria-hidden="true"
             />
 
-            {RULES.map((rule, i) => {
+            {SEASON_RULES.map((rule, i) => {
               const isFirst = i === 0;
-              const isLast = i === RULES.length - 1;
+              const isLast = i === SEASON_RULES.length - 1;
               return (
-                <div key={i} className="relative flex gap-6">
+                <div key={rule.title} className="relative flex gap-6">
                   <div className="relative w-10 flex-none">
                     {!isFirst && (
                       <span
@@ -259,7 +251,8 @@ export default function LandingPage() {
                       <span className="font-display text-xs font-bold uppercase tracking-[0.2em] text-[var(--rd-accent-from)]">
                         Rule 0{i + 1}
                       </span>
-                      <p className="mt-2 text-[15px] leading-relaxed text-[var(--rd-text)]">{rule}</p>
+                      <p className="font-display mt-2 text-lg font-semibold text-[var(--rd-text)]">{rule.title}</p>
+                      <p className="mt-1.5 text-[14px] leading-relaxed text-[var(--rd-text-muted)]">{rule.body}</p>
                     </div>
                   </div>
                 </div>

@@ -8,8 +8,7 @@ import { CheckCircle2, FileText, Loader2, Upload } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { readingRegistrationApi } from "@berea/api";
 import { isApiError } from "@/features/auth/utils";
-
-const REGISTRATION_FEE = "3 000 ₸";
+import { ENTRY_FEE } from "@/features/reading/lib/seasonRules";
 const MAX_RECEIPT_SIZE_BYTES = 5 * 1024 * 1024;
 
 const teamRegistrationSchema = z.object({
@@ -173,7 +172,7 @@ export function TeamRegistrationForm() {
 
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-medium uppercase tracking-wide text-[var(--rd-text-muted)]">
-          Payment receipt — {REGISTRATION_FEE} per team (PDF)
+          Payment receipt — {ENTRY_FEE} per team (PDF)
         </label>
         <label
           className={cn(
@@ -207,7 +206,7 @@ export function TeamRegistrationForm() {
         className="rd-accent-gradient mt-2 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl text-[14px] font-semibold text-[#1a0e05] transition-opacity hover:opacity-90 active:opacity-80 disabled:pointer-events-none disabled:opacity-50"
       >
         {isSubmitting && <Loader2 size={16} className="animate-spin" />}
-        Register our team — {REGISTRATION_FEE}
+        Register our team — {ENTRY_FEE}
       </button>
     </form>
   );
