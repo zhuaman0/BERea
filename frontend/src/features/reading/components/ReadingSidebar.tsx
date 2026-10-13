@@ -13,8 +13,10 @@ import {
   UserCircle,
   Settings,
   LogOut,
+  Lock,
   type LucideIcon,
 } from "lucide-react";
+import { isReadingRouteLocked } from "@/features/reading/lib/launchSections";
 import type { ReadingTeam } from "@berea/api";
 import { readingSettingsApi } from "@berea/api";
 
@@ -37,7 +39,28 @@ interface ReadingSidebarProps {
   team: ReadingTeam | null;
 }
 
+const LOCKED_HINT = "Opens when the season starts";
+
 function NavLink({ href, label, icon: Icon, isActive }: NavItem & { isActive: boolean }) {
+  if (isReadingRouteLocked(href)) {
+    return (
+      <span
+        aria-disabled="true"
+        title={LOCKED_HINT}
+        className={`flex cursor-not-allowed select-none items-center gap-3 rounded-lg px-3 py-2 text-[13px] ${
+          isActive ? "bg-white/[0.04] text-[var(--rd-text-muted)]" : "text-[var(--rd-text-muted)]/50"
+        }`}
+      >
+        <Icon size={16} strokeWidth={1.75} className="shrink-0" />
+        <span className="flex-1">{label}</span>
+        <span className="inline-flex items-center gap-1 rounded-full border border-[var(--rd-border)] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-[var(--rd-text-muted)]">
+          <Lock size={9} strokeWidth={2.25} />
+          Soon
+        </span>
+      </span>
+    );
+  }
+
   return (
     <Link
       href={href as Route}
@@ -48,6 +71,40 @@ function NavLink({ href, label, icon: Icon, isActive }: NavItem & { isActive: bo
       }`}
     >
       <Icon size={16} strokeWidth={isActive ? 2 : 1.75} className="shrink-0" />
+      {label}
+    </Link>
+  );
+}
+
+function MobileTab({ href, label, icon: Icon, isActive }: NavItem & { isActive: boolean }) {
+  if (isReadingRouteLocked(href)) {
+    return (
+      <span
+        aria-disabled="true"
+        title={LOCKED_HINT}
+        className="flex flex-col items-center gap-1 px-2 py-1 text-[10px] text-[var(--rd-text-muted)]/50"
+      >
+        <span className="relative">
+          <Icon size={18} strokeWidth={1.75} />
+          <Lock
+            size={9}
+            strokeWidth={2.5}
+            className="absolute -bottom-0.5 -right-1.5 rounded-full bg-[var(--rd-panel)] text-[var(--rd-accent-from)]"
+          />
+        </span>
+        {label}
+      </span>
+    );
+  }
+
+  return (
+    <Link
+      href={href as Route}
+      className={`flex flex-col items-center gap-1 px-2 py-1 text-[10px] transition-colors duration-150 ${
+        isActive ? "text-[var(--rd-text)]" : "text-[var(--rd-text-muted)]"
+      }`}
+    >
+      <Icon size={18} strokeWidth={isActive ? 2 : 1.75} />
       {label}
     </Link>
   );
@@ -114,21 +171,9 @@ export function ReadingSidebar({ team }: ReadingSidebarProps) {
 
       {/* Mobile bottom tab bar */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t border-[var(--rd-border)] bg-[var(--rd-panel)] px-2 py-2 md:hidden">
-        {navItems.map(({ href, label, icon: Icon }) => {
-          const isActive = pathname === href;
-          return (
-            <Link
-              key={href}
-              href={href as Route}
-              className={`flex flex-col items-center gap-1 px-2 py-1 text-[10px] transition-colors duration-150 ${
-                isActive ? "text-[var(--rd-text)]" : "text-[var(--rd-text-muted)]"
-              }`}
-            >
-              <Icon size={18} strokeWidth={isActive ? 2 : 1.75} />
-              {label}
-            </Link>
-          );
-        })}
+        {navItems.map((item) => (
+          <MobileTab key={item.href} {...item} isActive={pathname === item.href} />
+        ))}
       </nav>
     </>
   );
