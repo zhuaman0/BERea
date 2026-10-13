@@ -8,6 +8,7 @@ import { readingAuthApi } from "@berea/api";
 import { initials } from "@berea/core";
 import { isApiError } from "@/features/auth/utils";
 import type { ReadingTeamMemberProfile } from "@berea/api";
+import { READING_PAGE_CONTAINER } from "@/features/reading/lib/pageContainer";
 
 function memberSinceLabel(iso: string): string {
   if (!iso) return "";
@@ -36,7 +37,7 @@ export default function TeammateProfilePage({ params }: PageProps) {
   }, [memberId]);
 
   return (
-    <div className="mx-auto w-full max-w-[1600px] px-8 py-10 lg:px-12">
+    <div className={READING_PAGE_CONTAINER}>
       <Link
         href={"/reading/team" as Route}
         className="inline-flex items-center gap-1.5 text-sm text-[var(--rd-text-muted)] transition-colors hover:text-[var(--rd-text)]"

@@ -18,6 +18,7 @@ import { isApiError } from "@/features/auth/utils";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
 import type { ReadingTeam } from "@berea/api";
 import type { SemesterRound } from "@berea/api";
+import { READING_PAGE_CONTAINER } from "@/features/reading/lib/pageContainer";
 
 function TeamPageSkeleton() {
   return (
@@ -97,7 +98,7 @@ export default function ReadingTeamPage() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="w-full px-4 py-6 sm:px-8 sm:py-10 lg:px-12">
+      <div className={READING_PAGE_CONTAINER}>
         {isLoading ? (
           <TeamPageSkeleton />
         ) : loadError || !team ? (
