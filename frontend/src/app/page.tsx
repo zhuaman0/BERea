@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Space_Grotesk, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import {
   BookOpen, Brain, Gamepad2, Swords, Trophy, Users,
-  ArrowRight, ChevronDown, Flame,
+  ArrowRight, ChevronDown, ExternalLink, Flame,
 } from "lucide-react";
 import "@/app/reading/reading.css";
 import { TeamRegistrationForm } from "@/features/reading/components/TeamRegistrationForm";
@@ -35,6 +35,9 @@ const RULES = [
   "Once a round starts, the submission form closes to new answers.",
   "Play by paying a fee per game, or get a semester subscription.",
 ] as const;
+
+const GAME_RULES_URL =
+  "https://www.figma.com/proto/EBW39gk61x9IaSy1snPY5H/451%C2%B0?node-id=2021-3&p=f&viewport=344%2C160%2C0.06&t=6CRoKwMBNYMYj2S8-1&scaling=contain&content-scaling=fixed&page-id=2021%3A2";
 
 const FLAME_PATH =
   "M0,200 L0,65 L43,134 L86,70 L129,166 L171,48 L214,129 L257,79 L300,131 L343,68 L386,162 L429,48 L471,157 L514,58 L557,127 L600,50 L643,152 L686,71 L729,129 L771,60 L814,130 L857,80 L900,152 L943,48 L986,161 L1029,52 L1071,139 L1114,85 L1157,165 L1200,82 L1200,200 Z";
@@ -146,14 +149,27 @@ export default function LandingPage() {
             Immerse yourself in the world of literature — team up, read, and compete for
             the semester crown.
           </p>
-          <div className="mt-9 flex justify-center">
+          <div className="mt-9 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
             <Link
               href="/reading/register"
-              className="rd-accent-gradient inline-flex items-center gap-2 rounded-lg px-7 py-3.5 text-sm font-semibold text-[#1a0e05] transition-opacity hover:opacity-90"
+              className="rd-accent-gradient inline-flex items-center justify-center gap-2 rounded-lg px-7 py-3.5 text-sm font-semibold text-[#1a0e05] transition-all hover:-translate-y-0.5 hover:opacity-90"
             >
               Join the Book Battle
               <ArrowRight size={16} />
             </Link>
+            <a
+              href={GAME_RULES_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group inline-flex items-center justify-center gap-2 rounded-lg border border-white/20 bg-white/[0.04] px-7 py-3.5 text-sm font-semibold text-[var(--rd-text)] backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-[var(--rd-accent-from)]/60 hover:bg-[var(--rd-accent-from)]/[0.08]"
+            >
+              View the Rules
+              <ExternalLink
+                size={15}
+                className="text-[var(--rd-accent-from)] transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                aria-hidden="true"
+              />
+            </a>
           </div>
         </div>
 
