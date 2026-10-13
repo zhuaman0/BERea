@@ -4,6 +4,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { Flame, HeartHandshake, Sparkles, TrendingUp, Trophy, type LucideIcon } from "lucide-react";
 import { SEASON_FACTS, SEASON_GOALS, SEASON_RULES } from "@/features/reading/lib/seasonRules";
+import { READING_PAGE_CONTAINER } from "@/features/reading/lib/pageContainer";
 
 const GOAL_ICONS: readonly LucideIcon[] = [Flame, TrendingUp, HeartHandshake];
 
@@ -42,7 +43,7 @@ function SectionHeading({ eyebrow, title }: SectionHeadingProps) {
 
 export default function ReadingRulesPage() {
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 md:px-8 md:py-10">
+    <div className={READING_PAGE_CONTAINER}>
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <motion.section
         {...fadeUp(0)}

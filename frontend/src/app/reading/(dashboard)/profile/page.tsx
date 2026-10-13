@@ -7,6 +7,7 @@ import { readingSemesterApi } from "@berea/api";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
 import type { ReadingTeam } from "@berea/api";
 import type { SemesterRound } from "@berea/api";
+import { READING_PAGE_CONTAINER } from "@/features/reading/lib/pageContainer";
 
 const MATE_COLORS = ["var(--rd-mate-1)", "var(--rd-mate-2)", "var(--rd-mate-3)", "var(--rd-mate-4)"];
 
@@ -67,7 +68,7 @@ export default function ReadingProfilePage() {
   ];
 
   return (
-    <div className="mx-auto w-full max-w-[1600px] px-8 py-10 lg:px-12">
+    <div className={READING_PAGE_CONTAINER}>
       <div className="rounded-2xl border border-[var(--rd-border)] bg-[var(--rd-panel)] p-7">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-center gap-5">

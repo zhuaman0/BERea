@@ -36,6 +36,8 @@ export interface ReadingTeamMember {
   email:          string;
   current_streak: number;
   active_today:   boolean;
+  points:         number;
+  books_finished: number;
   created_at:     string;
 }
 
@@ -57,6 +59,7 @@ export interface ReadingTeam {
   name:        string;
   members:     ReadingTeamMember[];
   max_members: number;
+  points:      number;
   place:       number;
   teams_total: number;
   cover:       TeamCover;
@@ -66,6 +69,7 @@ export interface ReadingTeamSummary {
   id:           string;
   name:         string;
   member_count: number;
+  points:       number;
   cover:        TeamCover;
 }
 

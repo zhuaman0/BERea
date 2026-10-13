@@ -8,31 +8,47 @@ import { ReadingSidebar } from "@/features/reading/components/ReadingSidebar";
 import { LockedSection } from "@/features/reading/components/LockedSection";
 import { ReadingStageGuard } from "@/features/reading/components/auth/ReadingStageGuard";
 import { isReadingRouteLocked } from "@/features/reading/lib/launchSections";
+import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
+import { roundDayProgress, seasonLabel } from "@/features/reading/lib/roundCalendar";
 import { readingAuthApi } from "@berea/api";
 import { readingSemesterApi } from "@berea/api";
 import type { ReadingTeam } from "@berea/api";
 import type { SemesterRound } from "@berea/api";
 
-const SEASON_LABEL = "Fall semester 2026";
-
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const userName = useReadingAuthStore((s) => s.user?.full_name ?? null);
   const [team, setTeam] = useState<ReadingTeam | null>(null);
   const [rounds, setRounds] = useState<SemesterRound[]>([]);
+  const [roundsLoadedAt, setRoundsLoadedAt] = useState<number | null>(null);
 
   useEffect(() => {
     readingAuthApi.myTeam().then(setTeam).catch(() => { /* sidebar just shows nothing until it loads */ });
-    readingSemesterApi.listRounds().then(setRounds).catch(() => { /* topbar falls back below */ });
+    readingSemesterApi
+      .listRounds()
+      .then((loaded) => {
+        setRounds(loaded);
+        setRoundsLoadedAt(Date.now());
+      })
+      .catch(() => { /* topbar falls back below */ });
   }, []);
 
   const activeRound = rounds.find((r) => r.status === "in_progress");
   const roundIndex = activeRound?.index ?? rounds.filter((r) => r.status === "done").length;
   const roundTotal = rounds.length;
+  const dayProgress = activeRound && roundsLoadedAt !== null ? roundDayProgress(activeRound, roundsLoadedAt) : null;
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <ReadingStageGuard mode="require-team" />
-      <ReadingTopbar seasonLabel={SEASON_LABEL} roundIndex={roundIndex} roundTotal={roundTotal} totalPoints={0} />
+      <ReadingTopbar
+        seasonLabel={seasonLabel(rounds)}
+        roundIndex={roundIndex}
+        roundTotal={roundTotal}
+        dayProgress={dayProgress}
+        totalPoints={team?.points ?? 0}
+        userName={userName}
+      />
       {!isReadingRouteLocked("/reading/quiz") && <LiveQuizBanner />}
 
       <div className="flex min-h-0 flex-1">

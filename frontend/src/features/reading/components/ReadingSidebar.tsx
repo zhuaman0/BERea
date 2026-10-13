@@ -16,6 +16,7 @@ import {
   Lock,
   type LucideIcon,
 } from "lucide-react";
+import { initials } from "@berea/core";
 import { isReadingRouteLocked } from "@/features/reading/lib/launchSections";
 import type { ReadingTeam } from "@berea/api";
 import { readingSettingsApi } from "@berea/api";
@@ -142,7 +143,9 @@ export function ReadingSidebar({ team }: ReadingSidebarProps) {
             <div className="flex flex-col gap-1">
               {team.members.map((member) => (
                 <div key={member.id} className="flex items-center gap-2.5 rounded-lg px-3 py-2">
-                  <span className="h-7 w-7 shrink-0 rounded-full bg-[var(--rd-border)]" />
+                  <span className="rd-accent-gradient flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-black/80">
+                    {initials(member.full_name)}
+                  </span>
                   <div className="min-w-0">
                     <p className="truncate text-[13px] leading-none text-[var(--rd-text)]">{member.full_name}</p>
                     <p className="mt-0.5 truncate text-[11px] text-[var(--rd-text-muted)]">

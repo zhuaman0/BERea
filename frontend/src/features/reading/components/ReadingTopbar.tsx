@@ -1,15 +1,28 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Route } from "next";
+import { initials } from "@berea/core";
+import type { RoundDayProgress } from "@/features/reading/lib/roundCalendar";
 
 interface ReadingTopbarProps {
-  seasonLabel: string;
+  seasonLabel: string | null;
   roundIndex:  number;
   roundTotal:  number;
+  dayProgress: RoundDayProgress | null;
   totalPoints: number;
+  userName:    string | null;
 }
 
-export function ReadingTopbar({ seasonLabel, roundIndex, roundTotal, totalPoints }: ReadingTopbarProps) {
+function roundSummary(seasonLabel: string | null, roundIndex: number, roundTotal: number, day: RoundDayProgress | null): string {
+  const parts = [seasonLabel, `Round ${roundIndex} of ${roundTotal}`];
+  if (day) {
+    parts.push(`Day ${day.dayNumber} of ${day.totalDays}`);
+    parts.push(day.daysLeft > 0 ? `${day.daysLeft} ${day.daysLeft === 1 ? "day" : "days"} left` : "Last day");
+  }
+  return parts.filter(Boolean).join(" · ");
+}
+
+export function ReadingTopbar({ seasonLabel, roundIndex, roundTotal, dayProgress, totalPoints, userName }: ReadingTopbarProps) {
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-[var(--rd-border)] bg-[var(--rd-panel)] px-4 md:px-6">
       <Link href={"/reading" as Route} className="flex min-w-0 items-center gap-2.5">
@@ -19,16 +32,24 @@ export function ReadingTopbar({ seasonLabel, roundIndex, roundTotal, totalPoints
         </span>
         {roundTotal > 0 && (
           <span className="hidden truncate text-[12px] text-[var(--rd-text-muted)] sm:inline">
-            · {seasonLabel} · Round {roundIndex} of {roundTotal}
+            · {roundSummary(seasonLabel, roundIndex, roundTotal, dayProgress)}
           </span>
         )}
       </Link>
 
       <div className="flex shrink-0 items-center gap-3">
-        <span className="rd-accent-gradient rounded-full px-3 py-1 text-[12px] font-semibold text-black/80">
+        <span
+          title="Team points this season"
+          className="rd-accent-gradient rounded-full px-3 py-1 text-[12px] font-semibold text-black/80"
+        >
           {totalPoints} pts
         </span>
-        <div className="h-8 w-8 rounded-full bg-[var(--rd-border)]" />
+        <span
+          title={userName ?? undefined}
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--rd-border)] bg-[var(--rd-ink)] text-[11px] font-semibold text-[var(--rd-text)]"
+        >
+          {userName ? initials(userName) : ""}
+        </span>
       </div>
     </header>
   );

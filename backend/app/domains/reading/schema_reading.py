@@ -61,6 +61,8 @@ class ReadingTeamMemberResponse(BaseModel):
     email: EmailStr
     current_streak: int
     active_today: bool
+    points: int
+    books_finished: int
     created_at: datetime
 
 
@@ -99,6 +101,7 @@ class ReadingTeamResponse(BaseModel):
     name: str
     members: list[ReadingTeamMemberResponse]
     max_members: int = TEAM_MAX_MEMBERS
+    points: int
     place: int
     teams_total: int
     cover: ReadingTeamCover
@@ -108,6 +111,7 @@ class ReadingTeamSummaryResponse(BaseModel):
     id: uuid.UUID
     name: str
     member_count: int
+    points: int
     cover: ReadingTeamCover
 
 

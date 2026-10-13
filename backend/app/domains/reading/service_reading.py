@@ -209,8 +209,7 @@ async def add_team_member(
     await create_team_member_record(payload.email, placeholder_password, payload.full_name, user.team_id, db)
 
     members = await get_team_members(user.team_id, db)
-    place, teams_total = await _compute_team_rank(user.team_id, db)
-    return _to_team_response(user.team, members, place, teams_total)
+    return await _build_team_response(user.team, members, db)
 
 
 async def get_my_team(user_id: str, db: AsyncSession) -> ReadingTeamResponse:
@@ -221,8 +220,7 @@ async def get_my_team(user_id: str, db: AsyncSession) -> ReadingTeamResponse:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="You haven't joined a team yet")
 
     members = await get_team_members(user.team_id, db)
-    place, teams_total = await _compute_team_rank(user.team_id, db)
-    return _to_team_response(user.team, members, place, teams_total)
+    return await _build_team_response(user.team, members, db)
 
 
 async def rename_my_team(user_id: str, payload: ReadingTeamJoinRequest, db: AsyncSession) -> ReadingTeamResponse:
@@ -243,8 +241,7 @@ async def rename_my_team(user_id: str, payload: ReadingTeamJoinRequest, db: Asyn
 
     team = await rename_team(user.team, payload.team_name, db)
     members = await get_team_members(team.id, db)
-    place, teams_total = await _compute_team_rank(team.id, db)
-    return _to_team_response(team, members, place, teams_total)
+    return await _build_team_response(team, members, db)
 
 
 async def get_team_member_profile(
@@ -284,14 +281,14 @@ def _effective_streak(user: ReadingUser, today: date) -> int:
 
 
 async def list_teams(db: AsyncSession) -> list[ReadingTeamSummaryResponse]:
-    from app.domains.reading.repo_reading import list_teams_with_member_counts
+    from app.domains.reading.repo_reading import list_teams_ranked
 
-    rows = await list_teams_with_member_counts(db)
+    rows = await list_teams_ranked(db)
     return [
         ReadingTeamSummaryResponse(
-            id=team.id, name=team.name, member_count=member_count, cover=_to_team_cover(team)
+            id=team.id, name=team.name, member_count=member_count, points=points, cover=_to_team_cover(team)
         )
-        for team, member_count in rows
+        for team, member_count, points in rows
     ]
 
 
@@ -314,8 +311,7 @@ async def update_my_team_cover(
         db=db,
     )
     members = await get_team_members(team.id, db)
-    place, teams_total = await _compute_team_rank(team.id, db)
-    return _to_team_response(team, members, place, teams_total)
+    return await _build_team_response(team, members, db)
 
 
 def _to_team_cover(team: ReadingTeam) -> ReadingTeamCover:
@@ -328,19 +324,19 @@ def _to_team_cover(team: ReadingTeam) -> ReadingTeamCover:
     )
 
 
-async def _compute_team_rank(team_id: uuid.UUID, db: AsyncSession) -> tuple[int, int]:
-    """Ranks teams the same way the leaderboard does — by roster size until real
-    quiz/reading points exist to rank by instead."""
-    from app.domains.reading.repo_reading import list_teams_with_member_counts
-
-    rows = await list_teams_with_member_counts(db)
-    place = next((i + 1 for i, (team, _) in enumerate(rows) if team.id == team_id), len(rows))
-    return place, len(rows)
-
-
-def _to_team_response(
-    team: ReadingTeam, members: list[ReadingUser], place: int, teams_total: int
+async def _build_team_response(
+    team: ReadingTeam, members: list[ReadingUser], db: AsyncSession
 ) -> ReadingTeamResponse:
+    from app.domains.reading.repo_reading import books_finished_by_user, list_teams_ranked, quiz_points_by_user
+
+    rows = await list_teams_ranked(db)
+    place = next((i + 1 for i, (row_team, _, _) in enumerate(rows) if row_team.id == team.id), len(rows))
+    team_points = next((points for row_team, _, points in rows if row_team.id == team.id), 0)
+
+    member_ids = [m.id for m in members]
+    points_by_user = await quiz_points_by_user(member_ids, db)
+    books_by_user = await books_finished_by_user(member_ids, db)
+
     today = _today()
     return ReadingTeamResponse(
         id=team.id,
@@ -352,12 +348,15 @@ def _to_team_response(
                 email=m.email,
                 current_streak=_effective_streak(m, today),
                 active_today=m.last_active_date == today,
+                points=points_by_user.get(m.id, 0),
+                books_finished=books_by_user.get(m.id, 0),
                 created_at=m.created_at,
             )
             for m in members
         ],
+        points=team_points,
         place=place,
-        teams_total=teams_total,
+        teams_total=len(rows),
         cover=_to_team_cover(team),
     )
 
