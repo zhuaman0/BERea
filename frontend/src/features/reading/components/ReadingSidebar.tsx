@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import type { ReadingTeam } from "@berea/api";
 import { readingSettingsApi } from "@berea/api";
+import { useReadingLogout } from "../hooks/useReadingLogout";
 
 interface NavItem {
   href:  string;
@@ -55,6 +56,7 @@ function NavLink({ href, label, icon: Icon, isActive }: NavItem & { isActive: bo
 
 export function ReadingSidebar({ team }: ReadingSidebarProps) {
   const pathname = usePathname();
+  const { logout, isLoggingOut } = useReadingLogout();
   const [leaderboardEnabled, setLeaderboardEnabled] = useState(true);
 
   useEffect(() => {
@@ -105,9 +107,14 @@ export function ReadingSidebar({ team }: ReadingSidebarProps) {
             icon={Settings}
             isActive={pathname === "/reading/settings"}
           />
-          <button className="flex items-center gap-3 rounded-lg px-3 py-2 text-left text-[13px] text-[var(--rd-text-muted)] transition-colors duration-150 hover:text-red-400">
+          <button
+            type="button"
+            onClick={logout}
+            disabled={isLoggingOut}
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-left text-[13px] text-[var(--rd-text-muted)] transition-colors duration-150 hover:text-red-400 disabled:opacity-50"
+          >
             <LogOut size={16} strokeWidth={1.75} className="shrink-0" />
-            Log out
+            {isLoggingOut ? "Logging out…" : "Log out"}
           </button>
         </div>
       </aside>

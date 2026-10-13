@@ -1,19 +1,12 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
-import { readingAuthService } from "@berea/api";
+import { useReadingLogout } from "@/features/reading/hooks/useReadingLogout";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
 
 export default function ReadingSettingsPage() {
-  const router = useRouter();
-  const { user, refreshToken, clearSession } = useReadingAuthStore();
-
-  async function handleLogout() {
-    await readingAuthService.logout(refreshToken);
-    clearSession();
-    router.push("/reading/login");
-  }
+  const user = useReadingAuthStore((s) => s.user);
+  const { logout, isLoggingOut } = useReadingLogout();
 
   return (
     <div className="mx-auto max-w-4xl px-6 py-10 md:px-8">
@@ -33,11 +26,12 @@ export default function ReadingSettingsPage() {
         </div>
         <button
           type="button"
-          onClick={handleLogout}
+          onClick={logout}
+          disabled={isLoggingOut}
           className="inline-flex items-center gap-2 rounded-lg border border-[var(--rd-border)] px-4 py-2 text-[12px] font-semibold text-[var(--rd-text)] transition-colors hover:border-red-400 hover:text-red-400"
         >
           <LogOut size={14} />
-          Log out
+          {isLoggingOut ? "Logging out…" : "Log out"}
         </button>
       </div>
     </div>
