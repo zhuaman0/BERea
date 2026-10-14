@@ -8,6 +8,7 @@ import { cn } from "@/shared/lib/utils";
 import { readingAuthService } from "@berea/api";
 import { isApiError } from "@/features/auth/utils";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
+import { hasSubmittedPayment } from "@/features/reading/lib/paymentStatus";
 import type { ReadingUser } from "@berea/api";
 
 const loginSchema = z.object({
@@ -70,7 +71,7 @@ export function ReadingLoginForm() {
       router.push(
         !profile.team_name
           ? "/reading/join-team"
-          : profile.payment_status
+          : hasSubmittedPayment(profile.payment_status)
             ? "/reading"
             : "/reading/payment"
       );

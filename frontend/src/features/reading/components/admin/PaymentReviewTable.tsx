@@ -83,7 +83,6 @@ export function PaymentReviewTable() {
             <thead>
               <tr className="border-b border-[var(--rd-border)] text-left text-xs uppercase tracking-[0.1em] text-[var(--rd-text-muted)]">
                 <th className="px-6 py-4 font-medium">Team</th>
-                <th className="px-6 py-4 font-medium">Description</th>
                 <th className="px-6 py-4 font-medium">Amount</th>
                 <th className="px-6 py-4 font-medium">Status</th>
                 <th className="px-6 py-4 font-medium">Receipt</th>
@@ -94,7 +93,6 @@ export function PaymentReviewTable() {
               {payments.map((payment) => (
                 <tr key={payment.payment_id ?? payment.team_id}>
                   <td className="px-6 py-4"><p className="font-medium text-[var(--rd-text)]">{payment.team_name}</p><p className="mt-1 text-xs text-[var(--rd-text-muted)]">{payment.submitted_by_email ?? "No email"}</p></td>
-                  <td className="max-w-xs px-6 py-4 text-[var(--rd-text-muted)]">{payment.payment_description ?? "—"}</td>
                   <td className="whitespace-nowrap px-6 py-4 text-[var(--rd-text)]">{payment.amount_tenge.toLocaleString("ru-RU")} ₸</td>
                   <td className="px-6 py-4"><span className={`rounded-full px-2.5 py-1 text-xs font-medium ${payment.status === "approved" ? "bg-emerald-400/10 text-emerald-300" : payment.status === "rejected" ? "bg-red-400/10 text-red-300" : "bg-amber-400/10 text-amber-300"}`}>{payment.status ?? "not submitted"}</span></td>
                   <td className="px-6 py-4">{payment.payment_id ? <button type="button" onClick={() => openReceipt(payment.payment_id!)} className="inline-flex items-center gap-2 text-[var(--rd-accent-from)] hover:underline"><Eye size={15} /> View file</button> : "—"}</td>
