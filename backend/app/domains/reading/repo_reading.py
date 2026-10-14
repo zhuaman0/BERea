@@ -223,25 +223,95 @@ async def revoke_token(record: ReadingRefreshToken, db: AsyncSession) -> None:
 
 
 async def create_team_registration(
+    team_id: uuid.UUID,
+    submitted_by_user_id: uuid.UUID,
     team_name: str,
     member_1_name: str,
     member_2_name: str,
     member_3_name: str,
     contact_email: str,
     contact_phone: str | None,
+    payment_description: str,
+    amount_tenge: int,
     receipt_path: str,
+    receipt_content_type: str,
     db: AsyncSession,
 ) -> ReadingTeamRegistration:
     registration = ReadingTeamRegistration(
+        team_id=team_id,
+        submitted_by_user_id=submitted_by_user_id,
         team_name=team_name,
         member_1_name=member_1_name,
         member_2_name=member_2_name,
         member_3_name=member_3_name,
         contact_email=contact_email,
         contact_phone=contact_phone,
+        payment_description=payment_description,
+        amount_tenge=amount_tenge,
         receipt_path=receipt_path,
+        receipt_content_type=receipt_content_type,
     )
     db.add(registration)
+    await db.commit()
+    await db.refresh(registration)
+    return registration
+
+
+async def get_team_registration_by_team_id(
+    team_id: uuid.UUID, db: AsyncSession
+) -> ReadingTeamRegistration | None:
+    result = await db.execute(
+        select(ReadingTeamRegistration).where(ReadingTeamRegistration.team_id == team_id)
+    )
+    return result.scalar_one_or_none()
+
+
+async def get_team_registration_by_id(
+    registration_id: uuid.UUID, db: AsyncSession
+) -> ReadingTeamRegistration | None:
+    result = await db.execute(
+        select(ReadingTeamRegistration).where(ReadingTeamRegistration.id == registration_id)
+    )
+    return result.scalar_one_or_none()
+
+
+async def list_team_registrations(db: AsyncSession) -> list[ReadingTeamRegistration]:
+    result = await db.execute(
+        select(ReadingTeamRegistration)
+        .where(ReadingTeamRegistration.team_id.is_not(None))
+        .order_by(ReadingTeamRegistration.created_at.desc())
+    )
+    return list(result.scalars().all())
+
+
+async def update_team_registration_status(
+    registration: ReadingTeamRegistration, payment_status: str, db: AsyncSession
+) -> ReadingTeamRegistration:
+    registration.status = payment_status
+    await db.commit()
+    await db.refresh(registration)
+    return registration
+
+
+async def resubmit_team_registration(
+    registration: ReadingTeamRegistration,
+    submitted_by_user_id: uuid.UUID,
+    member_names: list[str],
+    contact_email: str,
+    payment_description: str,
+    receipt_path: str,
+    receipt_content_type: str,
+    db: AsyncSession,
+) -> ReadingTeamRegistration:
+    registration.submitted_by_user_id = submitted_by_user_id
+    registration.member_1_name = member_names[0]
+    registration.member_2_name = member_names[1]
+    registration.member_3_name = member_names[2]
+    registration.contact_email = contact_email
+    registration.payment_description = payment_description
+    registration.receipt_path = receipt_path
+    registration.receipt_content_type = receipt_content_type
+    registration.status = "pending"
     await db.commit()
     await db.refresh(registration)
     return registration

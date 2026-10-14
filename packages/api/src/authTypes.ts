@@ -3,6 +3,7 @@ export interface ReadingUser {
   email:          string;
   full_name:      string;
   team_name:      string | null;
+  payment_status: string | null;
   token_balance:  number;
   current_streak: number;
   is_admin:       boolean;

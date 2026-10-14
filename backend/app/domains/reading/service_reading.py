@@ -60,7 +60,8 @@ from app.domains.reading.schema_reading import (
     ReadingTeamMemberAddRequest,
     ReadingTeamMemberProfileResponse,
     ReadingTeamMemberResponse,
-    ReadingTeamRegistrationCreate,
+    ReadingTeamPaymentAdminResponse,
+    ReadingTeamPaymentStatusUpdate,
     ReadingTeamRegistrationResponse,
     ReadingTeamResponse,
     ReadingTeamSummaryResponse,
@@ -72,15 +73,22 @@ from app.domains.reading.schema_reading import (
     ReadingVoteRoundResponse,
 )
 
-RECEIPT_CONTENT_TYPE = "application/pdf"
+TEAM_ENTRY_FEE_TENGE = 3000
+RECEIPT_TYPES = {
+    "application/pdf": (".pdf", lambda data: data.startswith(b"%PDF")),
+    "image/jpeg": (".jpg", lambda data: data.startswith(b"\xff\xd8\xff")),
+    "image/png": (".png", lambda data: data.startswith(b"\x89PNG\r\n\x1a\n")),
+    "image/webp": (".webp", lambda data: len(data) >= 12 and data[:4] == b"RIFF" and data[8:12] == b"WEBP"),
+}
 
 
-def _to_user_response(user: ReadingUser) -> ReadingUserResponse:
+def _to_user_response(user: ReadingUser, payment_status: str | None = None) -> ReadingUserResponse:
     return ReadingUserResponse(
         id=user.id,
         email=user.email,
         full_name=user.full_name,
         team_name=user.team.name if user.team else None,
+        payment_status=payment_status,
         token_balance=user.token_balance,
         current_streak=user.current_streak,
         is_admin=user.is_admin,
@@ -141,19 +149,25 @@ async def revoke_refresh_token(refresh_token: str, db: AsyncSession) -> None:
 
 
 async def get_current_reading_user(user_id: str, db: AsyncSession) -> ReadingUserResponse:
-    from app.domains.reading.repo_reading import get_user_by_id, touch_user_streak
+    from app.domains.reading.repo_reading import (
+        get_team_registration_by_team_id,
+        get_user_by_id,
+        touch_user_streak,
+    )
 
     user = await get_user_by_id(uuid.UUID(user_id), db)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     user = await touch_user_streak(user, _today(), db)
-    return _to_user_response(user)
+    registration = await get_team_registration_by_team_id(user.team_id, db) if user.team_id else None
+    return _to_user_response(user, registration.status if registration else None)
 
 
 async def join_team(user_id: str, payload: ReadingTeamJoinRequest, db: AsyncSession) -> ReadingUserResponse:
     from app.domains.reading.repo_reading import (
         count_team_members,
         get_or_create_team,
+        get_team_registration_by_team_id,
         get_user_by_id,
         set_user_team,
     )
@@ -172,7 +186,8 @@ async def join_team(user_id: str, payload: ReadingTeamJoinRequest, db: AsyncSess
             )
 
     user = await set_user_team(user, team.id, db)
-    return _to_user_response(user)
+    registration = await get_team_registration_by_team_id(user.team_id, db)
+    return _to_user_response(user, registration.status if registration else None)
 
 
 async def add_team_member(
@@ -362,14 +377,39 @@ async def _build_team_response(
 
 
 async def register_team(
-    payload: ReadingTeamRegistrationCreate, receipt: UploadFile, db: AsyncSession
+    user_id: str, payment_description: str, receipt: UploadFile, db: AsyncSession
 ) -> ReadingTeamRegistrationResponse:
-    from app.domains.reading.repo_reading import create_team_registration
+    from app.domains.reading.repo_reading import (
+        create_team_registration,
+        get_team_members,
+        get_team_registration_by_team_id,
+        get_user_by_id,
+    )
 
-    if receipt.content_type != RECEIPT_CONTENT_TYPE:
+    user = await get_user_by_id(uuid.UUID(user_id), db)
+    if not user or not user.team_id or not user.team:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Create or join a team before paying")
+
+    payment_description = payment_description.strip()
+    if len(payment_description) < 3:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Payment receipt must be a PDF file",
+            detail="Add a short payment description",
+        )
+
+    existing = await get_team_registration_by_team_id(user.team_id, db)
+    if existing and existing.status != "rejected":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A payment receipt has already been submitted for this team",
+        )
+
+    receipt_type = receipt.content_type or ""
+    receipt_config = RECEIPT_TYPES.get(receipt_type)
+    if not receipt_config:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Payment receipt must be a PDF, JPG, PNG, or WebP file",
         )
 
     contents = await receipt.read()
@@ -379,25 +419,61 @@ async def register_team(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail=f"Payment receipt must be under {settings.max_upload_size_mb}MB",
         )
+    if not contents:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Payment receipt is empty")
+
+    extension, signature_matches = receipt_config
+    if not signature_matches(contents):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="The uploaded file does not match its file type",
+        )
 
     upload_dir = Path(settings.upload_dir) / "team-registrations"
     upload_dir.mkdir(parents=True, exist_ok=True)
-    receipt_path = upload_dir / f"{uuid.uuid4()}.pdf"
+    receipt_path = upload_dir / f"{uuid.uuid4()}{extension}"
     receipt_path.write_bytes(contents)
 
-    registration = await create_team_registration(
-        team_name=payload.team_name,
-        member_1_name=payload.member_1_name,
-        member_2_name=payload.member_2_name,
-        member_3_name=payload.member_3_name,
-        contact_email=payload.contact_email,
-        contact_phone=payload.contact_phone,
-        receipt_path=str(receipt_path),
-        db=db,
-    )
+    members = await get_team_members(user.team_id, db)
+    member_names = [member.full_name for member in members[:3]]
+    member_names.extend(["Pending teammate"] * (3 - len(member_names)))
+    if existing:
+        from app.domains.reading.repo_reading import resubmit_team_registration
+
+        old_receipt_path = Path(existing.receipt_path)
+        registration = await resubmit_team_registration(
+            existing,
+            submitted_by_user_id=user.id,
+            member_names=member_names,
+            contact_email=user.email,
+            payment_description=payment_description,
+            receipt_path=str(receipt_path),
+            receipt_content_type=receipt_type,
+            db=db,
+        )
+        if old_receipt_path != receipt_path:
+            old_receipt_path.unlink(missing_ok=True)
+    else:
+        registration = await create_team_registration(
+            team_id=user.team_id,
+            submitted_by_user_id=user.id,
+            team_name=user.team.name,
+            member_1_name=member_names[0],
+            member_2_name=member_names[1],
+            member_3_name=member_names[2],
+            contact_email=user.email,
+            contact_phone=None,
+            payment_description=payment_description,
+            amount_tenge=TEAM_ENTRY_FEE_TENGE,
+            receipt_path=str(receipt_path),
+            receipt_content_type=receipt_type,
+            db=db,
+        )
     return ReadingTeamRegistrationResponse(
         id=registration.id,
         team_name=registration.team_name,
+        payment_description=registration.payment_description,
+        amount_tenge=registration.amount_tenge,
         status=registration.status,
         created_at=registration.created_at,
     )
@@ -665,6 +741,78 @@ async def _require_admin(user_id: str, db: AsyncSession) -> None:
     user = await get_user_by_id(uuid.UUID(user_id), db)
     if not user or not user.is_admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admins only")
+
+
+async def list_team_payments_for_admin(
+    user_id: str, db: AsyncSession
+) -> list[ReadingTeamPaymentAdminResponse]:
+    from app.domains.reading.repo_reading import list_team_registrations, list_teams_ranked
+
+    await _require_admin(user_id, db)
+    teams = await list_teams_ranked(db)
+    registrations = await list_team_registrations(db)
+    registrations_by_team = {
+        registration.team_id: registration
+        for registration in registrations
+        if registration.team_id is not None
+    }
+    return [
+        ReadingTeamPaymentAdminResponse(
+            team_id=team.id,
+            team_name=team.name,
+            member_count=member_count,
+            payment_id=registration.id if registration else None,
+            submitted_by_email=registration.contact_email if registration else None,
+            payment_description=registration.payment_description if registration else None,
+            amount_tenge=registration.amount_tenge if registration else TEAM_ENTRY_FEE_TENGE,
+            receipt_content_type=registration.receipt_content_type if registration else None,
+            status=registration.status if registration else None,
+            submitted_at=registration.created_at if registration else None,
+        )
+        for team, member_count, _ in teams
+        for registration in [registrations_by_team.get(team.id)]
+    ]
+
+
+async def update_team_payment_status_for_admin(
+    user_id: str,
+    payment_id: str,
+    payload: ReadingTeamPaymentStatusUpdate,
+    db: AsyncSession,
+) -> ReadingTeamRegistrationResponse:
+    from app.domains.reading.repo_reading import (
+        get_team_registration_by_id,
+        update_team_registration_status,
+    )
+
+    await _require_admin(user_id, db)
+    registration = await get_team_registration_by_id(uuid.UUID(payment_id), db)
+    if not registration:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team payment not found")
+    registration = await update_team_registration_status(registration, payload.status, db)
+    return ReadingTeamRegistrationResponse(
+        id=registration.id,
+        team_name=registration.team_name,
+        payment_description=registration.payment_description,
+        amount_tenge=registration.amount_tenge,
+        status=registration.status,
+        created_at=registration.created_at,
+    )
+
+
+async def get_team_payment_receipt_for_admin(
+    user_id: str, payment_id: str, db: AsyncSession
+) -> tuple[Path, str, str]:
+    from app.domains.reading.repo_reading import get_team_registration_by_id
+
+    await _require_admin(user_id, db)
+    registration = await get_team_registration_by_id(uuid.UUID(payment_id), db)
+    if not registration:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team payment not found")
+    receipt_path = Path(registration.receipt_path)
+    if not receipt_path.is_file():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment receipt file not found")
+    return receipt_path, registration.receipt_content_type, registration.team_name
 
 
 def _to_quiz_response(quiz: ReadingQuiz) -> ReadingQuizResponse:

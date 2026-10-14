@@ -1,6 +1,6 @@
 import { CalendarRange, Crown, Send, Users, Vote, Wallet, type LucideIcon } from "lucide-react";
 
-export const ENTRY_FEE = "4 000 ₸";
+export const ENTRY_FEE = "3 000 ₸";
 
 export interface SeasonRule {
   title: string;

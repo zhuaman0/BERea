@@ -44,6 +44,7 @@ class ReadingUserResponse(BaseModel):
     email: EmailStr
     full_name: str
     team_name: str | None
+    payment_status: str | None
     token_balance: int
     current_streak: int
     is_admin: bool
@@ -127,22 +128,32 @@ class ReadingTeamMemberProfileResponse(BaseModel):
     created_at: datetime
 
 
-class ReadingTeamRegistrationCreate(BaseModel):
-    team_name: str = Field(min_length=2, max_length=120)
-    member_1_name: str = Field(min_length=1, max_length=120)
-    member_2_name: str = Field(min_length=1, max_length=120)
-    member_3_name: str = Field(min_length=1, max_length=120)
-    contact_email: EmailStr
-    contact_phone: str | None = Field(default=None, max_length=32)
-
-
 class ReadingTeamRegistrationResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
     team_name: str
+    payment_description: str
+    amount_tenge: int
     status: str
     created_at: datetime
+
+
+class ReadingTeamPaymentAdminResponse(BaseModel):
+    team_id: uuid.UUID
+    team_name: str
+    member_count: int
+    payment_id: uuid.UUID | None
+    submitted_by_email: EmailStr | None
+    payment_description: str | None
+    amount_tenge: int
+    receipt_content_type: str | None
+    status: str | None
+    submitted_at: datetime | None
+
+
+class ReadingTeamPaymentStatusUpdate(BaseModel):
+    status: Literal["pending", "approved", "rejected"]
 
 
 VoteStage = Literal["language", "genre", "book"]

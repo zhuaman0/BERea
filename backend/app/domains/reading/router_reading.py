@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile, status
-from pydantic import ValidationError
+from fastapi import APIRouter, File, Form, Response, UploadFile
+from fastapi.responses import FileResponse
 
 from app.dependencies import CurrentUserId, DbSession
 from app.domains.reading.schema_reading import (
@@ -30,7 +30,8 @@ from app.domains.reading.schema_reading import (
     ReadingTeamJoinRequest,
     ReadingTeamMemberAddRequest,
     ReadingTeamMemberProfileResponse,
-    ReadingTeamRegistrationCreate,
+    ReadingTeamPaymentAdminResponse,
+    ReadingTeamPaymentStatusUpdate,
     ReadingTeamRegistrationResponse,
     ReadingTeamResponse,
     ReadingTeamSummaryResponse,
@@ -134,32 +135,52 @@ async def get_team_member_profile(
     return await get_team_member_profile_service(user_id, member_id, db)
 
 
-@router.post("/teams/register", response_model=ReadingTeamRegistrationResponse, status_code=201)
-async def register_team(
+@router.post("/teams/payment", response_model=ReadingTeamRegistrationResponse, status_code=201)
+async def submit_team_payment(
     db: DbSession,
-    team_name: Annotated[str, Form()],
-    member_1_name: Annotated[str, Form()],
-    member_2_name: Annotated[str, Form()],
-    member_3_name: Annotated[str, Form()],
-    contact_email: Annotated[str, Form()],
-    contact_phone: Annotated[str | None, Form()] = None,
+    user_id: CurrentUserId,
+    payment_description: Annotated[str, Form(min_length=3, max_length=500)],
     receipt: UploadFile = File(...),
 ) -> ReadingTeamRegistrationResponse:
     from app.domains.reading.service_reading import register_team as register_team_service
 
-    try:
-        payload = ReadingTeamRegistrationCreate(
-            team_name=team_name,
-            member_1_name=member_1_name,
-            member_2_name=member_2_name,
-            member_3_name=member_3_name,
-            contact_email=contact_email,
-            contact_phone=contact_phone,
-        )
-    except ValidationError as exc:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=exc.errors()) from exc
+    return await register_team_service(user_id, payment_description, receipt, db)
 
-    return await register_team_service(payload, receipt, db)
+
+@router.get("/team-payments", response_model=list[ReadingTeamPaymentAdminResponse])
+async def list_team_payments(
+    user_id: CurrentUserId, db: DbSession
+) -> list[ReadingTeamPaymentAdminResponse]:
+    from app.domains.reading.service_reading import list_team_payments_for_admin
+
+    return await list_team_payments_for_admin(user_id, db)
+
+
+@router.patch("/team-payments/{payment_id}", response_model=ReadingTeamRegistrationResponse)
+async def update_team_payment_status(
+    payment_id: str,
+    payload: ReadingTeamPaymentStatusUpdate,
+    user_id: CurrentUserId,
+    db: DbSession,
+) -> ReadingTeamRegistrationResponse:
+    from app.domains.reading.service_reading import update_team_payment_status_for_admin
+
+    return await update_team_payment_status_for_admin(user_id, payment_id, payload, db)
+
+
+@router.get("/team-payments/{payment_id}/receipt", response_class=FileResponse)
+async def get_team_payment_receipt(
+    payment_id: str, user_id: CurrentUserId, db: DbSession
+) -> FileResponse:
+    from app.domains.reading.service_reading import get_team_payment_receipt_for_admin
+
+    receipt_path, content_type, team_name = await get_team_payment_receipt_for_admin(user_id, payment_id, db)
+    return FileResponse(
+        path=receipt_path,
+        media_type=content_type,
+        filename=f"{team_name}-receipt{receipt_path.suffix}",
+        content_disposition_type="inline",
+    )
 
 
 @router.post("/vote-rounds", response_model=ReadingVoteRoundResponse, status_code=201)
