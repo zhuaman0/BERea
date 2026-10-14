@@ -20,12 +20,6 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // ── 451° landing page ──────────────────────────────────────────────────────
-  // Returning signed-in visitors skip the marketing page and land straight in the app.
-  if (pathname === "/" && request.cookies.has("nats-session")) {
-    return NextResponse.redirect(new URL("/reading", request.url));
-  }
-
   // ── Reading (NATS Spirea) auth guard ──────────────────────────────────────
   if (pathname.startsWith("/reading")) {
     const hasReadingSession = request.cookies.has("nats-session");
