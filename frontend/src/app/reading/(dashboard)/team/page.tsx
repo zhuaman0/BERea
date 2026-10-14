@@ -77,14 +77,14 @@ export default function ReadingTeamPage() {
 
   const statItems: StatStripItem[] = [
     {
-      icon: Trophy, label: "Team place",
-      value: team ? `${team.place}/${team.teams_total}` : "—",
-      note: team ? `${team.points} ${team.points === 1 ? "point" : "points"} this season` : "",
+      icon: Trophy, label: "Team points",
+      value: team ? `${team.points}` : "—",
+      note: "From quiz nights and bonus tasks",
       accent: false,
     },
     {
-      icon: BookOpen, label: "Books you finished",
-      value: rounds.length > 0 ? `${me?.books_finished ?? 0}/${rounds.length}` : `${me?.books_finished ?? 0}`,
+      icon: BookOpen, label: "Team books finished",
+      value: team ? (rounds.length > 0 ? `${team.books_finished}/${rounds.length}` : `${team.books_finished}`) : "—",
       note: activeRound
         ? `${activeRound.label} in progress`
         : rounds.some((r) => r.status !== "locked") ? "No active round" : "Season hasn't started yet",
@@ -138,13 +138,13 @@ export default function ReadingTeamPage() {
                     index={i}
                   />
                 ))}
-                {Array.from({ length: team.max_members - team.members.length }).map((_, i) => (
+                {team.members.length < team.max_members && (
                   <OpenSpotCard
-                    key={`open-${i}`}
-                    index={team.members.length + i}
+                    spotsLeft={team.max_members - team.members.length}
+                    index={team.members.length}
                     onAdd={openAddModal}
                   />
-                ))}
+                )}
               </section>
 
               <aside className="flex flex-col gap-6">

@@ -112,28 +112,24 @@ async def list_teams_ranked(db: AsyncSession) -> list[tuple[ReadingTeam, int, in
     return [(row[0], int(row[1]), int(row[2])) for row in result.all()]
 
 
-async def quiz_points_by_user(user_ids: list[uuid.UUID], db: AsyncSession) -> dict[uuid.UUID, int]:
-    result = await db.execute(
-        select(ReadingQuizParticipant.user_id, func.sum(ReadingQuizParticipant.score))
-        .where(ReadingQuizParticipant.user_id.in_(user_ids))
-        .group_by(ReadingQuizParticipant.user_id)
-    )
-    return {user_id: int(total) for user_id, total in result.all()}
-
-
-async def books_finished_by_user(user_ids: list[uuid.UUID], db: AsyncSession) -> dict[uuid.UUID, int]:
-    """A book counts as finished once the reader's page has reached the book's page count."""
-    result = await db.execute(
-        select(ReadingProgress.user_id, func.count(ReadingProgress.id))
+async def count_books_finished_by_all(user_ids: list[uuid.UUID], db: AsyncSession) -> int:
+    """Books that every one of these readers has finished (saved page reached the book's page count)."""
+    if not user_ids:
+        return 0
+    finished_by_all = (
+        select(ReadingProgress.book_id)
         .join(ReadingBook, ReadingBook.id == ReadingProgress.book_id)
         .where(
             ReadingProgress.user_id.in_(user_ids),
             ReadingBook.page_count.is_not(None),
             ReadingProgress.current_page >= ReadingBook.page_count,
         )
-        .group_by(ReadingProgress.user_id)
+        .group_by(ReadingProgress.book_id)
+        .having(func.count(func.distinct(ReadingProgress.user_id)) == len(user_ids))
+        .subquery()
     )
-    return {user_id: int(count) for user_id, count in result.all()}
+    result = await db.execute(select(func.count()).select_from(finished_by_all))
+    return int(result.scalar_one())
 
 
 async def rename_team(team: ReadingTeam, new_name: str, db: AsyncSession) -> ReadingTeam:
