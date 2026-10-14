@@ -46,13 +46,16 @@ interface SeasonClockProps {
 export function SeasonClock({ rounds }: SeasonClockProps) {
   const now = useSyncExternalStore<number | null>(subscribeToMinutes, getMinuteSnapshot, getServerSnapshot);
 
-  const timed = rounds.map((r) => ({
+  const timed = [...rounds].sort((a, b) => a.index - b.index).map((r) => ({
     round: r,
     start: new Date(r.starts_at).getTime(),
     end: new Date(r.ends_at).getTime(),
   }));
-  const active = now === null ? undefined : timed.find((t) => now >= t.start && now <= t.end);
-  const next = now === null ? undefined : timed.find((t) => t.start > now);
+  const hasBegun = rounds.some((r) => r.status !== "locked");
+  const active = timed.find((t) => t.round.status === "in_progress");
+  // Before kickoff only Round 1 can be "next"; a later round never jumps the queue because Round 1's date passed.
+  const candidates = hasBegun ? timed.filter((t) => t.round.status === "locked") : timed.slice(0, 1);
+  const next = now === null ? undefined : candidates.find((t) => t.start > now);
 
   return (
     <motion.section
@@ -72,6 +75,14 @@ export function SeasonClock({ rounds }: SeasonClockProps) {
         <ActiveRound end={active.end} now={now} round={active.round} />
       ) : next ? (
         <UpcomingRound round={next.round} msUntilStart={next.start - now} />
+      ) : !hasBegun ? (
+        <div className="mt-4">
+          <p className="font-display text-xl font-semibold text-[var(--rd-text)]">Registration is open</p>
+          <p className="mt-2 text-xs leading-relaxed text-[var(--rd-text-muted)]">
+            The season hasn&apos;t started yet. Round 1 opens at kickoff — the date is announced in the
+            451° Telegram channel.
+          </p>
+        </div>
       ) : (
         <p className="mt-4 font-display text-xl font-semibold text-[var(--rd-text)]">
           {rounds.length > 0 ? "Season complete" : "Schedule coming soon"}
@@ -81,9 +92,9 @@ export function SeasonClock({ rounds }: SeasonClockProps) {
       {now !== null && timed.length > 0 && (
         <div className="mt-6 flex gap-1.5">
           {timed.map((t, i) => {
-            const isDone = now > t.end;
-            const isActive = now >= t.start && now <= t.end;
-            const fill = isActive ? (now - t.start) / (t.end - t.start) : isDone ? 1 : 0;
+            const isDone = t.round.status === "done";
+            const isActive = t.round.status === "in_progress";
+            const fill = isActive ? Math.min(Math.max((now - t.start) / (t.end - t.start), 0), 1) : isDone ? 1 : 0;
             return (
               <div key={t.round.id} className="flex flex-1 flex-col gap-1.5">
                 <div className={cn("h-1.5 overflow-hidden rounded-full", isActive ? "bg-white/[0.08]" : "bg-[var(--rd-border)]")}>

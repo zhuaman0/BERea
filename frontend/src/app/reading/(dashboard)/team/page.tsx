@@ -85,7 +85,9 @@ export default function ReadingTeamPage() {
     {
       icon: BookOpen, label: "Books you finished",
       value: rounds.length > 0 ? `${me?.books_finished ?? 0}/${rounds.length}` : `${me?.books_finished ?? 0}`,
-      note: activeRound ? `${activeRound.label} in progress` : "No active round",
+      note: activeRound
+        ? `${activeRound.label} in progress`
+        : rounds.some((r) => r.status !== "locked") ? "No active round" : "Season hasn't started yet",
       accent: false,
     },
     {

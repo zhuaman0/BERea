@@ -8,12 +8,20 @@ interface ReadingTopbarProps {
   seasonLabel: string | null;
   roundIndex:  number;
   roundTotal:  number;
+  isRegistrationPhase: boolean;
   dayProgress: RoundDayProgress | null;
   totalPoints: number;
   userName:    string | null;
 }
 
-function roundSummary(seasonLabel: string | null, roundIndex: number, roundTotal: number, day: RoundDayProgress | null): string {
+function roundSummary(
+  seasonLabel: string | null,
+  roundIndex: number,
+  roundTotal: number,
+  isRegistrationPhase: boolean,
+  day: RoundDayProgress | null
+): string {
+  if (isRegistrationPhase) return [seasonLabel, "Registration open"].filter(Boolean).join(" · ");
   const parts = [seasonLabel, `Round ${roundIndex} of ${roundTotal}`];
   if (day) {
     parts.push(`Day ${day.dayNumber} of ${day.totalDays}`);
@@ -22,7 +30,7 @@ function roundSummary(seasonLabel: string | null, roundIndex: number, roundTotal
   return parts.filter(Boolean).join(" · ");
 }
 
-export function ReadingTopbar({ seasonLabel, roundIndex, roundTotal, dayProgress, totalPoints, userName }: ReadingTopbarProps) {
+export function ReadingTopbar({ seasonLabel, roundIndex, roundTotal, isRegistrationPhase, dayProgress, totalPoints, userName }: ReadingTopbarProps) {
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-[var(--rd-border)] bg-[var(--rd-panel)] px-4 md:px-6">
       <Link href={"/reading" as Route} className="flex min-w-0 items-center gap-2.5">
@@ -30,9 +38,9 @@ export function ReadingTopbar({ seasonLabel, roundIndex, roundTotal, dayProgress
         <span className="font-display truncate text-[14px] font-semibold tracking-tight text-[var(--rd-text)]">
           NATS SPIREA
         </span>
-        {roundTotal > 0 && (
+        {(roundTotal > 0 || isRegistrationPhase) && (
           <span className="hidden truncate text-[12px] text-[var(--rd-text-muted)] sm:inline">
-            · {roundSummary(seasonLabel, roundIndex, roundTotal, dayProgress)}
+            · {roundSummary(seasonLabel, roundIndex, roundTotal, isRegistrationPhase, dayProgress)}
           </span>
         )}
       </Link>
