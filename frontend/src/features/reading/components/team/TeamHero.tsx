@@ -6,7 +6,6 @@ import { Paintbrush, Pencil, UserPlus } from "lucide-react";
 import { isApiError } from "@/features/auth/utils";
 import { cn } from "@/shared/lib/utils";
 import type { ReadingTeam } from "@berea/api";
-import { PagePattern } from "./PagePattern";
 import { CoverShowcase } from "./CoverShowcase";
 import { initials } from "@berea/core";
 import type { TeamTheme } from "./teamTheme";
@@ -58,7 +57,6 @@ export function TeamHero({ team, theme, roundLabel, onRename, onAddStudents, onD
       transition={{ duration: 0.6, ease: EASE }}
       className={cn("relative overflow-hidden rounded-[28px] border bg-[var(--rd-panel)]", theme.border)}
     >
-      <PagePattern theme={theme} className="inset-y-0 right-0 h-full w-2/3 [mask-image:linear-gradient(to_left,black,transparent)]" />
       <div className={cn("pointer-events-none absolute -left-24 -top-32 h-96 w-96 rounded-full blur-3xl", theme.glow)} />
       <div className={cn("pointer-events-none absolute -bottom-40 right-10 h-80 w-80 rounded-full opacity-60 blur-3xl", theme.glow)} />
 

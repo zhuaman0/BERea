@@ -48,13 +48,24 @@ class ReadingTeamRegistration(TimestampMixin, Base):
     __tablename__ = "reading_team_registrations"
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    team_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("reading_teams.id", ondelete="CASCADE"), nullable=True, unique=True, index=True
+    )
+    submitted_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("reading_users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     team_name: Mapped[str] = mapped_column(String(120), nullable=False, index=True)
     member_1_name: Mapped[str] = mapped_column(String(120), nullable=False)
     member_2_name: Mapped[str] = mapped_column(String(120), nullable=False)
     member_3_name: Mapped[str] = mapped_column(String(120), nullable=False)
     contact_email: Mapped[str] = mapped_column(String(255), nullable=False)
     contact_phone: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    payment_description: Mapped[str] = mapped_column(Text, default="", server_default="", nullable=False)
+    amount_tenge: Mapped[int] = mapped_column(Integer, default=3000, server_default="3000", nullable=False)
     receipt_path: Mapped[str] = mapped_column(String(512), nullable=False)
+    receipt_content_type: Mapped[str] = mapped_column(
+        String(50), default="application/pdf", server_default="application/pdf", nullable=False
+    )
     status: Mapped[str] = mapped_column(String(20), default="pending", nullable=False)
 
 

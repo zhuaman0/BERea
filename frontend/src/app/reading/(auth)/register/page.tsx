@@ -2,10 +2,12 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { ReadingRegisterForm } from "@/features/reading/components/auth/RegisterForm";
 import { ReadingGoogleButton } from "@/features/reading/components/auth/ReadingGoogleButton";
+import { RegistrationSteps } from "@/features/reading/components/auth/RegistrationSteps";
 
 export default function ReadingRegisterPage() {
   return (
     <div className="mt-8 flex flex-col gap-6">
+      <RegistrationSteps current={1} />
       <div className="flex flex-col gap-2">
         <h1 className="font-display text-[28px] font-semibold text-[var(--rd-text)]">
           Create your account

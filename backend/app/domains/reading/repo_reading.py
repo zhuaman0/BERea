@@ -88,15 +88,52 @@ async def get_team_members(team_id: uuid.UUID, db: AsyncSession) -> list[Reading
     return list(result.scalars().all())
 
 
-async def list_teams_with_member_counts(db: AsyncSession) -> list[tuple[ReadingTeam, int]]:
-    member_count = func.count(ReadingUser.id).label("member_count")
-    result = await db.execute(
-        select(ReadingTeam, member_count)
-        .outerjoin(ReadingUser, ReadingUser.team_id == ReadingTeam.id)
-        .group_by(ReadingTeam.id)
-        .order_by(member_count.desc(), ReadingTeam.name.asc())
+async def list_teams_ranked(db: AsyncSession) -> list[tuple[ReadingTeam, int, int]]:
+    """Every team with its member count and season points (sum of its quiz-night scores),
+    best first: points, then roster size, then name."""
+    member_counts = (
+        select(ReadingUser.team_id, func.count(ReadingUser.id).label("member_count"))
+        .group_by(ReadingUser.team_id)
+        .subquery()
     )
-    return [(row[0], row[1]) for row in result.all()]
+    team_points = (
+        select(ReadingQuizParticipant.team_id, func.sum(ReadingQuizParticipant.score).label("points"))
+        .group_by(ReadingQuizParticipant.team_id)
+        .subquery()
+    )
+    member_count = func.coalesce(member_counts.c.member_count, 0)
+    points = func.coalesce(team_points.c.points, 0)
+    result = await db.execute(
+        select(ReadingTeam, member_count, points)
+        .outerjoin(member_counts, member_counts.c.team_id == ReadingTeam.id)
+        .outerjoin(team_points, team_points.c.team_id == ReadingTeam.id)
+        .order_by(points.desc(), member_count.desc(), ReadingTeam.name.asc())
+    )
+    return [(row[0], int(row[1]), int(row[2])) for row in result.all()]
+
+
+async def quiz_points_by_user(user_ids: list[uuid.UUID], db: AsyncSession) -> dict[uuid.UUID, int]:
+    result = await db.execute(
+        select(ReadingQuizParticipant.user_id, func.sum(ReadingQuizParticipant.score))
+        .where(ReadingQuizParticipant.user_id.in_(user_ids))
+        .group_by(ReadingQuizParticipant.user_id)
+    )
+    return {user_id: int(total) for user_id, total in result.all()}
+
+
+async def books_finished_by_user(user_ids: list[uuid.UUID], db: AsyncSession) -> dict[uuid.UUID, int]:
+    """A book counts as finished once the reader's page has reached the book's page count."""
+    result = await db.execute(
+        select(ReadingProgress.user_id, func.count(ReadingProgress.id))
+        .join(ReadingBook, ReadingBook.id == ReadingProgress.book_id)
+        .where(
+            ReadingProgress.user_id.in_(user_ids),
+            ReadingBook.page_count.is_not(None),
+            ReadingProgress.current_page >= ReadingBook.page_count,
+        )
+        .group_by(ReadingProgress.user_id)
+    )
+    return {user_id: int(count) for user_id, count in result.all()}
 
 
 async def rename_team(team: ReadingTeam, new_name: str, db: AsyncSession) -> ReadingTeam:
@@ -186,25 +223,95 @@ async def revoke_token(record: ReadingRefreshToken, db: AsyncSession) -> None:
 
 
 async def create_team_registration(
+    team_id: uuid.UUID,
+    submitted_by_user_id: uuid.UUID,
     team_name: str,
     member_1_name: str,
     member_2_name: str,
     member_3_name: str,
     contact_email: str,
     contact_phone: str | None,
+    payment_description: str,
+    amount_tenge: int,
     receipt_path: str,
+    receipt_content_type: str,
     db: AsyncSession,
 ) -> ReadingTeamRegistration:
     registration = ReadingTeamRegistration(
+        team_id=team_id,
+        submitted_by_user_id=submitted_by_user_id,
         team_name=team_name,
         member_1_name=member_1_name,
         member_2_name=member_2_name,
         member_3_name=member_3_name,
         contact_email=contact_email,
         contact_phone=contact_phone,
+        payment_description=payment_description,
+        amount_tenge=amount_tenge,
         receipt_path=receipt_path,
+        receipt_content_type=receipt_content_type,
     )
     db.add(registration)
+    await db.commit()
+    await db.refresh(registration)
+    return registration
+
+
+async def get_team_registration_by_team_id(
+    team_id: uuid.UUID, db: AsyncSession
+) -> ReadingTeamRegistration | None:
+    result = await db.execute(
+        select(ReadingTeamRegistration).where(ReadingTeamRegistration.team_id == team_id)
+    )
+    return result.scalar_one_or_none()
+
+
+async def get_team_registration_by_id(
+    registration_id: uuid.UUID, db: AsyncSession
+) -> ReadingTeamRegistration | None:
+    result = await db.execute(
+        select(ReadingTeamRegistration).where(ReadingTeamRegistration.id == registration_id)
+    )
+    return result.scalar_one_or_none()
+
+
+async def list_team_registrations(db: AsyncSession) -> list[ReadingTeamRegistration]:
+    result = await db.execute(
+        select(ReadingTeamRegistration)
+        .where(ReadingTeamRegistration.team_id.is_not(None))
+        .order_by(ReadingTeamRegistration.created_at.desc())
+    )
+    return list(result.scalars().all())
+
+
+async def update_team_registration_status(
+    registration: ReadingTeamRegistration, payment_status: str, db: AsyncSession
+) -> ReadingTeamRegistration:
+    registration.status = payment_status
+    await db.commit()
+    await db.refresh(registration)
+    return registration
+
+
+async def resubmit_team_registration(
+    registration: ReadingTeamRegistration,
+    submitted_by_user_id: uuid.UUID,
+    member_names: list[str],
+    contact_email: str,
+    payment_description: str,
+    receipt_path: str,
+    receipt_content_type: str,
+    db: AsyncSession,
+) -> ReadingTeamRegistration:
+    registration.submitted_by_user_id = submitted_by_user_id
+    registration.member_1_name = member_names[0]
+    registration.member_2_name = member_names[1]
+    registration.member_3_name = member_names[2]
+    registration.contact_email = contact_email
+    registration.payment_description = payment_description
+    registration.receipt_path = receipt_path
+    registration.receipt_content_type = receipt_content_type
+    registration.status = "pending"
     await db.commit()
     await db.refresh(registration)
     return registration

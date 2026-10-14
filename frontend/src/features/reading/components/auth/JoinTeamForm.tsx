@@ -46,7 +46,7 @@ export function JoinTeamForm() {
     try {
       const profile = await readingAuthApi.joinTeam(result.data);
       updateUser(profile);
-      router.push("/reading");
+      router.push(profile.payment_status ? "/reading" : "/reading/payment");
     } catch (err: unknown) {
       setServerError(
         isApiError(err) ? err.detail : "Something went wrong. Please try again."

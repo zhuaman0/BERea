@@ -3,13 +3,14 @@
 import { LogOut } from "lucide-react";
 import { useReadingLogout } from "@/features/reading/hooks/useReadingLogout";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
+import { READING_PAGE_CONTAINER } from "@/features/reading/lib/pageContainer";
 
 export default function ReadingSettingsPage() {
   const user = useReadingAuthStore((s) => s.user);
   const { logout, isLoggingOut } = useReadingLogout();
 
   return (
-    <div className="mx-auto max-w-4xl px-6 py-10 md:px-8">
+    <div className={READING_PAGE_CONTAINER}>
       <h1 className="font-display text-2xl font-semibold text-[var(--rd-text)]">Settings</h1>
       <p className="mt-1 text-[13px] text-[var(--rd-text-muted)]">
         Account and notification preferences are coming in a later step.

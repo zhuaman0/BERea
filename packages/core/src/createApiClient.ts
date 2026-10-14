@@ -49,7 +49,17 @@ function createApiClient(config: ApiClientConfig) {
   }
 
   class ApiClient {
-    private async request<T>(path: string, init: RequestInit = {}, retry = true): Promise<T> {
+    private parseResponse<T>(res: Response, responseType: "json" | "blob"): Promise<T> {
+      if (responseType === "blob") return res.blob() as Promise<T>;
+      return res.json() as Promise<T>;
+    }
+
+    private async request<T>(
+      path: string,
+      init: RequestInit = {},
+      retry = true,
+      responseType: "json" | "blob" = "json"
+    ): Promise<T> {
       const { accessToken } = readSession();
       // FormData needs the browser to set its own multipart boundary header.
       const isJson = !(init.body instanceof FormData);
@@ -71,7 +81,7 @@ function createApiClient(config: ApiClientConfig) {
             throw { detail: body.detail ?? `HTTP ${retryRes.status}`, status: retryRes.status } satisfies ApiError;
           }
           if (retryRes.status === 204) return undefined as T;
-          return retryRes.json() as Promise<T>;
+          return this.parseResponse<T>(retryRes, responseType);
         } catch (e) {
           if ((e as ApiError).status) throw e;
           throw { detail: "Session expired", status: 401 } satisfies ApiError;
@@ -84,15 +94,23 @@ function createApiClient(config: ApiClientConfig) {
       }
 
       if (res.status === 204) return undefined as T;
-      return res.json() as Promise<T>;
+      return this.parseResponse<T>(res, responseType);
     }
 
     get<T>(path: string): Promise<T> {
       return this.request<T>(path, { method: "GET" });
     }
 
+    getBlob(path: string): Promise<Blob> {
+      return this.request<Blob>(path, { method: "GET" }, true, "blob");
+    }
+
     post<T>(path: string, body: unknown): Promise<T> {
       return this.request<T>(path, { method: "POST", body: JSON.stringify(body) });
+    }
+
+    postForm<T>(path: string, form: FormData): Promise<T> {
+      return this.request<T>(path, { method: "POST", body: form });
     }
 
     putForm<T>(path: string, form: FormData): Promise<T> {

@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Hourglass } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import type { SemesterRound } from "@berea/api";
+import { roundDayProgress } from "@/features/reading/lib/roundCalendar";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 const MINUTE_MS = 60_000;
@@ -68,7 +69,7 @@ export function SeasonClock({ rounds }: SeasonClockProps) {
       {now === null ? (
         <div className="mt-5 h-20 animate-pulse rounded-xl bg-white/[0.03]" />
       ) : active ? (
-        <ActiveRound start={active.start} end={active.end} now={now} round={active.round} />
+        <ActiveRound end={active.end} now={now} round={active.round} />
       ) : next ? (
         <UpcomingRound round={next.round} msUntilStart={next.start - now} />
       ) : (
@@ -107,7 +108,6 @@ export function SeasonClock({ rounds }: SeasonClockProps) {
 
 interface ActiveRoundProps {
   round: SemesterRound;
-  start: number;
   end:   number;
   now:   number;
 }
@@ -131,10 +131,11 @@ function UpcomingRound({ round, msUntilStart }: UpcomingRoundProps) {
   );
 }
 
-function ActiveRound({ round, start, end, now }: ActiveRoundProps) {
-  const remaining = formatDuration(end - now);
-  const totalDays = Math.max(Math.round((end - start) / DAY_MS), 1);
-  const dayNumber = Math.min(Math.floor((now - start) / DAY_MS) + 1, totalDays);
+function ActiveRound({ round, end, now }: ActiveRoundProps) {
+  const { dayNumber, totalDays, daysLeft } = roundDayProgress(round, now);
+  const remaining = daysLeft > 0
+    ? { value: daysLeft, unit: daysLeft === 1 ? "day left" : "days left" }
+    : { value: formatDuration(end - now).value, unit: `${formatDuration(end - now).unit} left` };
 
   return (
     <div className="mt-4">
@@ -148,10 +149,10 @@ function ActiveRound({ round, start, end, now }: ActiveRoundProps) {
         <span className="bg-gradient-to-r from-[var(--rd-accent-from)] to-[var(--rd-accent-to)] bg-clip-text font-display text-5xl font-semibold text-transparent">
           {remaining.value}
         </span>
-        <span className="text-sm text-[var(--rd-text-muted)]">{remaining.unit} left</span>
+        <span className="text-sm text-[var(--rd-text-muted)]">{remaining.unit}</span>
       </p>
       <p className="mt-1 text-xs text-[var(--rd-text-muted)]">
-        Day {dayNumber} of {totalDays}
+        {daysLeft > 0 ? `Day ${dayNumber} of ${totalDays}` : `Last day of ${totalDays}`}
       </p>
     </div>
   );
