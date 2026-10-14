@@ -342,15 +342,13 @@ def _to_team_cover(team: ReadingTeam) -> ReadingTeamCover:
 async def _build_team_response(
     team: ReadingTeam, members: list[ReadingUser], db: AsyncSession
 ) -> ReadingTeamResponse:
-    from app.domains.reading.repo_reading import books_finished_by_user, list_teams_ranked, quiz_points_by_user
+    from app.domains.reading.repo_reading import count_books_finished_by_all, list_teams_ranked
 
     rows = await list_teams_ranked(db)
     place = next((i + 1 for i, (row_team, _, _) in enumerate(rows) if row_team.id == team.id), len(rows))
     team_points = next((points for row_team, _, points in rows if row_team.id == team.id), 0)
 
-    member_ids = [m.id for m in members]
-    points_by_user = await quiz_points_by_user(member_ids, db)
-    books_by_user = await books_finished_by_user(member_ids, db)
+    books_finished = await count_books_finished_by_all([m.id for m in members], db)
 
     today = _today()
     return ReadingTeamResponse(
@@ -363,13 +361,12 @@ async def _build_team_response(
                 email=m.email,
                 current_streak=_effective_streak(m, today),
                 active_today=m.last_active_date == today,
-                points=points_by_user.get(m.id, 0),
-                books_finished=books_by_user.get(m.id, 0),
                 created_at=m.created_at,
             )
             for m in members
         ],
         points=team_points,
+        books_finished=books_finished,
         place=place,
         teams_total=len(rows),
         cover=_to_team_cover(team),
