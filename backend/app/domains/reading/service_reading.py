@@ -1,16 +1,11 @@
 from __future__ import annotations
 
-import asyncio
 import hashlib
-import logging
 import secrets
-import smtplib
 import uuid
 from datetime import UTC, date, datetime, timedelta
-from email.message import EmailMessage
 from pathlib import Path
 
-import httpx
 from fastapi import HTTPException, UploadFile, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -40,7 +35,6 @@ from app.domains.reading.schema_reading import (
     ReadingBookOfMonthResponse,
     ReadingBookResponse,
     ReadingBookWrite,
-    ReadingEmailVerifyRequest,
     ReadingLiveAnswerOption,
     ReadingLiveAnswerRequest,
     ReadingLiveHostState,
@@ -83,12 +77,7 @@ from app.domains.reading.schema_reading import (
     ReadingVoteRoundResponse,
 )
 
-logger = logging.getLogger(__name__)
-
 TEAM_ENTRY_FEE_TENGE = 3000
-EMAIL_CODE_TTL = timedelta(minutes=10)
-EMAIL_CODE_RESEND_COOLDOWN = timedelta(seconds=60)
-EMAIL_CODE_MAX_ATTEMPTS = 5
 TEAM_INVITE_TTL = timedelta(days=7)
 RECEIPT_TYPES = {
     "application/pdf": (".pdf", lambda data: data.startswith(b"%PDF")),
@@ -109,7 +98,6 @@ def _to_user_response(user: ReadingUser, payment_status: str | None = None) -> R
         current_streak=user.current_streak,
         is_admin=user.is_admin,
         is_captain=user.is_captain,
-        email_verified=user.email_verified,
         created_at=user.created_at,
     )
 
@@ -122,10 +110,6 @@ async def register_user(payload: ReadingRegisterRequest, db: AsyncSession) -> Re
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
 
     user = await create_user_record(payload.email, hash_password(payload.password), payload.full_name, db)
-    try:
-        await _issue_email_code(user, db)
-    except HTTPException:
-        pass  # Already logged; the account exists, so the verify page's "send a new code" retries instead of a dead end.
 
     access = create_access_token(str(user.id))
     refresh = create_refresh_token(str(user.id))
@@ -186,113 +170,13 @@ async def get_current_reading_user(user_id: str, db: AsyncSession) -> ReadingUse
     return _to_user_response(user, registration.status if registration else None)
 
 
-def _hash_email_code(user_id: uuid.UUID, code: str) -> str:
-    return hashlib.sha256(f"{user_id}:{code}".encode()).hexdigest()
-
-
-def _send_email(to: str, subject: str, body: str) -> None:
-    message = EmailMessage()
-    message["From"] = settings.smtp_from or settings.smtp_user
-    message["To"] = to
-    message["Subject"] = subject
-    message.set_content(body)
-    with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=15) as smtp:
-        smtp.starttls()
-        if settings.smtp_user:
-            smtp.login(settings.smtp_user, settings.smtp_password)
-        smtp.send_message(message)
-
-
-async def _send_email_via_brevo(to: str, subject: str, body: str) -> None:
-    async with httpx.AsyncClient(timeout=15) as client:
-        response = await client.post(
-            "https://api.brevo.com/v3/smtp/email",
-            headers={"api-key": settings.brevo_api_key},
-            json={
-                "sender": {"name": "NATS Spirea", "email": settings.brevo_sender_email},
-                "to": [{"email": to}],
-                "subject": subject,
-                "textContent": body,
-            },
-        )
-        response.raise_for_status()
-
-
-async def _issue_email_code(user: ReadingUser, db: AsyncSession) -> None:
-    from app.domains.reading.repo_reading import set_email_code
-
-    code = f"{secrets.randbelow(1_000_000):06d}"
-    now = datetime.now(UTC)
-    await set_email_code(user, _hash_email_code(user.id, code), now + EMAIL_CODE_TTL, now, db)
-
-    if not settings.brevo_api_key and not settings.smtp_host:
-        logger.warning("SMTP is not configured; verification code for %s is %s", user.email, code)
-        return
-    body = (
-        f"Hi {user.full_name},\n\n"
-        f"Your NATS Spirea verification code is {code}.\n"
-        "It expires in 10 minutes. If you didn't sign up, ignore this email."
-    )
-    subject = f"{code} is your NATS Spirea code"
-    try:
-        if settings.brevo_api_key:
-            await _send_email_via_brevo(user.email, subject, body)
-        else:
-            await asyncio.to_thread(_send_email, user.email, subject, body)
-    except (httpx.HTTPError, smtplib.SMTPException, OSError) as exc:
-        logger.exception("Sending the verification email to %s failed", user.email)
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="We couldn't send the verification email. Try resending the code in a minute.",
-        ) from exc
-
-
-async def verify_email(user_id: str, payload: ReadingEmailVerifyRequest, db: AsyncSession) -> ReadingUserResponse:
-    from app.domains.reading.repo_reading import get_user_by_id, mark_email_verified, record_email_code_attempt
-
-    user = await get_user_by_id(uuid.UUID(user_id), db)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    if user.email_verified:
-        return _to_user_response(user)
-    if not user.email_code_hash or not user.email_code_expires_at or user.email_code_expires_at < datetime.now(UTC):
-        raise HTTPException(status_code=status.HTTP_410_GONE, detail="This code has expired. Send a new one.")
-    if user.email_code_attempts >= EMAIL_CODE_MAX_ATTEMPTS:
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Too many wrong codes. Send a new one."
-        )
-    if not secrets.compare_digest(user.email_code_hash, _hash_email_code(user.id, payload.code)):
-        await record_email_code_attempt(user, db)
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="That code isn't right")
-
-    user = await mark_email_verified(user, db)
-    return _to_user_response(user)
-
-
-async def resend_email_code(user_id: str, db: AsyncSession) -> None:
-    from app.domains.reading.repo_reading import get_user_by_id
-
-    user = await get_user_by_id(uuid.UUID(user_id), db)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    if user.email_verified:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Your email is already verified")
-    if user.email_code_sent_at and datetime.now(UTC) - user.email_code_sent_at < EMAIL_CODE_RESEND_COOLDOWN:
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Wait a minute before asking for another code"
-        )
-    await _issue_email_code(user, db)
-
-
 async def _load_user_ready_for_team(user_id: str, db: AsyncSession) -> ReadingUser:
-    """A verified account that isn't on any team yet: the only state that may create or join one."""
+    """An account that isn't on any team yet: the only state that may create or join one."""
     from app.domains.reading.repo_reading import get_user_by_id
 
     user = await get_user_by_id(uuid.UUID(user_id), db)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    if not user.email_verified:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Verify your email first")
     if user.team:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

@@ -28,11 +28,6 @@ export const readingAuthApi = {
 
   myStats: () => readingApiClient.get<ReadingProfileStats>("/v1/reading/users/me/stats"),
 
-  verifyEmail: (code: string) =>
-    readingApiClient.post<ReadingUser>("/v1/reading/auth/verify-email", { code }),
-
-  resendCode: () => readingApiClient.post<void>("/v1/reading/auth/resend-code", {}),
-
   createTeam: (body: ReadingTeamJoinRequest) =>
     readingApiClient.post<ReadingUser>("/v1/reading/teams", body),
 

@@ -7,7 +7,7 @@ export default function ReadingJoinTeamPage() {
   return (
     <div className="mt-8 flex flex-col gap-6">
       <ReadingStageGuard mode="require-no-team" />
-      <RegistrationSteps current={3} />
+      <RegistrationSteps current={2} />
 
       <div className="flex flex-col gap-2">
         <h1 className="font-display text-[28px] font-semibold text-[var(--rd-text)]">

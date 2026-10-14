@@ -10,7 +10,6 @@ export interface ReadingUser {
   current_streak: number;
   is_admin:       boolean;
   is_captain:     boolean;
-  email_verified: boolean;
   created_at:     string;
 }
 

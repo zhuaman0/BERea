@@ -196,30 +196,6 @@ async def set_user_team(
     return user
 
 
-async def set_email_code(
-    user: ReadingUser, code_hash: str, expires_at: datetime, sent_at: datetime, db: AsyncSession
-) -> None:
-    user.email_code_hash = code_hash
-    user.email_code_expires_at = expires_at
-    user.email_code_sent_at = sent_at
-    user.email_code_attempts = 0
-    await db.commit()
-
-
-async def record_email_code_attempt(user: ReadingUser, db: AsyncSession) -> None:
-    user.email_code_attempts += 1
-    await db.commit()
-
-
-async def mark_email_verified(user: ReadingUser, db: AsyncSession) -> ReadingUser:
-    user.email_verified = True
-    user.email_code_hash = None
-    user.email_code_expires_at = None
-    await db.commit()
-    await db.refresh(user, attribute_names=["team"])
-    return user
-
-
 async def save_refresh_token(user_id: uuid.UUID, token_hash: str, expires_at: datetime, db: AsyncSession) -> None:
     record = ReadingRefreshToken(
         user_id=user_id,

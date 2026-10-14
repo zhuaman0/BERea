@@ -10,7 +10,6 @@ from app.domains.reading.schema_reading import (
     ReadingBookOfMonthResponse,
     ReadingBookResponse,
     ReadingBookWrite,
-    ReadingEmailVerifyRequest,
     ReadingLiveAnswerRequest,
     ReadingLiveHostState,
     ReadingLiveJoinRequest,
@@ -87,22 +86,6 @@ async def get_my_profile_stats(user_id: CurrentUserId, db: DbSession) -> Reading
     from app.domains.reading.service_reading import get_my_profile_stats as get_my_profile_stats_service
 
     return await get_my_profile_stats_service(user_id, db)
-
-
-@router.post("/auth/verify-email", response_model=ReadingUserResponse)
-async def verify_email(
-    payload: ReadingEmailVerifyRequest, user_id: CurrentUserId, db: DbSession
-) -> ReadingUserResponse:
-    from app.domains.reading.service_reading import verify_email as verify_email_service
-
-    return await verify_email_service(user_id, payload, db)
-
-
-@router.post("/auth/resend-code", status_code=204)
-async def resend_email_code(user_id: CurrentUserId, db: DbSession) -> None:
-    from app.domains.reading.service_reading import resend_email_code as resend_email_code_service
-
-    await resend_email_code_service(user_id, db)
 
 
 @router.post("/teams", response_model=ReadingUserResponse, status_code=201)
