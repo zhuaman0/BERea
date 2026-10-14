@@ -60,7 +60,7 @@ export function ReadingRegisterForm() {
 
       const placeholder: ReadingUser = {
         id: "", email: result.data.email, full_name: result.data.full_name,
-        team_name: null, token_balance: 0, current_streak: 0, is_admin: false, created_at: new Date().toISOString(),
+        team_name: null, payment_status: null, token_balance: 0, current_streak: 0, is_admin: false, created_at: new Date().toISOString(),
       };
       setSession(placeholder, access_token, refresh_token);
 
@@ -75,7 +75,7 @@ export function ReadingRegisterForm() {
         try {
           const profile = await readingAuthApi.joinTeam({ team_name: invitedTeam });
           updateUser(profile);
-          router.push("/reading");
+          router.push("/reading/payment");
           return;
         } catch { /* team may be full or renamed — let them join manually below */ }
       }

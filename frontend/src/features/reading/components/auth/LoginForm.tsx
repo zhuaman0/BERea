@@ -57,7 +57,7 @@ export function ReadingLoginForm() {
 
       const placeholder: ReadingUser = {
         id: "", email: result.data.email, full_name: "",
-        team_name: null, token_balance: 0, current_streak: 0, is_admin: false, created_at: new Date().toISOString(),
+        team_name: null, payment_status: null, token_balance: 0, current_streak: 0, is_admin: false, created_at: new Date().toISOString(),
       };
       setSession(placeholder, access_token, refresh_token);
 
@@ -67,7 +67,13 @@ export function ReadingLoginForm() {
         updateUser(profile);
       } catch { /* continue with placeholder */ }
 
-      router.push(profile.team_name ? "/reading" : "/reading/join-team");
+      router.push(
+        !profile.team_name
+          ? "/reading/join-team"
+          : profile.payment_status
+            ? "/reading"
+            : "/reading/payment"
+      );
     } catch (err: unknown) {
       setServerError(
         isApiError(err) ? err.detail : "Something went wrong. Please try again."

@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Route } from "next";
 import { usePathname } from "next/navigation";
-import { BookOpen, LayoutGrid, Settings, Users, Vote, Plus, type LucideIcon } from "lucide-react";
+import { BookOpen, ClipboardCheck, LayoutGrid, Settings, Users, Vote, Plus, type LucideIcon } from "lucide-react";
 
 interface NavItem {
   href:  string;
@@ -17,6 +17,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/reading/admin/books", label: "Books",   icon: BookOpen },
   { href: "/reading/admin/votes", label: "Book vote", icon: Vote },
   { href: "/reading/admin/teams", label: "Teams",   icon: Users },
+  { href: "/reading/admin/payments", label: "Payments", icon: ClipboardCheck },
   { href: "/reading/admin/settings", label: "Settings", icon: Settings },
 ];
 
