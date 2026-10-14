@@ -10,6 +10,7 @@ from datetime import UTC, date, datetime, timedelta
 from email.message import EmailMessage
 from pathlib import Path
 
+import httpx
 from fastapi import HTTPException, UploadFile, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -121,7 +122,10 @@ async def register_user(payload: ReadingRegisterRequest, db: AsyncSession) -> Re
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
 
     user = await create_user_record(payload.email, hash_password(payload.password), payload.full_name, db)
-    await _issue_email_code(user, db)
+    try:
+        await _issue_email_code(user, db)
+    except HTTPException:
+        pass  # Already logged; the account exists, so the verify page's "send a new code" retries instead of a dead end.
 
     access = create_access_token(str(user.id))
     refresh = create_refresh_token(str(user.id))
@@ -199,6 +203,21 @@ def _send_email(to: str, subject: str, body: str) -> None:
         smtp.send_message(message)
 
 
+async def _send_email_via_brevo(to: str, subject: str, body: str) -> None:
+    async with httpx.AsyncClient(timeout=15) as client:
+        response = await client.post(
+            "https://api.brevo.com/v3/smtp/email",
+            headers={"api-key": settings.brevo_api_key},
+            json={
+                "sender": {"name": "NATS Spirea", "email": settings.brevo_sender_email},
+                "to": [{"email": to}],
+                "subject": subject,
+                "textContent": body,
+            },
+        )
+        response.raise_for_status()
+
+
 async def _issue_email_code(user: ReadingUser, db: AsyncSession) -> None:
     from app.domains.reading.repo_reading import set_email_code
 
@@ -206,7 +225,7 @@ async def _issue_email_code(user: ReadingUser, db: AsyncSession) -> None:
     now = datetime.now(UTC)
     await set_email_code(user, _hash_email_code(user.id, code), now + EMAIL_CODE_TTL, now, db)
 
-    if not settings.smtp_host:
+    if not settings.brevo_api_key and not settings.smtp_host:
         logger.warning("SMTP is not configured; verification code for %s is %s", user.email, code)
         return
     body = (
@@ -214,9 +233,13 @@ async def _issue_email_code(user: ReadingUser, db: AsyncSession) -> None:
         f"Your NATS Spirea verification code is {code}.\n"
         "It expires in 10 minutes. If you didn't sign up, ignore this email."
     )
+    subject = f"{code} is your NATS Spirea code"
     try:
-        await asyncio.to_thread(_send_email, user.email, f"{code} is your NATS Spirea code", body)
-    except (smtplib.SMTPException, OSError) as exc:
+        if settings.brevo_api_key:
+            await _send_email_via_brevo(user.email, subject, body)
+        else:
+            await asyncio.to_thread(_send_email, user.email, subject, body)
+    except (httpx.HTTPError, smtplib.SMTPException, OSError) as exc:
         logger.exception("Sending the verification email to %s failed", user.email)
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
