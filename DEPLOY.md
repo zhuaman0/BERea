@@ -35,6 +35,13 @@ terms are for non-commercial projects. Since teams pay an entry fee, plan to mov
    | `SECRET_KEY` | a long random string — generate with `openssl rand -hex 32` |
    | `BACKEND_CORS_ORIGINS` | `["https://placeholder.vercel.app"]` for now — replaced in step 3 |
    | `FRONTEND_URL` | same Vercel URL as above (placeholder for now) |
+   | `SMTP_HOST` | `smtp.gmail.com` — sends the email verification codes |
+   | `SMTP_PORT` | `587` |
+   | `SMTP_USER` | the Gmail address that sends the codes |
+   | `SMTP_PASSWORD` | a Gmail app password for that address (myaccount.google.com/apppasswords) |
+   | `SMTP_FROM` | e.g. `NATS Spirea <that-address@gmail.com>` |
+
+   Without the `SMTP_*` variables nobody can finish registering: codes only go to the server log.
 
 4. Backend service → **Settings** → **Volumes** → **Add volume**, mount path **`/app/uploads`**.
    Payment receipts are saved there; without a volume they disappear on every redeploy.

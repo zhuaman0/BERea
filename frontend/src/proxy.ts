@@ -26,7 +26,12 @@ export function proxy(request: NextRequest) {
     const isReadingAuthPage = READING_AUTH_PAGES.some((p) => pathname.startsWith(p));
 
     if (isReadingAuthPage) {
-      if (hasReadingSession) return NextResponse.redirect(new URL("/reading", request.url));
+      if (hasReadingSession) {
+        // Already signed in and opening a teammate's invite link: go straight to the join step.
+        const invite = request.nextUrl.searchParams.get("invite");
+        const target = invite ? `/reading/join-team?invite=${encodeURIComponent(invite)}` : "/reading";
+        return NextResponse.redirect(new URL(target, request.url));
+      }
       return NextResponse.next();
     }
     if (!hasReadingSession) return NextResponse.redirect(new URL("/reading/login", request.url));

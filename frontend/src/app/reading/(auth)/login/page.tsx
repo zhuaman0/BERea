@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { ReadingLoginForm } from "@/features/reading/components/auth/LoginForm";
 import { ReadingGoogleButton } from "@/features/reading/components/auth/ReadingGoogleButton";
@@ -11,7 +12,9 @@ export default function ReadingLoginPage() {
         </h1>
       </div>
 
-      <ReadingLoginForm />
+      <Suspense fallback={null}>
+        <ReadingLoginForm />
+      </Suspense>
 
       <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.14em] text-[var(--rd-text-muted)]">
         <span className="h-px flex-1 bg-[var(--rd-border)]" />

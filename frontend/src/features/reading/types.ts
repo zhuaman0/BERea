@@ -24,15 +24,3 @@ export interface ReadingDashboard {
   quizNight:    QuizNight;
   bonusTasks:   BonusTask[];
 }
-
-export interface ReadingProfile {
-  name:            string;
-  handle:          string;
-  teamName:        string;
-  memberSince:     string;
-  tokenBalance:    number;
-  readingLogLabel: string;
-  yourProgress:    number;
-  teammates:       { name: string; progress: number }[];
-  activityDays:    number[];
-}

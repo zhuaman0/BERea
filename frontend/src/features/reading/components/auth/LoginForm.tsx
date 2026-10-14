@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { z } from "zod";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { readingAuthService } from "@berea/api";
 import { isApiError } from "@/features/auth/utils";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
-import { hasSubmittedPayment } from "@/features/reading/lib/paymentStatus";
+import { nextReadingStage } from "@/features/reading/lib/nextStage";
 import type { ReadingUser } from "@berea/api";
 
 const loginSchema = z.object({
@@ -24,6 +24,7 @@ const inputBase =
 
 export function ReadingLoginForm() {
   const router = useRouter();
+  const invite = useSearchParams().get("invite");
   const { setSession, updateUser } = useReadingAuthStore();
 
   const [values,       setValues]       = useState<LoginValues>({ email: "", password: "" });
@@ -58,7 +59,8 @@ export function ReadingLoginForm() {
 
       const placeholder: ReadingUser = {
         id: "", email: result.data.email, full_name: "",
-        team_name: null, payment_status: null, token_balance: 0, current_streak: 0, is_admin: false, created_at: new Date().toISOString(),
+        team_name: null, payment_status: null, token_balance: 0, current_streak: 0, is_admin: false,
+        is_captain: false, email_verified: false, created_at: new Date().toISOString(),
       };
       setSession(placeholder, access_token, refresh_token);
 
@@ -68,13 +70,7 @@ export function ReadingLoginForm() {
         updateUser(profile);
       } catch { /* continue with placeholder */ }
 
-      router.push(
-        !profile.team_name
-          ? "/reading/join-team"
-          : hasSubmittedPayment(profile.payment_status)
-            ? "/reading"
-            : "/reading/payment"
-      );
+      router.push(nextReadingStage(profile, invite));
     } catch (err: unknown) {
       setServerError(
         isApiError(err) ? err.detail : "Something went wrong. Please try again."

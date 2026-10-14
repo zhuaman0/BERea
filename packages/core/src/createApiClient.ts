@@ -24,7 +24,8 @@ function createApiClient(config: ApiClientConfig) {
         // Tokens live in per-tab sessionStorage but the session cookie is shared across tabs,
         // so a new tab can pass the route guard with nothing to authenticate with.
         clearSession();
-        window.location.href = config.loginPath;
+        // Keep the query (e.g. a team invite) so signing in can pick up where the link pointed.
+        window.location.href = config.loginPath + window.location.search;
         throw new Error("No refresh token");
       }
 

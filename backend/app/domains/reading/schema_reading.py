@@ -32,9 +32,24 @@ class ReadingTeamJoinRequest(BaseModel):
     team_name: str = Field(min_length=2, max_length=120)
 
 
-class ReadingTeamMemberAddRequest(BaseModel):
-    full_name: str = Field(min_length=1, max_length=120)
-    email: EmailStr
+class ReadingTeamInviteJoinRequest(BaseModel):
+    invite_token: str = Field(min_length=8, max_length=64)
+
+
+class ReadingEmailVerifyRequest(BaseModel):
+    code: str = Field(pattern=r"^\d{6}$")
+
+
+class ReadingTeamInviteResponse(BaseModel):
+    token: str
+    expires_at: datetime
+
+
+class ReadingTeamInvitePreview(BaseModel):
+    team_name: str
+    captain_name: str | None
+    member_count: int
+    max_members: int
 
 
 class ReadingUserResponse(BaseModel):
@@ -48,6 +63,8 @@ class ReadingUserResponse(BaseModel):
     token_balance: int
     current_streak: int
     is_admin: bool
+    is_captain: bool
+    email_verified: bool
     created_at: datetime
 
 
@@ -62,6 +79,7 @@ class ReadingTeamMemberResponse(BaseModel):
     email: EmailStr
     current_streak: int
     active_today: bool
+    is_captain: bool
     created_at: datetime
 
 
@@ -296,6 +314,23 @@ class ReadingBookOfMonthResponse(BaseModel):
 
 class ReadingProgressUpdate(BaseModel):
     current_page: int = Field(ge=0, le=5000)
+
+
+class ReadingShelfEntry(BaseModel):
+    book: ReadingBookResponse
+    current_page: int
+    updated_at: datetime
+
+
+class ReadingProfileStatsResponse(BaseModel):
+    quiz_points: int
+    quiz_nights: int
+    answers_total: int
+    answers_correct: int
+    votes_cast: int
+    pages_read: int
+    books_finished: int
+    shelf: list[ReadingShelfEntry]
 
 
 QuizStatus = Literal["draft", "scheduled"]

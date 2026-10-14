@@ -1,10 +1,12 @@
 import { readingApiClient } from "./readingApiClient";
 import type {
   ReadingLoginRequest,
+  ReadingProfileStats,
   ReadingRegisterRequest,
   ReadingTeam,
   ReadingTeamJoinRequest,
-  ReadingTeamMemberAddRequest,
+  ReadingTeamInvite,
+  ReadingTeamInvitePreview,
   ReadingTeamMemberProfile,
   ReadingTeamSummary,
   ReadingTokenResponse,
@@ -24,8 +26,23 @@ export const readingAuthApi = {
 
   me: () => readingApiClient.get<ReadingUser>("/v1/reading/users/me"),
 
-  joinTeam: (body: ReadingTeamJoinRequest) =>
-    readingApiClient.post<ReadingUser>("/v1/reading/teams/join", body),
+  myStats: () => readingApiClient.get<ReadingProfileStats>("/v1/reading/users/me/stats"),
+
+  verifyEmail: (code: string) =>
+    readingApiClient.post<ReadingUser>("/v1/reading/auth/verify-email", { code }),
+
+  resendCode: () => readingApiClient.post<void>("/v1/reading/auth/resend-code", {}),
+
+  createTeam: (body: ReadingTeamJoinRequest) =>
+    readingApiClient.post<ReadingUser>("/v1/reading/teams", body),
+
+  joinTeam: (inviteToken: string) =>
+    readingApiClient.post<ReadingUser>("/v1/reading/teams/join", { invite_token: inviteToken }),
+
+  previewInvite: (inviteToken: string) =>
+    readingApiClient.get<ReadingTeamInvitePreview>(`/v1/reading/teams/invites/${encodeURIComponent(inviteToken)}`),
+
+  teamInvite: () => readingApiClient.post<ReadingTeamInvite>("/v1/reading/teams/me/invite", {}),
 
   myTeam: () => readingApiClient.get<ReadingTeam>("/v1/reading/teams/me"),
 
@@ -39,7 +56,4 @@ export const readingAuthApi = {
 
   teamMemberProfile: (memberId: string) =>
     readingApiClient.get<ReadingTeamMemberProfile>(`/v1/reading/teams/members/${memberId}`),
-
-  addTeamMember: (body: ReadingTeamMemberAddRequest) =>
-    readingApiClient.post<ReadingTeam>("/v1/reading/teams/members", body),
 };

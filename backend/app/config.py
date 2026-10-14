@@ -38,6 +38,14 @@ class Settings(BaseSettings):
     # ─── YouTube ─────────────────────────────────────────────────────────────
     youtube_api_key: str = ""
 
+    # ─── Email (SMTP) ────────────────────────────────────────────────────────
+    # Empty smtp_host = dev mode: verification codes are written to the backend log instead of sent.
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from: str = ""
+
     # ─── Uploads ─────────────────────────────────────────────────────────────
     upload_dir: str = "uploads"
     max_upload_size_mb: int = 5

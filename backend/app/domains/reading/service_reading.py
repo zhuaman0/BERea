@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import asyncio
 import hashlib
+import logging
 import secrets
+import smtplib
 import uuid
 from datetime import UTC, date, datetime, timedelta
+from email.message import EmailMessage
 from pathlib import Path
 
 from fastapi import HTTPException, UploadFile, status
@@ -35,6 +39,7 @@ from app.domains.reading.schema_reading import (
     ReadingBookOfMonthResponse,
     ReadingBookResponse,
     ReadingBookWrite,
+    ReadingEmailVerifyRequest,
     ReadingLiveAnswerOption,
     ReadingLiveAnswerRequest,
     ReadingLiveHostState,
@@ -46,6 +51,7 @@ from app.domains.reading.schema_reading import (
     ReadingLiveSummary,
     ReadingLiveTeamScore,
     ReadingLoginRequest,
+    ReadingProfileStatsResponse,
     ReadingProgressUpdate,
     ReadingQuizAnswerResponse,
     ReadingQuizQuestionResponse,
@@ -54,10 +60,13 @@ from app.domains.reading.schema_reading import (
     ReadingRegisterRequest,
     ReadingSemesterRoundCreate,
     ReadingSemesterRoundResponse,
+    ReadingShelfEntry,
     ReadingTeamCover,
     ReadingTeamCoverUpdate,
+    ReadingTeamInviteJoinRequest,
+    ReadingTeamInvitePreview,
+    ReadingTeamInviteResponse,
     ReadingTeamJoinRequest,
-    ReadingTeamMemberAddRequest,
     ReadingTeamMemberProfileResponse,
     ReadingTeamMemberResponse,
     ReadingTeamPaymentAdminResponse,
@@ -73,7 +82,13 @@ from app.domains.reading.schema_reading import (
     ReadingVoteRoundResponse,
 )
 
+logger = logging.getLogger(__name__)
+
 TEAM_ENTRY_FEE_TENGE = 3000
+EMAIL_CODE_TTL = timedelta(minutes=10)
+EMAIL_CODE_RESEND_COOLDOWN = timedelta(seconds=60)
+EMAIL_CODE_MAX_ATTEMPTS = 5
+TEAM_INVITE_TTL = timedelta(days=7)
 RECEIPT_TYPES = {
     "application/pdf": (".pdf", lambda data: data.startswith(b"%PDF")),
     "image/jpeg": (".jpg", lambda data: data.startswith(b"\xff\xd8\xff")),
@@ -92,6 +107,8 @@ def _to_user_response(user: ReadingUser, payment_status: str | None = None) -> R
         token_balance=user.token_balance,
         current_streak=user.current_streak,
         is_admin=user.is_admin,
+        is_captain=user.is_captain,
+        email_verified=user.email_verified,
         created_at=user.created_at,
     )
 
@@ -104,6 +121,7 @@ async def register_user(payload: ReadingRegisterRequest, db: AsyncSession) -> Re
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
 
     user = await create_user_record(payload.email, hash_password(payload.password), payload.full_name, db)
+    await _issue_email_code(user, db)
 
     access = create_access_token(str(user.id))
     refresh = create_refresh_token(str(user.id))
@@ -157,74 +175,182 @@ async def get_current_reading_user(user_id: str, db: AsyncSession) -> ReadingUse
 
     user = await get_user_by_id(uuid.UUID(user_id), db)
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        # A still-valid token for a deleted account: 401 makes the client drop the session and go to login.
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Your account no longer exists")
     user = await touch_user_streak(user, _today(), db)
     registration = await get_team_registration_by_team_id(user.team_id, db) if user.team_id else None
     return _to_user_response(user, registration.status if registration else None)
 
 
-async def join_team(user_id: str, payload: ReadingTeamJoinRequest, db: AsyncSession) -> ReadingUserResponse:
-    from app.domains.reading.repo_reading import (
-        count_team_members,
-        get_or_create_team,
-        get_team_registration_by_team_id,
-        get_user_by_id,
-        set_user_team,
+def _hash_email_code(user_id: uuid.UUID, code: str) -> str:
+    return hashlib.sha256(f"{user_id}:{code}".encode()).hexdigest()
+
+
+def _send_email(to: str, subject: str, body: str) -> None:
+    message = EmailMessage()
+    message["From"] = settings.smtp_from or settings.smtp_user
+    message["To"] = to
+    message["Subject"] = subject
+    message.set_content(body)
+    with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=15) as smtp:
+        smtp.starttls()
+        if settings.smtp_user:
+            smtp.login(settings.smtp_user, settings.smtp_password)
+        smtp.send_message(message)
+
+
+async def _issue_email_code(user: ReadingUser, db: AsyncSession) -> None:
+    from app.domains.reading.repo_reading import set_email_code
+
+    code = f"{secrets.randbelow(1_000_000):06d}"
+    now = datetime.now(UTC)
+    await set_email_code(user, _hash_email_code(user.id, code), now + EMAIL_CODE_TTL, now, db)
+
+    if not settings.smtp_host:
+        logger.warning("SMTP is not configured; verification code for %s is %s", user.email, code)
+        return
+    body = (
+        f"Hi {user.full_name},\n\n"
+        f"Your NATS Spirea verification code is {code}.\n"
+        "It expires in 10 minutes. If you didn't sign up, ignore this email."
     )
+    try:
+        await asyncio.to_thread(_send_email, user.email, f"{code} is your NATS Spirea code", body)
+    except (smtplib.SMTPException, OSError) as exc:
+        logger.exception("Sending the verification email to %s failed", user.email)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="We couldn't send the verification email. Try resending the code in a minute.",
+        ) from exc
+
+
+async def verify_email(user_id: str, payload: ReadingEmailVerifyRequest, db: AsyncSession) -> ReadingUserResponse:
+    from app.domains.reading.repo_reading import get_user_by_id, mark_email_verified, record_email_code_attempt
 
     user = await get_user_by_id(uuid.UUID(user_id), db)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    if user.email_verified:
+        return _to_user_response(user)
+    if not user.email_code_hash or not user.email_code_expires_at or user.email_code_expires_at < datetime.now(UTC):
+        raise HTTPException(status_code=status.HTTP_410_GONE, detail="This code has expired. Send a new one.")
+    if user.email_code_attempts >= EMAIL_CODE_MAX_ATTEMPTS:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Too many wrong codes. Send a new one."
+        )
+    if not secrets.compare_digest(user.email_code_hash, _hash_email_code(user.id, payload.code)):
+        await record_email_code_attempt(user, db)
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="That code isn't right")
 
-    team = await get_or_create_team(payload.team_name, db)
-    if team.id != user.team_id:
-        member_count = await count_team_members(team.id, db)
-        if member_count >= TEAM_MAX_MEMBERS:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"{payload.team_name} already has {TEAM_MAX_MEMBERS} players",
-            )
+    user = await mark_email_verified(user, db)
+    return _to_user_response(user)
 
-    user = await set_user_team(user, team.id, db)
-    registration = await get_team_registration_by_team_id(user.team_id, db)
+
+async def resend_email_code(user_id: str, db: AsyncSession) -> None:
+    from app.domains.reading.repo_reading import get_user_by_id
+
+    user = await get_user_by_id(uuid.UUID(user_id), db)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    if user.email_verified:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Your email is already verified")
+    if user.email_code_sent_at and datetime.now(UTC) - user.email_code_sent_at < EMAIL_CODE_RESEND_COOLDOWN:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Wait a minute before asking for another code"
+        )
+    await _issue_email_code(user, db)
+
+
+async def _load_user_ready_for_team(user_id: str, db: AsyncSession) -> ReadingUser:
+    """A verified account that isn't on any team yet: the only state that may create or join one."""
+    from app.domains.reading.repo_reading import get_user_by_id
+
+    user = await get_user_by_id(uuid.UUID(user_id), db)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    if not user.email_verified:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Verify your email first")
+    if user.team:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"You're already on {user.team.name}. A player can only be on one team.",
+        )
+    return user
+
+
+async def create_team(user_id: str, payload: ReadingTeamJoinRequest, db: AsyncSession) -> ReadingUserResponse:
+    from app.domains.reading.repo_reading import create_team as create_team_record
+    from app.domains.reading.repo_reading import get_team_by_name, set_user_team
+
+    user = await _load_user_ready_for_team(user_id, db)
+    if await get_team_by_name(payload.team_name, db):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="That team name is already taken")
+
+    team = await create_team_record(payload.team_name, db)
+    user = await set_user_team(user, team.id, is_captain=True, db=db)
+    return _to_user_response(user)
+
+
+def _active_invite_team(team: ReadingTeam | None) -> ReadingTeam:
+    if not team or not team.invite_expires_at or team.invite_expires_at < datetime.now(UTC):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="This invite link is invalid or has expired")
+    return team
+
+
+async def preview_team_invite(token: str, db: AsyncSession) -> ReadingTeamInvitePreview:
+    from app.domains.reading.repo_reading import count_team_members, get_team_by_invite_token, get_team_captain
+
+    team = _active_invite_team(await get_team_by_invite_token(token, db))
+    captain = await get_team_captain(team.id, db)
+    return ReadingTeamInvitePreview(
+        team_name=team.name,
+        captain_name=captain.full_name if captain else None,
+        member_count=await count_team_members(team.id, db),
+        max_members=TEAM_MAX_MEMBERS,
+    )
+
+
+async def join_team(user_id: str, payload: ReadingTeamInviteJoinRequest, db: AsyncSession) -> ReadingUserResponse:
+    from app.domains.reading.repo_reading import (
+        count_team_members,
+        get_team_by_invite_token,
+        get_team_registration_by_team_id,
+        set_user_team,
+    )
+
+    user = await _load_user_ready_for_team(user_id, db)
+    team = _active_invite_team(await get_team_by_invite_token(payload.invite_token, db))
+    if await count_team_members(team.id, db) >= TEAM_MAX_MEMBERS:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=f"{team.name} already has {TEAM_MAX_MEMBERS} players"
+        )
+
+    user = await set_user_team(user, team.id, is_captain=False, db=db)
+    registration = await get_team_registration_by_team_id(team.id, db)
     return _to_user_response(user, registration.status if registration else None)
 
 
-async def add_team_member(
-    user_id: str, payload: ReadingTeamMemberAddRequest, db: AsyncSession
-) -> ReadingTeamResponse:
-    """Creates a real account for a teammate and adds them to the captain's team directly.
-
-    This is the stand-in for a proper invite-link flow (see TEAM_INVITE_LINK_ENABLED on the
-    frontend): the new member gets a random password they don't know yet, so logging in will
-    require a password reset once that flow exists. Until then this just gets them onto the
-    roster immediately.
-    """
-    from app.domains.reading.repo_reading import (
-        count_team_members,
-        create_team_member_record,
-        get_team_members,
-        get_user_by_email,
-        get_user_by_id,
-    )
+async def _load_captain(user_id: str, db: AsyncSession) -> ReadingUser:
+    from app.domains.reading.repo_reading import get_user_by_id
 
     user = await get_user_by_id(uuid.UUID(user_id), db)
-    if not user or not user.team_id:
+    if not user or not user.team:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="You haven't joined a team yet")
+    if not user.is_captain:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only your team captain can do this")
+    return user
 
-    existing = await get_user_by_email(payload.email, db)
-    if existing:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="That email is already registered")
 
-    member_count = await count_team_members(user.team_id, db)
-    if member_count >= TEAM_MAX_MEMBERS:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Your team is already full")
+async def get_or_create_team_invite(user_id: str, db: AsyncSession) -> ReadingTeamInviteResponse:
+    """The team's current invite link, or a fresh one if it has none or it expired."""
+    from app.domains.reading.repo_reading import set_team_invite
 
-    placeholder_password = hash_password(secrets.token_urlsafe(24))
-    await create_team_member_record(payload.email, placeholder_password, payload.full_name, user.team_id, db)
-
-    members = await get_team_members(user.team_id, db)
-    return await _build_team_response(user.team, members, db)
+    team = (await _load_captain(user_id, db)).team
+    assert team is not None
+    if not team.invite_token or not team.invite_expires_at or team.invite_expires_at < datetime.now(UTC):
+        team = await set_team_invite(team, secrets.token_urlsafe(16), datetime.now(UTC) + TEAM_INVITE_TTL, db)
+    assert team.invite_token is not None and team.invite_expires_at is not None
+    return ReadingTeamInviteResponse(token=team.invite_token, expires_at=team.invite_expires_at)
 
 
 async def get_my_team(user_id: str, db: AsyncSession) -> ReadingTeamResponse:
@@ -239,16 +365,10 @@ async def get_my_team(user_id: str, db: AsyncSession) -> ReadingTeamResponse:
 
 
 async def rename_my_team(user_id: str, payload: ReadingTeamJoinRequest, db: AsyncSession) -> ReadingTeamResponse:
-    from app.domains.reading.repo_reading import (
-        get_team_by_name,
-        get_team_members,
-        get_user_by_id,
-        rename_team,
-    )
+    from app.domains.reading.repo_reading import get_team_by_name, get_team_members, rename_team
 
-    user = await get_user_by_id(uuid.UUID(user_id), db)
-    if not user or not user.team:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="You haven't joined a team yet")
+    user = await _load_captain(user_id, db)
+    assert user.team is not None
 
     existing = await get_team_by_name(payload.team_name, db)
     if existing and existing.id != user.team_id:
@@ -310,11 +430,10 @@ async def list_teams(db: AsyncSession) -> list[ReadingTeamSummaryResponse]:
 async def update_my_team_cover(
     user_id: str, payload: ReadingTeamCoverUpdate, db: AsyncSession
 ) -> ReadingTeamResponse:
-    from app.domains.reading.repo_reading import get_team_members, get_user_by_id, update_team_cover
+    from app.domains.reading.repo_reading import get_team_members, update_team_cover
 
-    user = await get_user_by_id(uuid.UUID(user_id), db)
-    if not user or not user.team:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="You haven't joined a team yet")
+    user = await _load_captain(user_id, db)
+    assert user.team is not None
 
     team = await update_team_cover(
         user.team,
@@ -361,6 +480,7 @@ async def _build_team_response(
                 email=m.email,
                 current_streak=_effective_streak(m, today),
                 active_today=m.last_active_date == today,
+                is_captain=m.is_captain,
                 created_at=m.created_at,
             )
             for m in members
@@ -386,6 +506,8 @@ async def register_team(
     user = await get_user_by_id(uuid.UUID(user_id), db)
     if not user or not user.team_id or not user.team:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Create or join a team before paying")
+    if not user.is_captain:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only your team captain can submit the payment")
 
     existing = await get_team_registration_by_team_id(user.team_id, db)
     if existing and existing.status != "rejected":
@@ -515,8 +637,11 @@ async def list_vote_rounds_for_user(user_id: str, db: AsyncSession) -> list[Read
 async def cast_vote_for_user(
     round_id: str, user_id: str, payload: ReadingVoteCastRequest, db: AsyncSession
 ) -> ReadingVoteRoundResponse:
-    from app.domains.reading.repo_reading import cast_vote, get_vote_round_by_id
+    from app.domains.reading.repo_reading import cast_vote, get_user_by_id, get_vote_round_by_id
 
+    user = await get_user_by_id(uuid.UUID(user_id), db)
+    if not user or not user.team_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Join a team before voting")
     round_ = await get_vote_round_by_id(uuid.UUID(round_id), db)
     if not round_:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vote round not found")
@@ -931,6 +1056,29 @@ async def update_progress_for_user(
     result = await get_book_of_month_for_user(user_id, db)
     assert result is not None
     return result
+
+
+async def get_my_profile_stats(user_id: str, db: AsyncSession) -> ReadingProfileStatsResponse:
+    from app.domains.reading.repo_reading import count_votes_by_user, get_user_quiz_totals, list_progress_with_books
+
+    uid = uuid.UUID(user_id)
+    shelf = await list_progress_with_books(uid, db)
+    quiz_points, quiz_nights, answers_total, answers_correct = await get_user_quiz_totals(uid, db)
+    return ReadingProfileStatsResponse(
+        quiz_points=quiz_points,
+        quiz_nights=quiz_nights,
+        answers_total=answers_total,
+        answers_correct=answers_correct,
+        votes_cast=await count_votes_by_user(uid, db),
+        pages_read=sum(progress.current_page for progress, _ in shelf),
+        books_finished=sum(
+            1 for progress, book in shelf if book.page_count and progress.current_page >= book.page_count
+        ),
+        shelf=[
+            ReadingShelfEntry(book=_to_book_response(book), current_page=progress.current_page, updated_at=progress.updated_at)
+            for progress, book in shelf
+        ],
+    )
 
 
 SPEED_BONUS_SHARE = 0.5
