@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile, status
+from fastapi import APIRouter, File, Form, Response, UploadFile
 from fastapi.responses import FileResponse
 
 from app.dependencies import CurrentUserId, DbSession
