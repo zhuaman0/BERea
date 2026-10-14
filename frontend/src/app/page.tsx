@@ -6,7 +6,6 @@ import {
   ArrowRight, ChevronDown, Flame,
 } from "lucide-react";
 import "@/app/reading/reading.css";
-import { TeamRegistrationForm } from "@/features/reading/components/TeamRegistrationForm";
 import { SEASON_RULES } from "@/features/reading/lib/seasonRules";
 
 const spaceGrotesk = Space_Grotesk({ variable: "--font-space-grotesk", subsets: ["latin"], display: "swap" });
@@ -16,7 +15,6 @@ const ibmPlexMono  = IBM_Plex_Mono({ variable: "--font-ibm-plex-mono", subsets: 
 const NAV_LINKS = [
   { href: "#features", label: "Features" },
   { href: "#rules",    label: "Rules" },
-  { href: "#register", label: "Register" },
 ];
 
 const FEATURES = [
@@ -280,26 +278,6 @@ export default function LandingPage() {
             <p className="relative mt-3 text-sm text-[var(--rd-text-muted)]">
               Six rules. One fuse. Light it.
             </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Register ─────────────────────────────────────────────────────── */}
-      <section id="register" className="border-t border-white/5 px-6 py-24 lg:px-10">
-        <div className="mx-auto max-w-2xl">
-          <span className="block text-center text-xs uppercase tracking-[0.3em] text-[var(--rd-text-muted)]">
-            Join the battle
-          </span>
-          <h2 className="font-display mt-3 text-center text-3xl font-semibold text-[var(--rd-text)] sm:text-4xl">
-            Register your team
-          </h2>
-          <p className="mx-auto mt-4 max-w-md text-center text-sm text-[var(--rd-text-muted)]">
-            Enter your team name and all 3 players, then attach the PDF receipt for your
-            bank transfer. We&apos;ll confirm your spot by email.
-          </p>
-
-          <div className="mt-10">
-            <TeamRegistrationForm />
           </div>
         </div>
       </section>
