@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, ImageIcon, Loader2, Upload } from "lucide-react";
+import { Check, Copy, FileText, ImageIcon, Loader2, Phone, Upload } from "lucide-react";
 import { readingRegistrationApi } from "@berea/api";
 import { isApiError } from "@/features/auth/utils";
 import { cn } from "@/shared/lib/utils";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
+import { ENTRY_FEE, PAYMENT_PHONE, PAYMENT_PHONE_DISPLAY } from "@/features/reading/lib/seasonRules";
 
 const MAX_RECEIPT_SIZE_BYTES = 5 * 1024 * 1024;
 const RECEIPT_TYPES = ["application/pdf", "image/jpeg", "image/png", "image/webp"];
@@ -15,7 +16,7 @@ export function TeamPaymentForm() {
   const router = useRouter();
   const updateUser = useReadingAuthStore((state) => state.updateUser);
   const teamName = useReadingAuthStore((state) => state.user?.team_name);
-  const [description, setDescription] = useState("");
+  const [isPhoneCopied, setIsPhoneCopied] = useState(false);
   const [receipt, setReceipt] = useState<File | null>(null);
   const [receiptError, setReceiptError] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -42,25 +43,26 @@ export function TeamPaymentForm() {
     setReceipt(file);
   }
 
+  async function handleCopyPhone() {
+    try {
+      await navigator.clipboard.writeText(PAYMENT_PHONE);
+      setIsPhoneCopied(true);
+      window.setTimeout(() => setIsPhoneCopied(false), 2000);
+    } catch { /* clipboard blocked — the number is still on screen to type */ }
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setServerError(null);
 
-    if (description.trim().length < 3) {
-      setServerError("Add a short payment description");
-      return;
-    }
     if (!receipt) {
-      setReceiptError("Attach the 3 000 ₸ payment receipt");
+      setReceiptError(`Attach the ${ENTRY_FEE} payment receipt`);
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const payment = await readingRegistrationApi.submitTeamPayment({
-        paymentDescription: description.trim(),
-        receipt,
-      });
+      const payment = await readingRegistrationApi.submitTeamPayment({ receipt });
       updateUser({ payment_status: payment.status });
       router.push("/reading");
     } catch (error: unknown) {
@@ -82,24 +84,34 @@ export function TeamPaymentForm() {
         <p className="text-[11px] uppercase tracking-[0.12em] text-[var(--rd-text-muted)]">Team payment</p>
         <div className="mt-1 flex items-baseline justify-between gap-3">
           <p className="truncate text-[13px] font-medium text-[var(--rd-text)]">{teamName ?? "Your team"}</p>
-          <p className="shrink-0 font-display text-lg font-semibold text-[var(--rd-accent-from)]">3 000 ₸</p>
+          <p className="shrink-0 font-display text-lg font-semibold text-[var(--rd-accent-from)]">{ENTRY_FEE}</p>
         </div>
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="payment-description" className="text-xs font-medium text-[var(--rd-text)]">
-          Payment description
-        </label>
-        <textarea
-          id="payment-description"
-          value={description}
-          onChange={(event) => setDescription(event.target.value)}
-          maxLength={500}
-          rows={3}
-          placeholder="For example: Team entry fee, paid by the captain"
-          className="w-full resize-none rounded-xl border border-[var(--rd-border)] bg-[var(--rd-panel)] px-4 py-3 text-[13px] text-[var(--rd-text)] placeholder:text-[var(--rd-text-muted)] focus:border-[var(--rd-accent-from)] focus:outline-none"
-        />
-        <p className="text-right text-[10px] text-[var(--rd-text-muted)]">{description.length}/500</p>
+      <div className="rounded-xl border border-[var(--rd-accent-from)]/40 bg-[var(--rd-accent-from)]/[0.06] px-4 py-4">
+        <p className="text-[11px] uppercase tracking-[0.12em] text-[var(--rd-text-muted)]">
+          Send {ENTRY_FEE} to this number
+        </p>
+        <div className="mt-2 flex items-center justify-between gap-3">
+          <a
+            href={`tel:${PAYMENT_PHONE}`}
+            className="flex items-center gap-2.5 font-display text-xl font-semibold tracking-wide text-[var(--rd-text)]"
+          >
+            <Phone size={18} className="shrink-0 text-[var(--rd-accent-from)]" />
+            {PAYMENT_PHONE_DISPLAY}
+          </a>
+          <button
+            type="button"
+            onClick={handleCopyPhone}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--rd-border)] bg-[var(--rd-panel)] px-3 py-1.5 text-[12px] font-medium text-[var(--rd-text)] transition-colors hover:border-[var(--rd-accent-from)]"
+          >
+            {isPhoneCopied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+            {isPhoneCopied ? "Copied" : "Copy"}
+          </button>
+        </div>
+        <p className="mt-2 text-[11px] leading-relaxed text-[var(--rd-text-muted)]">
+          Transfer the entry fee, then upload the receipt below.
+        </p>
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -129,7 +141,7 @@ export function TeamPaymentForm() {
           ) : (
             <>
               <Upload size={22} className="text-[var(--rd-text-muted)]" />
-              <span className="text-[13px] text-[var(--rd-text)]">Upload the 3 000 ₸ receipt</span>
+              <span className="text-[13px] text-[var(--rd-text)]">Upload the {ENTRY_FEE} receipt</span>
               <span className="text-[11px] text-[var(--rd-text-muted)]">PDF, JPG, PNG, or WebP · up to 5 MB</span>
             </>
           )}
@@ -143,7 +155,7 @@ export function TeamPaymentForm() {
         className="rd-accent-gradient mt-1 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl text-[14px] font-semibold text-[#1a0e05] transition-opacity hover:opacity-90 disabled:pointer-events-none disabled:opacity-50"
       >
         {isSubmitting && <Loader2 size={16} className="animate-spin" />}
-        Submit receipt — 3 000 ₸
+        Submit receipt — {ENTRY_FEE}
       </button>
     </form>
   );

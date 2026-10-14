@@ -1,6 +1,7 @@
 import { RegistrationSteps } from "@/features/reading/components/auth/RegistrationSteps";
 import { ReadingStageGuard } from "@/features/reading/components/auth/ReadingStageGuard";
 import { TeamPaymentForm } from "@/features/reading/components/auth/TeamPaymentForm";
+import { ENTRY_FEE } from "@/features/reading/lib/seasonRules";
 
 export default function ReadingPaymentPage() {
   return (
@@ -13,8 +14,8 @@ export default function ReadingPaymentPage() {
           Confirm your team payment
         </h1>
         <p className="text-[13px] leading-relaxed text-[var(--rd-text-muted)]">
-          Add a short description and upload the receipt for the 3 000 ₸ team entry fee.
-          We&apos;ll review it after submission.
+          Send the {ENTRY_FEE} team entry fee to the number below and upload the receipt.
+          You can start using the app right away while we review it.
         </p>
       </div>
 

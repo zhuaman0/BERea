@@ -1,7 +1,6 @@
 import { readingApiClient } from "./readingApiClient";
 
 export interface TeamPaymentInput {
-  paymentDescription: string;
   receipt: File;
 }
 
@@ -30,7 +29,6 @@ export interface TeamPaymentAdminRow {
 export const readingRegistrationApi = {
   submitTeamPayment(input: TeamPaymentInput): Promise<TeamRegistrationResult> {
     const form = new FormData();
-    form.set("payment_description", input.paymentDescription);
     form.set("receipt", input.receipt);
     return readingApiClient.postForm<TeamRegistrationResult>("/v1/reading/teams/payment", form);
   },

@@ -7,6 +7,7 @@ import { cn } from "@/shared/lib/utils";
 import { readingAuthApi } from "@berea/api";
 import { isApiError } from "@/features/auth/utils";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
+import { hasSubmittedPayment } from "@/features/reading/lib/paymentStatus";
 
 const joinTeamSchema = z.object({
   team_name: z.string().min(2, "At least 2 characters").max(120),
@@ -46,7 +47,7 @@ export function JoinTeamForm() {
     try {
       const profile = await readingAuthApi.joinTeam(result.data);
       updateUser(profile);
-      router.push(profile.payment_status ? "/reading" : "/reading/payment");
+      router.push(hasSubmittedPayment(profile.payment_status) ? "/reading" : "/reading/payment");
     } catch (err: unknown) {
       setServerError(
         isApiError(err) ? err.detail : "Something went wrong. Please try again."
