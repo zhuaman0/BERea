@@ -45,6 +45,9 @@ class Settings(BaseSettings):
     smtp_user: str = ""
     smtp_password: str = ""
     smtp_from: str = ""
+    # Brevo's HTTPS API, for hosts that block outgoing SMTP (e.g. Railway below the Pro plan). Takes priority over SMTP.
+    brevo_api_key: str = ""
+    brevo_sender_email: str = ""
 
     # ─── Uploads ─────────────────────────────────────────────────────────────
     upload_dir: str = "uploads"
