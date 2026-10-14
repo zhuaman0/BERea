@@ -1,3 +1,5 @@
+import type { ReadingBook } from "./bookTypes";
+
 export interface ReadingUser {
   id:             string;
   email:          string;
@@ -7,7 +9,26 @@ export interface ReadingUser {
   token_balance:  number;
   current_streak: number;
   is_admin:       boolean;
+  is_captain:     boolean;
+  email_verified: boolean;
   created_at:     string;
+}
+
+export interface ReadingShelfEntry {
+  book:         ReadingBook;
+  current_page: number;
+  updated_at:   string;
+}
+
+export interface ReadingProfileStats {
+  quiz_points:     number;
+  quiz_nights:     number;
+  answers_total:   number;
+  answers_correct: number;
+  votes_cast:      number;
+  pages_read:      number;
+  books_finished:  number;
+  shelf:           ReadingShelfEntry[];
 }
 
 export interface ReadingTokenResponse {
@@ -37,6 +58,7 @@ export interface ReadingTeamMember {
   email:          string;
   current_streak: number;
   active_today:   boolean;
+  is_captain:     boolean;
   created_at:     string;
 }
 
@@ -73,9 +95,16 @@ export interface ReadingTeamSummary {
   cover:        TeamCover;
 }
 
-export interface ReadingTeamMemberAddRequest {
-  full_name: string;
-  email:     string;
+export interface ReadingTeamInvite {
+  token:      string;
+  expires_at: string;
+}
+
+export interface ReadingTeamInvitePreview {
+  team_name:    string;
+  captain_name: string | null;
+  member_count: number;
+  max_members:  number;
 }
 
 export interface ReadingTeamMemberProfile {

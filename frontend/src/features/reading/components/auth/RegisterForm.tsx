@@ -5,9 +5,10 @@ import { z } from "zod";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
-import { readingAuthApi, readingAuthService } from "@berea/api";
+import { readingAuthService } from "@berea/api";
 import { isApiError } from "@/features/auth/utils";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
+import { nextReadingStage } from "@/features/reading/lib/nextStage";
 import type { ReadingUser } from "@berea/api";
 
 const registerSchema = z.object({
@@ -25,7 +26,7 @@ const inputBase =
 export function ReadingRegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const invitedTeam = searchParams.get("team");
+  const invite = searchParams.get("invite");
   const { setSession, updateUser } = useReadingAuthStore();
 
   const [values, setValues] = useState<RegisterValues>({ full_name: "", email: "", password: "" });
@@ -60,29 +61,18 @@ export function ReadingRegisterForm() {
 
       const placeholder: ReadingUser = {
         id: "", email: result.data.email, full_name: result.data.full_name,
-        team_name: null, payment_status: null, token_balance: 0, current_streak: 0, is_admin: false, created_at: new Date().toISOString(),
+        team_name: null, payment_status: null, token_balance: 0, current_streak: 0, is_admin: false,
+        is_captain: false, email_verified: false, created_at: new Date().toISOString(),
       };
       setSession(placeholder, access_token, refresh_token);
 
+      let profile: ReadingUser = placeholder;
       try {
-        const profile = await readingAuthService.me();
+        profile = await readingAuthService.me();
         updateUser(profile);
       } catch { /* continue with placeholder */ }
 
-      // Came in through a teammate's invite link — join that team immediately
-      // instead of making them retype the name on the onboarding step.
-      if (invitedTeam) {
-        try {
-          const profile = await readingAuthApi.joinTeam({ team_name: invitedTeam });
-          updateUser(profile);
-          router.push("/reading/payment");
-          return;
-        } catch { /* team may be full or renamed — let them join manually below */ }
-      }
-
-      router.push(
-        invitedTeam ? `/reading/join-team?team=${encodeURIComponent(invitedTeam)}` : "/reading/join-team"
-      );
+      router.push(nextReadingStage(profile, invite));
     } catch (err: unknown) {
       setServerError(
         isApiError(err) ? err.detail : "Something went wrong. Please try again."

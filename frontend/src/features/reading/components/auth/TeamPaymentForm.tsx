@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Copy, FileText, ImageIcon, Loader2, Phone, Upload } from "lucide-react";
-import { readingRegistrationApi } from "@berea/api";
+import { readingAuthApi, readingRegistrationApi } from "@berea/api";
 import { isApiError } from "@/features/auth/utils";
 import { cn } from "@/shared/lib/utils";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
@@ -16,6 +16,8 @@ export function TeamPaymentForm() {
   const router = useRouter();
   const updateUser = useReadingAuthStore((state) => state.updateUser);
   const teamName = useReadingAuthStore((state) => state.user?.team_name);
+  const isCaptain = useReadingAuthStore((state) => state.user?.is_captain ?? false);
+  const [isChecking, setIsChecking] = useState(false);
   const [isPhoneCopied, setIsPhoneCopied] = useState(false);
   const [receipt, setReceipt] = useState<File | null>(null);
   const [receiptError, setReceiptError] = useState<string | null>(null);
@@ -70,6 +72,37 @@ export function TeamPaymentForm() {
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  function handleCheckAgain() {
+    setIsChecking(true);
+    // Once the captain has paid, the stage guard sees the new status and moves this player on.
+    readingAuthApi
+      .me()
+      .then(updateUser)
+      .catch(() => { /* API client handles expired sessions */ })
+      .finally(() => setIsChecking(false));
+  }
+
+  if (!isCaptain) {
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="rounded-xl border border-[var(--rd-border)] bg-[var(--rd-panel)] px-4 py-4">
+          <p className="text-[13px] font-medium text-[var(--rd-text)]">{teamName ?? "Your team"} is waiting on the entry fee</p>
+          <p className="mt-1 text-[13px] leading-relaxed text-[var(--rd-text-muted)]">
+            Your team captain pays the {ENTRY_FEE} fee for the whole team. You&apos;ll get into the app as soon as they upload the receipt.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={handleCheckAgain}
+          disabled={isChecking}
+          className="h-12 w-full rounded-xl border border-[var(--rd-border)] text-[14px] font-semibold text-[var(--rd-text)] transition-colors hover:border-[var(--rd-accent-from)] disabled:opacity-50"
+        >
+          {isChecking ? "Checking…" : "Check again"}
+        </button>
+      </div>
+    );
   }
 
   return (
