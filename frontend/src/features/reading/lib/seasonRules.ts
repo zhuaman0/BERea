@@ -1,4 +1,5 @@
 import { CalendarRange, Crown, Send, Users, Vote, Wallet, type LucideIcon } from "lucide-react";
+import { PAYMENT_STEP_ENABLED } from "./paymentStatus";
 
 export const ENTRY_FEE = "3 000 ₸";
 export const PAYMENT_PHONE = "87057287996";
@@ -13,7 +14,9 @@ export interface SeasonRule {
 export const SEASON_RULES: readonly SeasonRule[] = [
   {
     title: "Entry fee",
-    body:  `Taking part costs ${ENTRY_FEE}. Pay by bank transfer and attach the receipt when you register your team.`,
+    body:  PAYMENT_STEP_ENABLED
+      ? `Taking part costs ${ENTRY_FEE}. Pay by bank transfer and attach the receipt when you register your team.`
+      : `Taking part costs ${ENTRY_FEE} per team.`,
     icon:  Wallet,
   },
   {

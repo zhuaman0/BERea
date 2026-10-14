@@ -12,6 +12,11 @@ import type { ReadingTeamInvitePreview } from "@berea/api";
 import { isApiError } from "@/features/auth/utils";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
 import { nextReadingStage } from "@/features/reading/lib/nextStage";
+import { PAYMENT_STEP_ENABLED } from "@/features/reading/lib/paymentStatus";
+
+const CAPTAIN_HINT = PAYMENT_STEP_ENABLED
+  ? "You'll be the captain: you invite players, pay the entry fee and design the team cover."
+  : "You'll be the captain: you invite players and design the team cover.";
 
 const createTeamSchema = z.object({
   team_name: z.string().trim().min(2, "At least 2 characters").max(120),
@@ -77,7 +82,7 @@ function CreateTeamForm() {
           className={cn(inputBase, fieldError && "border-red-400 focus:border-red-400")}
         />
         <p className={cn("text-[11px]", fieldError ? "text-red-400" : "text-[var(--rd-text-muted)]")}>
-          {fieldError ?? "You'll be the captain: you invite players, pay the entry fee and design the team cover."}
+          {fieldError ?? CAPTAIN_HINT}
         </p>
       </div>
       <button type="submit" disabled={isSubmitting} className={cn(primaryButton, "mt-2")}>

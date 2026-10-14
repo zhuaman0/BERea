@@ -5,6 +5,7 @@ import type { Route } from "next";
 import { Check, Clock } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import type { ReadingTeam, SemesterRound } from "@berea/api";
+import { PAYMENT_STEP_ENABLED } from "@/features/reading/lib/paymentStatus";
 
 type ItemState = "done" | "waiting" | "todo";
 
@@ -52,6 +53,21 @@ export function KickoffChecklist({ team, paymentStatus, rounds, isCaptain, onInv
   const openSpots = team.max_members - team.members.length;
   const firstRound = [...rounds].sort((a, b) => a.index - b.index)[0];
 
+  const paymentItem: ChecklistItem = {
+    title:  "Pay the entry fee",
+    detail: paymentStatus === "approved"
+      ? "Paid and confirmed by the organisers."
+      : paymentStatus === "pending"
+        ? "Receipt sent. The organisers are checking it."
+        : paymentStatus === "rejected"
+          ? "The receipt was rejected. Upload a new one."
+          : "Not paid yet.",
+    state:  paymentStatus === "approved" ? "done" : paymentStatus === "pending" ? "waiting" : "todo",
+    action: isCaptain && (paymentStatus === "rejected" || !paymentStatus)
+      ? <Link href={"/reading/payment" as Route} className={actionClass}>Upload receipt</Link>
+      : undefined,
+  };
+
   const items: ChecklistItem[] = [
     {
       title:  "Fill the team",
@@ -63,20 +79,7 @@ export function KickoffChecklist({ team, paymentStatus, rounds, isCaptain, onInv
         ? <button type="button" onClick={onInvite} className={actionClass}>Invite players</button>
         : undefined,
     },
-    {
-      title:  "Pay the entry fee",
-      detail: paymentStatus === "approved"
-        ? "Paid and confirmed by the organisers."
-        : paymentStatus === "pending"
-          ? "Receipt sent. The organisers are checking it."
-          : paymentStatus === "rejected"
-            ? "The receipt was rejected. Upload a new one."
-            : "Not paid yet.",
-      state:  paymentStatus === "approved" ? "done" : paymentStatus === "pending" ? "waiting" : "todo",
-      action: isCaptain && (paymentStatus === "rejected" || !paymentStatus)
-        ? <Link href={"/reading/payment" as Route} className={actionClass}>Upload receipt</Link>
-        : undefined,
-    },
+    ...(PAYMENT_STEP_ENABLED ? [paymentItem] : []),
     {
       title:  "Kickoff",
       detail: firstRound

@@ -1,7 +1,8 @@
 import { Check } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
+import { PAYMENT_STEP_ENABLED } from "@/features/reading/lib/paymentStatus";
 
-const STEPS = ["Account", "Team", "Payment"] as const;
+const STEPS: readonly string[] = PAYMENT_STEP_ENABLED ? ["Account", "Team", "Payment"] : ["Account", "Team"];
 
 export function RegistrationSteps({ current }: { current: 1 | 2 | 3 }) {
   return (
