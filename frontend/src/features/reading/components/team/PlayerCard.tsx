@@ -10,7 +10,7 @@ import {
   useSpring,
   useTransform,
 } from "framer-motion";
-import { BookOpen, Flame, Star, UserRound, type LucideIcon } from "lucide-react";
+import { Flame, UserRound } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import type { ReadingTeamMember } from "@berea/api";
 import { initials } from "@berea/core";
@@ -27,30 +27,6 @@ function streakStatus(member: ReadingTeamMember): string {
   if (member.active_today) return "Checked in today";
   if (member.current_streak > 0) return "Not in yet today — streak at risk";
   return "No active streak";
-}
-
-interface PlayerStatProps {
-  icon:     LucideIcon;
-  value:    number;
-  label:    string;
-  isLit?:   boolean;
-}
-
-function PlayerStat({ icon: Icon, value, label, isLit = false }: PlayerStatProps) {
-  return (
-    <div className="flex flex-col items-center gap-1 rounded-xl bg-[var(--rd-panel)] px-2 py-3">
-      <Icon
-        size={15}
-        className={cn(
-          isLit
-            ? "fill-[var(--rd-accent-from)]/35 text-[var(--rd-accent-from)] drop-shadow-[0_0_6px_rgba(255,107,44,0.6)]"
-            : "text-[var(--rd-text-muted)]"
-        )}
-      />
-      <span className="font-display text-lg font-semibold leading-none text-[var(--rd-text)]">{value}</span>
-      <span className="text-[10px] uppercase tracking-[0.12em] text-[var(--rd-text-muted)]">{label}</span>
-    </div>
-  );
 }
 
 interface PlayerCardProps {
@@ -138,21 +114,25 @@ export function PlayerCard({ member, theme, isMe, index }: PlayerCardProps) {
           </div>
         </div>
 
-        <div className="relative mt-5 grid grid-cols-3 gap-2">
-          <PlayerStat icon={Flame} value={member.current_streak} label="Streak" isLit={isLit} />
-          <PlayerStat icon={Star} value={member.points} label="Points" />
-          <PlayerStat icon={BookOpen} value={member.books_finished} label="Books" />
-        </div>
-
-        <p className="relative mt-4 flex items-center gap-2 text-xs">
-          <span
-            className={cn("h-1.5 w-1.5 shrink-0 rounded-full", isLit ? "bg-emerald-400" : "bg-[var(--rd-text-muted)]/50")}
-            aria-hidden="true"
+        <div className="relative mt-5 flex items-center gap-3 rounded-xl bg-[var(--rd-panel)] px-4 py-3">
+          <Flame
+            size={20}
+            className={cn(
+              "shrink-0",
+              isLit
+                ? "fill-[var(--rd-accent-from)]/35 text-[var(--rd-accent-from)] drop-shadow-[0_0_6px_rgba(255,107,44,0.6)]"
+                : "text-[var(--rd-text-muted)]/50"
+            )}
           />
-          <span className={cn("truncate", isLit ? "text-emerald-400" : "text-[var(--rd-text-muted)]")}>
-            {streakStatus(member)}
-          </span>
-        </p>
+          <div className="min-w-0">
+            <p className="font-display text-[15px] font-semibold leading-tight text-[var(--rd-text)]">
+              {member.current_streak}-day streak
+            </p>
+            <p className={cn("mt-0.5 truncate text-[11px]", isLit ? "text-emerald-400" : "text-[var(--rd-text-muted)]")}>
+              {streakStatus(member)}
+            </p>
+          </div>
+        </div>
 
         <div className="min-h-4 flex-1" aria-hidden="true" />
 
