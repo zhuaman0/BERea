@@ -1,9 +1,9 @@
 import { Check } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 
-const STEPS = ["Account", "Verify", "Team", "Payment"] as const;
+const STEPS = ["Account", "Team", "Payment"] as const;
 
-export function RegistrationSteps({ current }: { current: 1 | 2 | 3 | 4 }) {
+export function RegistrationSteps({ current }: { current: 1 | 2 | 3 }) {
   return (
     <ol className="flex items-center" aria-label={`Registration step ${current} of ${STEPS.length}`}>
       {STEPS.map((label, index) => {

@@ -36,10 +36,6 @@ class ReadingTeamInviteJoinRequest(BaseModel):
     invite_token: str = Field(min_length=8, max_length=64)
 
 
-class ReadingEmailVerifyRequest(BaseModel):
-    code: str = Field(pattern=r"^\d{6}$")
-
-
 class ReadingTeamInviteResponse(BaseModel):
     token: str
     expires_at: datetime
@@ -64,7 +60,6 @@ class ReadingUserResponse(BaseModel):
     current_streak: int
     is_admin: bool
     is_captain: bool
-    email_verified: bool
     created_at: datetime
 
 

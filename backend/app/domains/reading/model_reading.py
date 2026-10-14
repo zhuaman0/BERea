@@ -52,11 +52,6 @@ class ReadingUser(TimestampMixin, Base):
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False)
     last_active_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     is_captain: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false(), nullable=False)
-    email_verified: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false(), nullable=False)
-    email_code_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    email_code_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    email_code_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    email_code_attempts: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
 
     team: Mapped[ReadingTeam | None] = relationship(back_populates="members")
     refresh_tokens: Mapped[list[ReadingRefreshToken]] = relationship(

@@ -38,17 +38,6 @@ class Settings(BaseSettings):
     # ─── YouTube ─────────────────────────────────────────────────────────────
     youtube_api_key: str = ""
 
-    # ─── Email (SMTP) ────────────────────────────────────────────────────────
-    # Empty smtp_host = dev mode: verification codes are written to the backend log instead of sent.
-    smtp_host: str = ""
-    smtp_port: int = 587
-    smtp_user: str = ""
-    smtp_password: str = ""
-    smtp_from: str = ""
-    # Brevo's HTTPS API, for hosts that block outgoing SMTP (e.g. Railway below the Pro plan). Takes priority over SMTP.
-    brevo_api_key: str = ""
-    brevo_sender_email: str = ""
-
     # ─── Uploads ─────────────────────────────────────────────────────────────
     upload_dir: str = "uploads"
     max_upload_size_mb: int = 5
