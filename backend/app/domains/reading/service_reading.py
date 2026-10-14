@@ -377,7 +377,7 @@ async def _build_team_response(
 
 
 async def register_team(
-    user_id: str, payment_description: str, receipt: UploadFile, db: AsyncSession
+    user_id: str, receipt: UploadFile, db: AsyncSession
 ) -> ReadingTeamRegistrationResponse:
     from app.domains.reading.repo_reading import (
         create_team_registration,
@@ -389,13 +389,6 @@ async def register_team(
     user = await get_user_by_id(uuid.UUID(user_id), db)
     if not user or not user.team_id or not user.team:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Create or join a team before paying")
-
-    payment_description = payment_description.strip()
-    if len(payment_description) < 3:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Add a short payment description",
-        )
 
     existing = await get_team_registration_by_team_id(user.team_id, db)
     if existing and existing.status != "rejected":
@@ -446,7 +439,7 @@ async def register_team(
             submitted_by_user_id=user.id,
             member_names=member_names,
             contact_email=user.email,
-            payment_description=payment_description,
+            payment_description="",
             receipt_path=str(receipt_path),
             receipt_content_type=receipt_type,
             db=db,
@@ -463,7 +456,7 @@ async def register_team(
             member_3_name=member_names[2],
             contact_email=user.email,
             contact_phone=None,
-            payment_description=payment_description,
+            payment_description="",
             amount_tenge=TEAM_ENTRY_FEE_TENGE,
             receipt_path=str(receipt_path),
             receipt_content_type=receipt_type,

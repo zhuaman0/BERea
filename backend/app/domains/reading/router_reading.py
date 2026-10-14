@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated
-
-from fastapi import APIRouter, File, Form, Response, UploadFile
+from fastapi import APIRouter, File, Response, UploadFile
 from fastapi.responses import FileResponse
 
 from app.dependencies import CurrentUserId, DbSession
@@ -139,12 +137,11 @@ async def get_team_member_profile(
 async def submit_team_payment(
     db: DbSession,
     user_id: CurrentUserId,
-    payment_description: Annotated[str, Form(min_length=3, max_length=500)],
     receipt: UploadFile = File(...),
 ) -> ReadingTeamRegistrationResponse:
     from app.domains.reading.service_reading import register_team as register_team_service
 
-    return await register_team_service(user_id, payment_description, receipt, db)
+    return await register_team_service(user_id, receipt, db)
 
 
 @router.get("/team-payments", response_model=list[ReadingTeamPaymentAdminResponse])
