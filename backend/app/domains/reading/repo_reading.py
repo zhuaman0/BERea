@@ -429,9 +429,14 @@ async def get_app_settings(db: AsyncSession) -> ReadingAppSettings:
     return settings_row
 
 
-async def set_leaderboard_enabled(enabled: bool, db: AsyncSession) -> ReadingAppSettings:
+async def update_app_settings(
+    leaderboard_enabled: bool | None, season_started: bool | None, db: AsyncSession
+) -> ReadingAppSettings:
     settings_row = await get_app_settings(db)
-    settings_row.leaderboard_enabled = enabled
+    if leaderboard_enabled is not None:
+        settings_row.leaderboard_enabled = leaderboard_enabled
+    if season_started is not None:
+        settings_row.season_started = season_started
     await db.commit()
     await db.refresh(settings_row)
     return settings_row

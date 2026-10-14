@@ -3,7 +3,19 @@ from __future__ import annotations
 import uuid
 from datetime import date, datetime
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, LargeBinary, String, Text, UniqueConstraint, Uuid
+from sqlalchemy import (
+    Boolean,
+    Date,
+    DateTime,
+    ForeignKey,
+    Integer,
+    LargeBinary,
+    String,
+    Text,
+    UniqueConstraint,
+    Uuid,
+    false,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base, TimestampMixin
@@ -273,6 +285,8 @@ class ReadingAppSettings(TimestampMixin, Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, default=1)
     leaderboard_enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # Off during registration: rounds report as locked and the student app shows no round progress.
+    season_started: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false(), nullable=False)
 
 
 class ReadingRefreshToken(Base):
