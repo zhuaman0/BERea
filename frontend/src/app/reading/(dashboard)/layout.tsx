@@ -7,11 +7,13 @@ import { LiveQuizBanner } from "@/features/reading/components/quiz/LiveQuizBanne
 import { ReadingSidebar } from "@/features/reading/components/ReadingSidebar";
 import { LockedSection } from "@/features/reading/components/LockedSection";
 import { ReadingStageGuard } from "@/features/reading/components/auth/ReadingStageGuard";
-import { isReadingRouteLocked } from "@/features/reading/lib/launchSections";
+import { isReadingRouteLocked, isSeasonRoute } from "@/features/reading/lib/launchSections";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
 import { roundDayProgress, seasonLabel } from "@/features/reading/lib/roundCalendar";
 import { readingAuthApi } from "@berea/api";
 import { readingSemesterApi } from "@berea/api";
+import { readingSettingsApi } from "@berea/api";
+import type { ReadingAppSettings } from "@berea/api";
 import type { ReadingTeam } from "@berea/api";
 import type { SemesterRound } from "@berea/api";
 
@@ -21,8 +23,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [team, setTeam] = useState<ReadingTeam | null>(null);
   const [rounds, setRounds] = useState<SemesterRound[]>([]);
   const [roundsLoadedAt, setRoundsLoadedAt] = useState<number | null>(null);
+  const [settings, setSettings] = useState<ReadingAppSettings | null>(null);
 
   useEffect(() => {
+    readingSettingsApi
+      .get()
+      .then(setSettings)
+      .catch(() => setSettings({ leaderboard_enabled: true, season_started: false }));
     readingAuthApi.myTeam().then(setTeam).catch(() => { /* sidebar just shows nothing until it loads */ });
     readingSemesterApi
       .listRounds()
@@ -36,6 +43,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const activeRound = rounds.find((r) => r.status === "in_progress");
   const roundIndex = activeRound?.index ?? rounds.filter((r) => r.status === "done").length;
   const roundTotal = rounds.length;
+  const seasonStarted = settings?.season_started ?? false;
+  const isRegistrationPhase = roundsLoadedAt !== null && !rounds.some((r) => r.status !== "locked");
   const dayProgress = activeRound && roundsLoadedAt !== null ? roundDayProgress(activeRound, roundsLoadedAt) : null;
 
   return (
@@ -45,16 +54,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         seasonLabel={seasonLabel(rounds)}
         roundIndex={roundIndex}
         roundTotal={roundTotal}
+        isRegistrationPhase={isRegistrationPhase}
         dayProgress={dayProgress}
         totalPoints={team?.points ?? 0}
         userName={userName}
       />
-      {!isReadingRouteLocked("/reading/quiz") && <LiveQuizBanner />}
+      {seasonStarted && <LiveQuizBanner />}
 
       <div className="flex min-h-0 flex-1">
-        <ReadingSidebar team={team} />
+        <ReadingSidebar
+          team={team}
+          seasonStarted={seasonStarted}
+          leaderboardEnabled={settings?.leaderboard_enabled ?? true}
+        />
         <main className="flex-1 overflow-y-auto pb-20 md:pb-8">
-          {isReadingRouteLocked(pathname) ? <LockedSection pathname={pathname} /> : children}
+          {settings === null && isSeasonRoute(pathname)
+            ? null
+            : isReadingRouteLocked(pathname, seasonStarted)
+              ? <LockedSection pathname={pathname} />
+              : children}
         </main>
       </div>
     </div>

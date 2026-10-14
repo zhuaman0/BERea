@@ -239,10 +239,12 @@ class ReadingAppSettingsResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     leaderboard_enabled: bool
+    season_started: bool
 
 
 class ReadingAppSettingsUpdate(BaseModel):
-    leaderboard_enabled: bool
+    leaderboard_enabled: bool | None = None
+    season_started: bool | None = None
 
 
 class ReadingBookWrite(BaseModel):

@@ -577,23 +577,25 @@ async def _to_vote_round_response(
 async def create_semester_round_for_admin(
     user_id: str, payload: ReadingSemesterRoundCreate, db: AsyncSession
 ) -> ReadingSemesterRoundResponse:
-    from app.domains.reading.repo_reading import create_semester_round
+    from app.domains.reading.repo_reading import create_semester_round, get_app_settings
 
     await _require_admin(user_id, db)
     round_ = await create_semester_round(payload.index, payload.label, payload.starts_at, payload.ends_at, db)
-    return _to_semester_round_response(round_)
+    settings_row = await get_app_settings(db)
+    return _to_semester_round_response(round_, settings_row.season_started)
 
 
 async def list_semester_rounds_for_user(db: AsyncSession) -> list[ReadingSemesterRoundResponse]:
-    from app.domains.reading.repo_reading import list_semester_rounds
+    from app.domains.reading.repo_reading import get_app_settings, list_semester_rounds
 
+    settings_row = await get_app_settings(db)
     rounds = await list_semester_rounds(db)
-    return [_to_semester_round_response(round_) for round_ in rounds]
+    return [_to_semester_round_response(round_, settings_row.season_started) for round_ in rounds]
 
 
-def _to_semester_round_response(round_: ReadingSemesterRound) -> ReadingSemesterRoundResponse:
+def _to_semester_round_response(round_: ReadingSemesterRound, season_started: bool) -> ReadingSemesterRoundResponse:
     now = datetime.now(UTC)
-    if now < round_.starts_at:
+    if not season_started or now < round_.starts_at:
         status_ = "locked"
     elif now > round_.ends_at:
         status_ = "done"
@@ -620,10 +622,10 @@ async def get_app_settings_for_user(db: AsyncSession) -> ReadingAppSettingsRespo
 async def update_app_settings_for_admin(
     user_id: str, payload: ReadingAppSettingsUpdate, db: AsyncSession
 ) -> ReadingAppSettingsResponse:
-    from app.domains.reading.repo_reading import set_leaderboard_enabled
+    from app.domains.reading.repo_reading import update_app_settings
 
     await _require_admin(user_id, db)
-    settings_row = await set_leaderboard_enabled(payload.leaderboard_enabled, db)
+    settings_row = await update_app_settings(payload.leaderboard_enabled, payload.season_started, db)
     return ReadingAppSettingsResponse.model_validate(settings_row)
 
 

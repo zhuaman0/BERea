@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { usePathname } from "next/navigation";
@@ -19,7 +18,6 @@ import {
 import { initials } from "@berea/core";
 import { isReadingRouteLocked } from "@/features/reading/lib/launchSections";
 import type { ReadingTeam } from "@berea/api";
-import { readingSettingsApi } from "@berea/api";
 import { useReadingLogout } from "../hooks/useReadingLogout";
 
 interface NavItem {
@@ -38,13 +36,20 @@ const BASE_NAV_ITEMS: NavItem[] = [
 ];
 
 interface ReadingSidebarProps {
-  team: ReadingTeam | null;
+  team:               ReadingTeam | null;
+  seasonStarted:      boolean;
+  leaderboardEnabled: boolean;
 }
 
 const LOCKED_HINT = "Opens when the season starts";
 
-function NavLink({ href, label, icon: Icon, isActive }: NavItem & { isActive: boolean }) {
-  if (isReadingRouteLocked(href)) {
+interface NavEntryProps extends NavItem {
+  isActive: boolean;
+  isLocked: boolean;
+}
+
+function NavLink({ href, label, icon: Icon, isActive, isLocked }: NavEntryProps) {
+  if (isLocked) {
     return (
       <span
         aria-disabled="true"
@@ -78,8 +83,8 @@ function NavLink({ href, label, icon: Icon, isActive }: NavItem & { isActive: bo
   );
 }
 
-function MobileTab({ href, label, icon: Icon, isActive }: NavItem & { isActive: boolean }) {
-  if (isReadingRouteLocked(href)) {
+function MobileTab({ href, label, icon: Icon, isActive, isLocked }: NavEntryProps) {
+  if (isLocked) {
     return (
       <span
         aria-disabled="true"
@@ -112,16 +117,9 @@ function MobileTab({ href, label, icon: Icon, isActive }: NavItem & { isActive: 
   );
 }
 
-export function ReadingSidebar({ team }: ReadingSidebarProps) {
+export function ReadingSidebar({ team, seasonStarted, leaderboardEnabled }: ReadingSidebarProps) {
   const pathname = usePathname();
   const { logout, isLoggingOut } = useReadingLogout();
-  const [leaderboardEnabled, setLeaderboardEnabled] = useState(true);
-
-  useEffect(() => {
-    readingSettingsApi.get().then((s) => setLeaderboardEnabled(s.leaderboard_enabled)).catch(() => {
-      /* keep the leaderboard link visible if settings fail to load */
-    });
-  }, []);
 
   const navItems = leaderboardEnabled
     ? BASE_NAV_ITEMS
@@ -133,7 +131,12 @@ export function ReadingSidebar({ team }: ReadingSidebarProps) {
       <aside className="hidden w-56 shrink-0 flex-col border-r border-[var(--rd-border)] bg-[var(--rd-panel)] md:flex">
         <nav className="flex flex-col gap-1 px-3 pt-5">
           {navItems.map((item) => (
-            <NavLink key={item.href} {...item} isActive={pathname === item.href} />
+            <NavLink
+              key={item.href}
+              {...item}
+              isActive={pathname === item.href}
+              isLocked={isReadingRouteLocked(item.href, seasonStarted)}
+            />
           ))}
         </nav>
 
@@ -166,6 +169,7 @@ export function ReadingSidebar({ team }: ReadingSidebarProps) {
             label="Settings"
             icon={Settings}
             isActive={pathname === "/reading/settings"}
+            isLocked={false}
           />
           <button
             type="button"
@@ -182,7 +186,12 @@ export function ReadingSidebar({ team }: ReadingSidebarProps) {
       {/* Mobile bottom tab bar */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t border-[var(--rd-border)] bg-[var(--rd-panel)] px-2 py-2 md:hidden">
         {navItems.map((item) => (
-          <MobileTab key={item.href} {...item} isActive={pathname === item.href} />
+          <MobileTab
+            key={item.href}
+            {...item}
+            isActive={pathname === item.href}
+            isLocked={isReadingRouteLocked(item.href, seasonStarted)}
+          />
         ))}
       </nav>
     </>

@@ -1,8 +1,8 @@
 /**
- * Registration-only launch: these sections stay visible in the navigation but are locked until the
- * season starts. Remove a route from this set to open that section.
+ * Sections that stay visible in the navigation but are locked until an admin starts the season
+ * (Admin → Settings → Season started).
  */
-const LOCKED_READING_ROUTES: ReadonlySet<string> = new Set([
+const SEASON_ROUTES: ReadonlySet<string> = new Set([
   "/reading",
   "/reading/games",
   "/reading/leaderboard",
@@ -10,6 +10,10 @@ const LOCKED_READING_ROUTES: ReadonlySet<string> = new Set([
   "/reading/quiz",
 ]);
 
-export function isReadingRouteLocked(pathname: string): boolean {
-  return LOCKED_READING_ROUTES.has(pathname);
+export function isSeasonRoute(pathname: string): boolean {
+  return SEASON_ROUTES.has(pathname);
+}
+
+export function isReadingRouteLocked(pathname: string, seasonStarted: boolean): boolean {
+  return !seasonStarted && isSeasonRoute(pathname);
 }
