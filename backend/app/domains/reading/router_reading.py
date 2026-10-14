@@ -10,6 +10,7 @@ from app.domains.reading.schema_reading import (
     ReadingBookOfMonthResponse,
     ReadingBookResponse,
     ReadingBookWrite,
+    ReadingEmailVerifyRequest,
     ReadingLiveAnswerRequest,
     ReadingLiveHostState,
     ReadingLiveJoinRequest,
@@ -17,6 +18,7 @@ from app.domains.reading.schema_reading import (
     ReadingLiveSessionCreate,
     ReadingLiveSummary,
     ReadingLoginRequest,
+    ReadingProfileStatsResponse,
     ReadingProgressUpdate,
     ReadingQuizResponse,
     ReadingQuizWrite,
@@ -25,8 +27,10 @@ from app.domains.reading.schema_reading import (
     ReadingSemesterRoundCreate,
     ReadingSemesterRoundResponse,
     ReadingTeamCoverUpdate,
+    ReadingTeamInviteJoinRequest,
+    ReadingTeamInvitePreview,
+    ReadingTeamInviteResponse,
     ReadingTeamJoinRequest,
-    ReadingTeamMemberAddRequest,
     ReadingTeamMemberProfileResponse,
     ReadingTeamPaymentAdminResponse,
     ReadingTeamPaymentStatusUpdate,
@@ -78,11 +82,57 @@ async def get_me(user_id: CurrentUserId, db: DbSession) -> ReadingUserResponse:
     return await get_current_reading_user(user_id, db)
 
 
+@router.get("/users/me/stats", response_model=ReadingProfileStatsResponse)
+async def get_my_profile_stats(user_id: CurrentUserId, db: DbSession) -> ReadingProfileStatsResponse:
+    from app.domains.reading.service_reading import get_my_profile_stats as get_my_profile_stats_service
+
+    return await get_my_profile_stats_service(user_id, db)
+
+
+@router.post("/auth/verify-email", response_model=ReadingUserResponse)
+async def verify_email(
+    payload: ReadingEmailVerifyRequest, user_id: CurrentUserId, db: DbSession
+) -> ReadingUserResponse:
+    from app.domains.reading.service_reading import verify_email as verify_email_service
+
+    return await verify_email_service(user_id, payload, db)
+
+
+@router.post("/auth/resend-code", status_code=204)
+async def resend_email_code(user_id: CurrentUserId, db: DbSession) -> None:
+    from app.domains.reading.service_reading import resend_email_code as resend_email_code_service
+
+    await resend_email_code_service(user_id, db)
+
+
+@router.post("/teams", response_model=ReadingUserResponse, status_code=201)
+async def create_team(payload: ReadingTeamJoinRequest, user_id: CurrentUserId, db: DbSession) -> ReadingUserResponse:
+    from app.domains.reading.service_reading import create_team as create_team_service
+
+    return await create_team_service(user_id, payload, db)
+
+
 @router.post("/teams/join", response_model=ReadingUserResponse)
-async def join_team(payload: ReadingTeamJoinRequest, user_id: CurrentUserId, db: DbSession) -> ReadingUserResponse:
+async def join_team(
+    payload: ReadingTeamInviteJoinRequest, user_id: CurrentUserId, db: DbSession
+) -> ReadingUserResponse:
     from app.domains.reading.service_reading import join_team as join_team_service
 
     return await join_team_service(user_id, payload, db)
+
+
+@router.get("/teams/invites/{token}", response_model=ReadingTeamInvitePreview)
+async def preview_team_invite(token: str, user_id: CurrentUserId, db: DbSession) -> ReadingTeamInvitePreview:
+    from app.domains.reading.service_reading import preview_team_invite as preview_team_invite_service
+
+    return await preview_team_invite_service(token, db)
+
+
+@router.post("/teams/me/invite", response_model=ReadingTeamInviteResponse)
+async def get_team_invite(user_id: CurrentUserId, db: DbSession) -> ReadingTeamInviteResponse:
+    from app.domains.reading.service_reading import get_or_create_team_invite
+
+    return await get_or_create_team_invite(user_id, db)
 
 
 @router.get("/teams", response_model=list[ReadingTeamSummaryResponse])
@@ -113,15 +163,6 @@ async def update_my_team_cover(
     from app.domains.reading.service_reading import update_my_team_cover as update_my_team_cover_service
 
     return await update_my_team_cover_service(user_id, payload, db)
-
-
-@router.post("/teams/members", response_model=ReadingTeamResponse, status_code=201)
-async def add_team_member(
-    payload: ReadingTeamMemberAddRequest, user_id: CurrentUserId, db: DbSession
-) -> ReadingTeamResponse:
-    from app.domains.reading.service_reading import add_team_member as add_team_member_service
-
-    return await add_team_member_service(user_id, payload, db)
 
 
 @router.get("/teams/members/{member_id}", response_model=ReadingTeamMemberProfileResponse)

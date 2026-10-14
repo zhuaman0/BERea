@@ -62,11 +62,24 @@ async def create_team(name: str, db: AsyncSession) -> ReadingTeam:
     return team
 
 
-async def get_or_create_team(name: str, db: AsyncSession) -> ReadingTeam:
-    team = await get_team_by_name(name, db)
-    if team:
-        return team
-    return await create_team(name, db)
+async def get_team_by_invite_token(token: str, db: AsyncSession) -> ReadingTeam | None:
+    result = await db.execute(select(ReadingTeam).where(ReadingTeam.invite_token == token))
+    return result.scalar_one_or_none()
+
+
+async def set_team_invite(team: ReadingTeam, token: str, expires_at: datetime, db: AsyncSession) -> ReadingTeam:
+    team.invite_token = token
+    team.invite_expires_at = expires_at
+    await db.commit()
+    await db.refresh(team)
+    return team
+
+
+async def get_team_captain(team_id: uuid.UUID, db: AsyncSession) -> ReadingUser | None:
+    result = await db.execute(
+        select(ReadingUser).where(ReadingUser.team_id == team_id, ReadingUser.is_captain.is_(True))
+    )
+    return result.scalars().first()
 
 
 async def get_team_by_id(team_id: uuid.UUID, db: AsyncSession) -> ReadingTeam | None:
@@ -173,23 +186,35 @@ async def create_user_record(
     return user
 
 
-async def create_team_member_record(
-    email: str, hashed_password: str, full_name: str, team_id: uuid.UUID, db: AsyncSession
+async def set_user_team(
+    user: ReadingUser, team_id: uuid.UUID, *, is_captain: bool, db: AsyncSession
 ) -> ReadingUser:
-    user = ReadingUser(
-        email=email,
-        hashed_password=hashed_password,
-        full_name=full_name,
-        team_id=team_id,
-    )
-    db.add(user)
+    user.team_id = team_id
+    user.is_captain = is_captain
     await db.commit()
     await db.refresh(user, attribute_names=["team"])
     return user
 
 
-async def set_user_team(user: ReadingUser, team_id: uuid.UUID, db: AsyncSession) -> ReadingUser:
-    user.team_id = team_id
+async def set_email_code(
+    user: ReadingUser, code_hash: str, expires_at: datetime, sent_at: datetime, db: AsyncSession
+) -> None:
+    user.email_code_hash = code_hash
+    user.email_code_expires_at = expires_at
+    user.email_code_sent_at = sent_at
+    user.email_code_attempts = 0
+    await db.commit()
+
+
+async def record_email_code_attempt(user: ReadingUser, db: AsyncSession) -> None:
+    user.email_code_attempts += 1
+    await db.commit()
+
+
+async def mark_email_verified(user: ReadingUser, db: AsyncSession) -> ReadingUser:
+    user.email_verified = True
+    user.email_code_hash = None
+    user.email_code_expires_at = None
     await db.commit()
     await db.refresh(user, attribute_names=["team"])
     return user
@@ -594,6 +619,37 @@ async def set_progress(user_id: uuid.UUID, book_id: uuid.UUID, current_page: int
     else:
         progress.current_page = current_page
     await db.commit()
+
+
+async def list_progress_with_books(user_id: uuid.UUID, db: AsyncSession) -> list[tuple[ReadingProgress, ReadingBook]]:
+    result = await db.execute(
+        select(ReadingProgress, ReadingBook)
+        .join(ReadingBook, ReadingBook.id == ReadingProgress.book_id)
+        .where(ReadingProgress.user_id == user_id)
+        .order_by(ReadingProgress.updated_at.desc())
+    )
+    return [(row[0], row[1]) for row in result.all()]
+
+
+async def get_user_quiz_totals(user_id: uuid.UUID, db: AsyncSession) -> tuple[int, int, int, int]:
+    """(points, quiz nights joined, answers given, answers correct) across every live quiz the user played."""
+    participants = await db.execute(
+        select(func.coalesce(func.sum(ReadingQuizParticipant.score), 0), func.count(ReadingQuizParticipant.id))
+        .where(ReadingQuizParticipant.user_id == user_id)
+    )
+    points, nights = participants.one()
+    answers = await db.execute(
+        select(func.count(ReadingQuizSubmission.id), func.count().filter(ReadingQuizSubmission.is_correct))
+        .join(ReadingQuizParticipant, ReadingQuizParticipant.id == ReadingQuizSubmission.participant_id)
+        .where(ReadingQuizParticipant.user_id == user_id)
+    )
+    total, correct = answers.one()
+    return int(points), int(nights), int(total), int(correct)
+
+
+async def count_votes_by_user(user_id: uuid.UUID, db: AsyncSession) -> int:
+    result = await db.execute(select(func.count(ReadingVote.id)).where(ReadingVote.user_id == user_id))
+    return int(result.scalar_one())
 
 
 def _session_query() -> Select[tuple[ReadingQuizSession]]:

@@ -31,6 +31,8 @@ class ReadingTeam(TimestampMixin, Base):
     cover_pattern: Mapped[str] = mapped_column(String(20), default="plain", server_default="plain", nullable=False)
     cover_emblem: Mapped[str] = mapped_column(String(20), default="monogram", server_default="monogram", nullable=False)
     cover_animation: Mapped[str] = mapped_column(String(20), default="float", server_default="float", nullable=False)
+    invite_token: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True)
+    invite_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     members: Mapped[list[ReadingUser]] = relationship(back_populates="team")
 
@@ -49,6 +51,12 @@ class ReadingUser(TimestampMixin, Base):
     current_streak: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False)
     last_active_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    is_captain: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false(), nullable=False)
+    email_verified: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false(), nullable=False)
+    email_code_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    email_code_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    email_code_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    email_code_attempts: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
 
     team: Mapped[ReadingTeam | None] = relationship(back_populates="members")
     refresh_tokens: Mapped[list[ReadingRefreshToken]] = relationship(
