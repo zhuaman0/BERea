@@ -42,6 +42,15 @@ class Settings(BaseSettings):
     upload_dir: str = "uploads"
     max_upload_size_mb: int = 5
 
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def use_asyncpg_driver(cls, v: str) -> str:
+        # Hosted Postgres (Railway, Render, …) hands out plain postgres:// URLs; SQLAlchemy async needs the asyncpg driver.
+        for prefix in ("postgres://", "postgresql://"):
+            if isinstance(v, str) and v.startswith(prefix):
+                return "postgresql+asyncpg://" + v.removeprefix(prefix)
+        return v
+
     @field_validator("backend_cors_origins", mode="before")
     @classmethod
     def parse_cors(cls, v: str | list[str]) -> list[str]:

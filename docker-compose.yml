@@ -27,6 +27,7 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.backend
+      target: runner
     container_name: berea_backend
     restart: unless-stopped
     env_file: .env
