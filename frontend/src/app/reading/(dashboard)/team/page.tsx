@@ -77,9 +77,9 @@ export default function ReadingTeamPage() {
 
   const statItems: StatStripItem[] = [
     {
-      icon: Trophy, label: "Team place",
-      value: team ? `${team.place}/${team.teams_total}` : "—",
-      note: team ? `${team.points} ${team.points === 1 ? "point" : "points"} this season` : "",
+      icon: Trophy, label: "Team points",
+      value: team ? `${team.points}` : "—",
+      note: "From quiz nights and bonus tasks",
       accent: false,
     },
     {
@@ -138,13 +138,13 @@ export default function ReadingTeamPage() {
                     index={i}
                   />
                 ))}
-                {Array.from({ length: team.max_members - team.members.length }).map((_, i) => (
+                {team.members.length < team.max_members && (
                   <OpenSpotCard
-                    key={`open-${i}`}
-                    index={team.members.length + i}
+                    spotsLeft={team.max_members - team.members.length}
+                    index={team.members.length}
                     onAdd={openAddModal}
                   />
-                ))}
+                )}
               </section>
 
               <aside className="flex flex-col gap-6">

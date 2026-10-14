@@ -2,11 +2,10 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Paintbrush, Pencil, UserPlus } from "lucide-react";
+import { Paintbrush, Pencil, Plus } from "lucide-react";
 import { isApiError } from "@/features/auth/utils";
 import { cn } from "@/shared/lib/utils";
 import type { ReadingTeam } from "@berea/api";
-import { CoverShowcase } from "./CoverShowcase";
 import { initials } from "@berea/core";
 import type { TeamTheme } from "./teamTheme";
 
@@ -55,46 +54,28 @@ export function TeamHero({ team, theme, roundLabel, onRename, onAddStudents, onD
       initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: EASE }}
-      className={cn("relative overflow-hidden rounded-[28px] border bg-[var(--rd-panel)]", theme.border)}
+      className="relative overflow-hidden rounded-[28px] border border-[var(--rd-border)] bg-[var(--rd-panel)]"
     >
-      <div className={cn("pointer-events-none absolute -left-24 -top-32 h-96 w-96 rounded-full blur-3xl", theme.glow)} />
-      <div className={cn("pointer-events-none absolute -bottom-40 right-10 h-80 w-80 rounded-full opacity-60 blur-3xl", theme.glow)} />
+      <div
+        className={cn("pointer-events-none absolute -right-24 -top-32 h-80 w-80 rounded-full opacity-70 blur-3xl", theme.glow)}
+        aria-hidden="true"
+      />
 
-      <div className="relative flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:gap-8 sm:p-8 lg:gap-12 lg:p-10">
-        <motion.div
-          initial={{ opacity: 0, rotate: -10, scale: 0.85 }}
-          animate={{ opacity: 1, rotate: 0, scale: 1 }}
-          transition={{ duration: 0.8, delay: 0.1, ease: EASE }}
-          className="w-36 shrink-0 lg:w-48"
-        >
-          <button
-            type="button"
-            onClick={onDesignCover}
-            tabIndex={-1}
-            aria-hidden="true"
-            className="block w-full cursor-pointer transition-transform duration-300 hover:scale-[1.03]"
-          >
-            <CoverShowcase cover={team.cover} teamName={team.name} className="w-full" />
-          </button>
-          <button
-            type="button"
-            onClick={onDesignCover}
-            className="mx-auto mt-3 flex items-center gap-1.5 rounded-full border border-[var(--rd-border)] bg-[var(--rd-ink)]/70 px-3 py-1.5 text-[11px] font-medium text-[var(--rd-text-muted)] transition-colors hover:border-[var(--rd-accent-from)] hover:text-[var(--rd-text)]"
-          >
-            <Paintbrush size={12} />
-            Design cover
-          </button>
-        </motion.div>
+      <button
+        type="button"
+        onClick={onDesignCover}
+        title="Customize team cover"
+        aria-label="Customize team cover"
+        className="absolute right-4 top-4 z-10 rounded-lg p-2 text-[var(--rd-text-muted)] transition-colors hover:bg-white/[0.05] hover:text-[var(--rd-text)]"
+      >
+        <Paintbrush size={15} />
+      </button>
 
+      <div className="relative flex flex-col gap-8 p-6 sm:p-8 lg:flex-row lg:items-end lg:justify-between lg:p-10">
         <div className="min-w-0 flex-1">
-          <motion.p
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.2, ease: EASE }}
-            className={cn("text-[11px] font-semibold uppercase tracking-[0.28em]", theme.text)}
-          >
+          <p className={cn("text-[11px] font-semibold uppercase tracking-[0.28em]", theme.text)}>
             Your reading team{roundLabel ? ` · ${roundLabel}` : ""}
-          </motion.p>
+          </p>
 
           {isRenaming ? (
             <form onSubmit={handleRenameSubmit} className="mt-3 flex flex-wrap items-center gap-2">
@@ -103,104 +84,83 @@ export function TeamHero({ team, theme, roundLabel, onRename, onAddStudents, onD
                 value={draftName}
                 onChange={(e) => setDraftName(e.target.value)}
                 aria-label="Team name"
-                className="h-14 min-w-0 max-w-md flex-1 rounded-xl border border-[var(--rd-border)] bg-[var(--rd-ink)] px-4 font-display text-2xl font-semibold text-[var(--rd-text)] focus:border-[var(--rd-accent-from)] focus:outline-none"
+                className="h-12 min-w-0 max-w-md flex-1 rounded-xl border border-[var(--rd-border)] bg-[var(--rd-ink)] px-4 font-display text-xl font-semibold text-[var(--rd-text)] focus:border-[var(--rd-accent-from)] focus:outline-none"
               />
               <button
                 type="submit"
                 disabled={isSaving}
-                className="rd-accent-gradient h-11 rounded-lg px-5 text-sm font-semibold text-black/85 disabled:opacity-50"
+                className="rd-accent-gradient h-10 rounded-lg px-5 text-sm font-semibold text-black/85 disabled:opacity-50"
               >
                 Save
               </button>
               <button
                 type="button"
                 onClick={cancelRename}
-                className="h-11 rounded-lg border border-[var(--rd-border)] px-5 text-sm text-[var(--rd-text)]"
+                className="h-10 rounded-lg border border-[var(--rd-border)] px-5 text-sm text-[var(--rd-text)]"
               >
                 Cancel
               </button>
             </form>
           ) : (
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.25, ease: EASE }}
-              className="group mt-2 flex items-start gap-3"
-            >
-              <h1 className="break-words font-display text-4xl font-semibold tracking-tight text-[var(--rd-text)] sm:text-5xl lg:text-6xl">
+            <div className="group mt-3 flex items-center gap-2">
+              <h1 className="break-words font-display text-4xl font-semibold tracking-tight text-[var(--rd-text)] sm:text-5xl">
                 {team.name}
               </h1>
               <button
+                type="button"
                 onClick={() => { setDraftName(team.name); setIsRenaming(true); }}
                 aria-label="Rename team"
-                className="mt-2 rounded-lg p-2 text-[var(--rd-text-muted)] opacity-60 transition-all hover:bg-white/[0.05] hover:text-[var(--rd-text)] group-hover:opacity-100"
+                className="rounded-lg p-2 text-[var(--rd-text-muted)] opacity-0 transition-opacity hover:bg-white/[0.05] hover:text-[var(--rd-text)] focus-visible:opacity-100 group-hover:opacity-100"
               >
-                <Pencil size={16} />
+                <Pencil size={15} />
               </button>
-            </motion.div>
+            </div>
           )}
           {renameError && <p className="mt-2 text-sm text-red-400">{renameError}</p>}
 
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.35, ease: EASE }}
-            className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-4"
-          >
+          <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-3">
             <div className="flex items-center">
-              {team.members.map((member, i) => (
-                <motion.span
+              {team.members.map((member) => (
+                <span
                   key={member.id}
-                  initial={{ opacity: 0, scale: 0.6 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.4, delay: 0.45 + i * 0.08, ease: EASE }}
                   title={member.full_name}
                   className={cn(
-                    "-ml-1.5 flex h-10 w-10 items-center justify-center rounded-full text-xs font-bold text-black/80 ring-[3px] ring-[var(--rd-panel)] first:ml-0",
+                    "-ml-2 flex h-9 w-9 items-center justify-center rounded-full text-[11px] font-bold text-black/80 ring-[3px] ring-[var(--rd-panel)] first:ml-0",
                     theme.band
                   )}
                 >
                   {initials(member.full_name)}
-                </motion.span>
-              ))}
-              {Array.from({ length: openSpots }).map((_, i) => (
-                <span
-                  key={`open-${i}`}
-                  className="-ml-1.5 flex h-10 w-10 items-center justify-center rounded-full border border-dashed border-[var(--rd-text-muted)]/50 bg-[var(--rd-panel)] ring-[3px] ring-[var(--rd-panel)] first:ml-0"
-                />
+                </span>
               ))}
             </div>
             <p className="text-sm text-[var(--rd-text-muted)]">
-              <span className="font-semibold text-[var(--rd-text)]">{team.members.length}/{team.max_members}</span> players
-              {openSpots > 0 ? ` · ${openSpots} ${openSpots === 1 ? "spot" : "spots"} open` : " · full roster"}
+              <span className="font-semibold text-[var(--rd-text)]">{team.members.length}</span>/{team.max_members} players
             </p>
             {openSpots > 0 && (
               <button
+                type="button"
                 onClick={onAddStudents}
-                className="rd-accent-gradient inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-black/85 shadow-[0_8px_30px_-8px_var(--rd-accent-from)] transition-transform hover:-translate-y-0.5"
+                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rd-accent-from)]/40 px-3 py-1.5 text-xs font-semibold text-[var(--rd-accent-from)] transition-colors hover:bg-[var(--rd-accent-from)]/10"
               >
-                <UserPlus size={15} />
-                Add students
+                <Plus size={13} />
+                Add {openSpots === 1 ? "the last player" : "players"}
               </button>
             )}
-          </motion.div>
+          </div>
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.7, delay: 0.4, ease: EASE }}
-          className="hidden shrink-0 flex-col items-end text-right lg:flex"
-        >
-          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--rd-text-muted)]">Place</p>
-          <p className="font-display text-[112px] font-bold leading-none tracking-tighter text-[var(--rd-text)]">
+        <div className="flex shrink-0 items-baseline gap-3 lg:flex-col lg:items-end lg:gap-1">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--rd-text-muted)] lg:order-first">
+            Place
+          </p>
+          <p className="font-display text-5xl font-bold leading-none tracking-tighter text-[var(--rd-text)] lg:text-7xl">
             <span className={theme.text}>#</span>
             {team.place}
           </p>
-          <p className="mt-1 text-sm text-[var(--rd-text-muted)]">
+          <p className="text-sm text-[var(--rd-text-muted)]">
             of {team.teams_total} {team.teams_total === 1 ? "team" : "teams"}
           </p>
-        </motion.div>
+        </div>
       </div>
     </motion.section>
   );
