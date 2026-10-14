@@ -24,10 +24,16 @@ FROM deps AS runner
 COPY backend/ .
 EXPOSE 8000
 
-# Development: source is volume-mounted, reload on change.
-# Production: override CMD with workers and no reload.
+# Development (docker-compose target): source is volume-mounted, reload on change.
 CMD ["uvicorn", "app.main:app", \
      "--host", "0.0.0.0", \
      "--port", "8000", \
      "--reload", \
      "--reload-dir", "app"]
+
+# ─── Production (default target — Railway builds this) ───────────────────────
+# Applies pending migrations, then serves on the platform's $PORT without reload.
+FROM deps AS production
+COPY backend/ .
+EXPOSE 8000
+CMD ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 2 --proxy-headers --forwarded-allow-ips='*'"]
