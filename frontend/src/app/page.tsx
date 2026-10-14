@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Space_Grotesk, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
-import { ArrowRight, ChevronDown, Flame } from "lucide-react";
+import { ArrowRight, ChevronDown, ExternalLink, Flame } from "lucide-react";
 import "@/app/reading/reading.css";
 import { LandingRulesSection } from "@/features/reading/components/LandingRulesSection";
 
@@ -12,6 +12,9 @@ const ibmPlexMono  = IBM_Plex_Mono({ variable: "--font-ibm-plex-mono", subsets: 
 const NAV_LINKS = [
   { href: "#rules", label: "Rules" },
 ];
+
+const GAME_RULES_URL =
+  "https://www.figma.com/proto/EBW39gk61x9IaSy1snPY5H/451%C2%B0?node-id=2021-3&p=f&viewport=344%2C160%2C0.06&t=6CRoKwMBNYMYj2S8-1&scaling=contain&content-scaling=fixed&page-id=2021%3A2";
 
 const FLAME_PATH =
   "M0,200 L0,65 L43,134 L86,70 L129,166 L171,48 L214,129 L257,79 L300,131 L343,68 L386,162 L429,48 L471,157 L514,58 L557,127 L600,50 L643,152 L686,71 L729,129 L771,60 L814,130 L857,80 L900,152 L943,48 L986,161 L1029,52 L1071,139 L1114,85 L1157,165 L1200,82 L1200,200 Z";
