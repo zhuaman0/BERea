@@ -23,6 +23,8 @@ export interface VoteRound {
   id:                  string;
   stage:               VoteStage;
   is_open:             boolean;
+  status:              "scheduled" | "open" | "closed";
+  is_tied:             boolean;
   opens_at:            string;
   closes_at:           string;
   total_votes:         number;

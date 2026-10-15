@@ -123,6 +123,24 @@ The frontend intentionally runs on the host (not in Docker) for fast refresh; Ng
 3. From the dashboard: log reading pages, vote on the next book once a vote round opens, check the leaderboard, and join quiz nights.
 4. Admins manage books, quizzes, and vote rounds from `/reading/admin` (requires an admin account).
 
+Book voting starts at **Admin → Book vote**. Configure language and genre options and start a
+single six-hour selection with one shared deadline. Each student chooses a language first,
+then immediately chooses a genre on the same page. Both choices can be changed until the
+shared deadline; there is no waiting period between them. Once both stages have a winner, the admin offers 2–12 matching catalog
+books in a separate book vote. Students can change their book vote until it closes.
+Home and Book vote are available before the season starts; the Season started setting only
+locks season-specific pages (Leaderboard, Profile and Quiz).
+Tied or empty rounds have no winner: restart the selection for language/genre, or repeat the
+book vote. The dashboard and voting pages refresh results and deadlines automatically.
+
+After pulling backend changes, apply migrations with
+`docker compose exec -T backend alembic upgrade head`. Errors such as
+`column reading_users.is_captain does not exist` mean the database schema is behind the code.
+
+Voting regression tests use isolated PostgreSQL schemas, which are removed after each test:
+`cd backend` then `python -m pytest tests -q --vote-test-db <postgresql+asyncpg://...>`.
+CI runs these tests against a disposable PostgreSQL service.
+
 ### Using Furniture Studio
 
 1. Register or sign in at `/login` / `/register`.

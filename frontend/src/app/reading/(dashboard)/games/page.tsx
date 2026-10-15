@@ -1,92 +1,42 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { AnimatePresence, LayoutGroup, MotionConfig, motion } from "framer-motion";
-import { Check, Clock, Globe, Tags, BookOpen } from "lucide-react";
+import { useState } from "react";
+import Link from "next/link";
+import { LayoutGroup, MotionConfig, motion } from "framer-motion";
+import { Check, Clock, Lock, RefreshCw } from "lucide-react";
+import type { VoteRound } from "@berea/api";
 import { VoteOptionCard } from "@/features/reading/components/VoteOptionCard";
-import { readingVoteApi } from "@berea/api";
+import { VoteSelectionSteps } from "@/features/reading/components/VoteSelectionSteps";
+import { useVoteRounds } from "@/features/reading/hooks/useVoteRounds";
+import { formatVoteCountdown, VOTE_LABELS, voteStatus, voteWinner } from "@/features/reading/lib/voteRounds";
 import { isApiError } from "@/features/auth/utils";
-import type { VoteRound, VoteStage } from "@berea/api";
 import { READING_PAGE_CONTAINER } from "@/features/reading/lib/pageContainer";
 
-const STAGE_META: Record<VoteStage, { label: string; icon: typeof Globe }> = {
-  language: { label: "Language", icon: Globe },
-  genre:    { label: "Genre",    icon: Tags },
-  book:     { label: "Book",     icon: BookOpen },
-};
-
-const EASE = [0.16, 1, 0.3, 1] as const;
-const VOTE_RIPPLE_MS = 1200;
-
-function VoteSkeleton() {
-  return (
-    <div className="mt-6 animate-pulse rounded-2xl border border-[var(--rd-border)] bg-[var(--rd-panel)] p-6" aria-label="Loading the vote">
-      <div className="h-3 w-28 rounded bg-white/[0.06]" />
-      <div className="mt-3 h-6 w-56 rounded bg-white/[0.06]" />
-      <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="h-36 rounded-xl border border-[var(--rd-border)] bg-white/[0.02]" />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function useCountdown(closesAt: string | undefined): string {
-  const [now, setNow] = useState(() => Date.now());
-
-  useEffect(() => {
-    if (!closesAt) return;
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, [closesAt]);
-
-  if (!closesAt) return "";
-  const diffMs = new Date(closesAt).getTime() - now;
-  if (diffMs <= 0) return "Voting closed";
-
-  const hours = Math.floor(diffMs / (1000 * 60 * 60));
-  const minutes = Math.floor((diffMs / (1000 * 60)) % 60);
-  const seconds = Math.floor((diffMs / 1000) % 60);
-  return `${String(hours).padStart(2, "0")}h ${String(minutes).padStart(2, "0")}m ${String(seconds).padStart(2, "0")}s`;
-}
-
 export default function ReadingGamesPage() {
-  const [rounds, setRounds] = useState<VoteRound[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const { rounds, selection, currentRound, now, isPending, error, refetch, recordVote } = useVoteRounds();
   const [voteError, setVoteError] = useState<string | null>(null);
   const [pendingOptionId, setPendingOptionId] = useState<string | null>(null);
   const [justVotedId, setJustVotedId] = useState<string | null>(null);
+  const language = selection.find((round) => round.stage === "language");
+  const genre = selection.find((round) => round.stage === "genre");
+  const isBookVote = currentRound?.stage === "book";
+  const displayRounds = isBookVote ? [currentRound] : selection.filter((round) => round.stage !== "book");
+  const deadline = isBookVote ? currentRound.closes_at : genre?.closes_at ?? language?.closes_at;
+  const isOpen = displayRounds.some((round) => voteStatus(round, now) === "open");
+  const bothSaved = Boolean(language?.your_vote_option_id && genre?.your_vote_option_id);
+  const unresolved = selection.some((round) => round.stage !== "book" && round.status === "closed" && !round.winner_option_id);
+  const history = rounds.filter((round) => !selection.some((item) => item.id === round.id));
 
-  useEffect(() => {
-    readingVoteApi
-      .listRounds()
-      .then(setRounds)
-      .catch((err) => setLoadError(isApiError(err) ? err.detail : "Couldn't load the vote."))
-      .finally(() => setIsLoading(false));
-  }, []);
-
-  const currentRound = rounds.length > 0 ? rounds[rounds.length - 1] : null;
-  const history = rounds.slice(0, -1);
-  const countdown = useCountdown(currentRound?.is_open ? currentRound.closes_at : undefined);
-
-  const winningOption = useMemo(() => {
-    if (!currentRound || currentRound.is_open) return null;
-    return currentRound.options.find((o) => o.id === currentRound.winner_option_id) ?? null;
-  }, [currentRound]);
-
-  async function handleVote(optionId: string) {
-    if (!currentRound || pendingOptionId) return;
+  async function handleVote(round: VoteRound, optionId: string) {
+    if (pendingOptionId || voteStatus(round, now) !== "open") return;
+    if (round.stage === "genre" && !language?.your_vote_option_id) return;
     setVoteError(null);
     setPendingOptionId(optionId);
     try {
-      const updated = await readingVoteApi.castVote(currentRound.id, optionId);
-      setRounds((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+      await recordVote(round.id, optionId);
       setJustVotedId(optionId);
-      window.setTimeout(() => setJustVotedId((id) => (id === optionId ? null : id)), VOTE_RIPPLE_MS);
     } catch (err: unknown) {
-      setVoteError(isApiError(err) ? err.detail : "Couldn't cast your vote. Please try again.");
+      setVoteError(isApiError(err) ? err.detail : "Couldn't save your vote. Please try again.");
     } finally {
       setPendingOptionId(null);
     }
@@ -95,127 +45,96 @@ export default function ReadingGamesPage() {
   return (
     <MotionConfig reducedMotion="user">
       <div className={READING_PAGE_CONTAINER}>
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: EASE }}>
-          <h1 className="font-display text-2xl font-semibold text-[var(--rd-text)]">Choose the book</h1>
-          <p className="mt-1 text-[13px] text-[var(--rd-text-muted)]">
-            Language, then genre, then the book itself — each round decided by majority vote.
-          </p>
-        </motion.div>
+        <h1 className="font-display text-2xl font-semibold text-[var(--rd-text)]">Choose the book</h1>
+        <p className="mt-2 max-w-2xl text-sm text-[var(--rd-text-muted)]">
+          Choose a language, then immediately choose a genre below. Both choices share one 6-hour deadline.
+          You can change either choice until voting closes.
+        </p>
+        <div className="mt-6"><VoteSelectionSteps rounds={selection} now={now} /></div>
 
-        {history.length > 0 && (
-          <div className="mt-5 flex flex-wrap items-center gap-2">
-            {history.map((round, i) => {
-              const winner = round.options.find((o) => o.id === round.winner_option_id);
-              const Icon = STAGE_META[round.stage].icon;
-              return (
-                <motion.span
-                  key={round.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.35, delay: 0.1 + i * 0.06, ease: EASE }}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rd-border)] bg-[var(--rd-panel)] px-3 py-1.5 text-[12px] text-[var(--rd-text-muted)]"
-                >
-                  <Icon size={12} className="text-[var(--rd-accent-from)]" />
-                  {STAGE_META[round.stage].label}:
-                  <span className="font-medium text-[var(--rd-text)]">{winner?.label ?? "—"}</span>
-                  <Check size={12} className="text-emerald-400" />
-                </motion.span>
-              );
-            })}
-          </div>
-        )}
+        {error && <div role="alert" className="mt-5 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-400">
+          {isApiError(error) ? error.detail : "Couldn't refresh voting. Please try again."}
+          <button type="button" onClick={() => void refetch()} className="ml-3 inline-flex items-center gap-1 underline"><RefreshCw size={13} /> Retry</button>
+        </div>}
 
-        {isLoading ? (
-          <VoteSkeleton />
-        ) : loadError ? (
-          <p className="mt-8 text-sm text-[var(--rd-text-muted)]">{loadError}</p>
+        {isPending ? (
+          <div role="status" className="mt-6 animate-pulse rounded-2xl border border-[var(--rd-border)] bg-[var(--rd-panel)] p-8 text-sm text-[var(--rd-text-muted)]">Loading the vote…</div>
         ) : !currentRound ? (
-          <p className="mt-8 text-sm text-[var(--rd-text-muted)]">
-            No vote is open right now. Check back once the next round starts.
-          </p>
+          !error && <div className="mt-6 rounded-2xl border border-dashed border-[var(--rd-border)] p-8 text-sm text-[var(--rd-text-muted)]">
+            Voting hasn&apos;t started yet. Language and genre choices will appear here when the admin opens the selection.
+          </div>
         ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.05, ease: EASE }}
-            className="mt-6 rounded-2xl border border-[var(--rd-border)] bg-[var(--rd-panel)] p-6"
-          >
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <section className="mt-6 rounded-2xl border border-[var(--rd-border)] bg-[var(--rd-panel)] p-4 sm:p-6">
+            <div className="flex flex-col justify-between gap-4 sm:flex-row">
               <div>
-                <p className="text-[11px] uppercase tracking-[0.15em] text-[var(--rd-text-muted)]">
-                  {STAGE_META[currentRound.stage].label} vote
+                <h2 className="font-display text-xl font-semibold text-[var(--rd-text)]">{isBookVote ? "Book vote" : "Language + genre"}</h2>
+                <p className="mt-2 text-sm text-[var(--rd-text-muted)]">
+                  {isBookVote ? "Vote for a book matching the winning language and genre." : "Two choices, one shared voting window. One vote per student for each choice."}
                 </p>
-                <h2 className="font-display mt-1 text-xl font-semibold text-[var(--rd-text)]">
-                  {currentRound.is_open ? `Choose the ${STAGE_META[currentRound.stage].label.toLowerCase()}` : "Voting closed"}
-                </h2>
               </div>
-              <div className="shrink-0 text-right">
-                {currentRound.is_open ? (
-                  <span className="rd-accent-gradient inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] font-semibold tabular-nums text-black/80">
-                    <span className="relative flex h-2 w-2">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-black/40" />
-                      <span className="relative inline-flex h-2 w-2 rounded-full bg-black/60" />
-                    </span>
-                    <Clock size={12} />
-                    {countdown}
-                  </span>
-                ) : (
-                  winningOption && (
-                    <motion.span
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ type: "spring", stiffness: 380, damping: 20 }}
-                      className="rd-accent-gradient inline-block rounded-full px-3 py-1 text-[12px] font-semibold text-black/80"
-                    >
-                      Winner: {winningOption.label}
-                    </motion.span>
-                  )
-                )}
-                <p className="mt-1 text-[11px] text-[var(--rd-text-muted)]">{currentRound.total_votes} votes cast</p>
-              </div>
+              {deadline && <div className="shrink-0 sm:text-right">
+                <span className="rd-accent-gradient inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold tabular-nums text-black/85">
+                  <Clock size={15} /> {isOpen ? `${formatVoteCountdown(deadline, now)} left` : "Voting closed"}
+                </span>
+                <p className="mt-2 text-xs text-[var(--rd-text-muted)]">{isBookVote ? "Deadline" : "Both choices close"}: {new Date(deadline).toLocaleString()}</p>
+              </div>}
             </div>
 
-            <AnimatePresence>
-              {voteError && (
-                <motion.p
-                  initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                  animate={{ opacity: 1, height: "auto", marginTop: 16 }}
-                  exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                  transition={{ duration: 0.25, ease: EASE }}
-                  role="alert"
-                  className="overflow-hidden rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-[13px] text-red-400"
-                >
-                  {voteError}
-                </motion.p>
-              )}
-            </AnimatePresence>
+            {voteError && <p role="alert" className="mt-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-400">{voteError}</p>}
+            {!isBookVote && bothSaved && <p role="status" className="mt-4 flex items-center gap-2 rounded-lg bg-emerald-400/10 p-3 text-sm text-emerald-400">
+              <Check size={16} /> Both choices are saved.{isOpen && " You can still change either choice below."}
+            </p>}
 
-            <LayoutGroup>
-              <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-                {currentRound.options.map((option, i) => (
-                  <VoteOptionCard
-                    key={option.id}
-                    option={option}
-                    index={i}
-                    isYourVote={currentRound.your_vote_option_id === option.id}
-                    isWinner={currentRound.winner_option_id === option.id}
-                    canVote={currentRound.is_open}
-                    isPending={pendingOptionId === option.id}
-                    isLocked={pendingOptionId !== null}
-                    justVoted={justVotedId === option.id}
-                    onVote={() => handleVote(option.id)}
-                  />
-                ))}
-              </div>
-            </LayoutGroup>
-
-            {!currentRound.is_open && (
-              <p className="mt-5 text-[13px] text-[var(--rd-text-muted)]">
-                Waiting for the next round to open.
-              </p>
-            )}
-          </motion.div>
+            <div className="mt-6 space-y-8">
+              {displayRounds.map((round, roundIndex) => {
+                const status = voteStatus(round, now);
+                const needsLanguage = round.stage === "genre" && !language?.your_vote_option_id;
+                const winner = voteWinner(round);
+                return (
+                  <motion.section key={round.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} aria-labelledby={`vote-${round.stage}`}>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h3 id={`vote-${round.stage}`} className="font-display text-lg font-semibold text-[var(--rd-text)]">{!isBookVote && `${roundIndex + 1}. `}{VOTE_LABELS[round.stage]}</h3>
+                      <span className="text-xs text-[var(--rd-text-muted)]">{round.total_votes} votes</span>
+                    </div>
+                    {needsLanguage && status === "open" && <p className="mt-2 flex items-center gap-2 text-sm text-[var(--rd-text-muted)]"><Lock size={14} /> Choose a language above to unlock genres immediately.</p>}
+                    {status === "scheduled" && <p className="mt-2 text-sm text-[var(--rd-text-muted)]">Opens {new Date(round.opens_at).toLocaleString()}</p>}
+                    {round.your_vote_option_id && <p className="mt-2 text-sm text-emerald-400">Your choice: {round.options.find((option) => option.id === round.your_vote_option_id)?.label}</p>}
+                    <LayoutGroup id={round.id}>
+                      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                        {round.options.map((option, index) => (
+                          <VoteOptionCard key={option.id} option={option} index={index}
+                            isYourVote={round.your_vote_option_id === option.id}
+                            isWinner={round.winner_option_id === option.id}
+                            canVote={status === "open" && !needsLanguage} isPending={pendingOptionId === option.id}
+                            isLocked={pendingOptionId !== null} justVoted={justVotedId === option.id}
+                            onVote={() => void handleVote(round, option.id)} />
+                        ))}
+                      </div>
+                    </LayoutGroup>
+                    {status === "closed" && <p className="mt-3 text-sm text-[var(--rd-text-muted)]">
+                      {round.status !== "closed" ? "Updating the final results…" : winner ? `Winner: ${winner}` : round.is_tied ? "Tied vote — no winner." : "No votes were cast."}
+                    </p>}
+                  </motion.section>
+                );
+              })}
+            </div>
+            {!isOpen && displayRounds.every((round) => round.status === "closed") && <p className="mt-6 text-sm text-[var(--rd-text-muted)]">
+              {isBookVote && currentRound.winner_option_id ? <>The book has been chosen. <Link href="/reading" className="text-[var(--rd-text)] underline">Open your dashboard</Link> to start reading.</>
+                : unresolved || (isBookVote && !currentRound.winner_option_id) ? "No clear winner yet. Waiting for the admin to open another vote."
+                : "The admin will open the book vote using the winning language and genre."}
+            </p>}
+          </section>
         )}
+
+        {history.length > 0 && <details className="mt-6 rounded-xl border border-[var(--rd-border)] p-4">
+          <summary className="cursor-pointer text-sm font-medium text-[var(--rd-text)]">Previous votes</summary>
+          <ul className="mt-4 space-y-3 text-sm text-[var(--rd-text-muted)]">
+            {[...history].reverse().map((round) => <li key={round.id} className="flex flex-wrap justify-between gap-2">
+              <span>{VOTE_LABELS[round.stage]} · {new Date(round.closes_at).toLocaleDateString()}</span>
+              <span>{voteWinner(round) ?? (round.is_tied ? "Tied vote" : "No winner")} · {round.total_votes} votes</span>
+            </li>)}
+          </ul>
+        </details>}
       </div>
     </MotionConfig>
   );

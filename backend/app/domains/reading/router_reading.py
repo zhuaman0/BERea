@@ -41,6 +41,7 @@ from app.domains.reading.schema_reading import (
     ReadingVoteCastRequest,
     ReadingVoteRoundCreate,
     ReadingVoteRoundResponse,
+    ReadingVoteSelectionCreate,
 )
 
 router = APIRouter()
@@ -202,6 +203,15 @@ async def get_team_payment_receipt(
         filename=f"{team_name}-receipt{receipt_path.suffix}",
         content_disposition_type="inline",
     )
+
+
+@router.post("/vote-selections", response_model=list[ReadingVoteRoundResponse], status_code=201)
+async def create_vote_selection(
+    payload: ReadingVoteSelectionCreate, user_id: CurrentUserId, db: DbSession
+) -> list[ReadingVoteRoundResponse]:
+    from app.domains.reading.service_reading import create_vote_selection_for_admin
+
+    return await create_vote_selection_for_admin(user_id, payload, db)
 
 
 @router.post("/vote-rounds", response_model=ReadingVoteRoundResponse, status_code=201)

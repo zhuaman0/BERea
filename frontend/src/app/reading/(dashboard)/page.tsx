@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Trophy, Flame, BookOpen, Zap } from "lucide-react";
 import { BookOfMonthCard } from "@/features/reading/components/BookOfMonthCard";
+import { VoteStatusCard } from "@/features/reading/components/VoteStatusCard";
 import { LogPagesModal } from "@/features/reading/components/LogPagesModal";
-import { readingBookOfMonthApi, type BookOfMonthResult } from "@berea/api";
+import { readingBookOfMonthApi } from "@berea/api";
 import { QuizNightCard } from "@/features/reading/components/QuizNightCard";
 import { StatStrip, type StatStripItem } from "@berea/ui-kit";
 import { MOCK_DASHBOARD } from "@/features/reading/mockData";
@@ -31,24 +33,25 @@ export default function ReadingHomePage() {
   const { user, updateUser } = useReadingAuthStore();
   const [team, setTeam] = useState<ReadingTeam | null>(null);
   const [rounds, setRounds] = useState<SemesterRound[]>([]);
-  const [bookOfMonth, setBookOfMonth] = useState<BookOfMonthResult | null>(null);
-  const [isBookLoading, setIsBookLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const bookQueryKey = ["reading-book-of-month", user?.id] as const;
+  const bookQuery = useQuery({
+    queryKey: bookQueryKey,
+    queryFn: readingBookOfMonthApi.get,
+    enabled: Boolean(user?.id),
+    staleTime: 0,
+    refetchInterval: 5000,
+    refetchOnWindowFocus: true,
+  });
+  const bookOfMonth = bookQuery.data ?? null;
   const [isLogOpen, setIsLogOpen] = useState(false);
 
   useEffect(() => {
     readingAuthApi.me().then(updateUser).catch(() => { /* keep whatever we already have */ });
     readingAuthApi.myTeam().then(setTeam).catch(() => { /* stat tile shows a dash until it loads */ });
     readingSemesterApi.listRounds().then(setRounds).catch(() => { /* same */ });
-    readingBookOfMonthApi
-      .get()
-      .then(setBookOfMonth)
-      .catch(() => { /* card shows its "not chosen yet" state */ })
-      .finally(() => setIsBookLoading(false));
   }, [updateUser]);
 
-  // Book of the month and quiz night have no backend yet. Everything in the
-  // stat strip below is either real (streak, team place, books finished) or
-  // an honest zero — never a made-up number.
   const dashboard = MOCK_DASHBOARD;
   const firstName = user?.full_name?.split(" ")[0] || dashboard.greetingName;
   const currentStreak = user?.current_streak ?? 0;
@@ -127,9 +130,12 @@ export default function ReadingHomePage() {
         </div>
       </motion.div>
 
+      <VoteStatusCard />
+
+      {bookQuery.error && <p role="alert" className="mb-4 text-sm text-red-400">Couldn&apos;t refresh the book of the month. <button type="button" className="underline" onClick={() => void bookQuery.refetch()}>Retry</button></p>}
       <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-[1.6fr_1fr]">
         <motion.div {...fadeUp(0.08)} whileHover={HOVER_LIFT}>
-          <BookOfMonthCard result={bookOfMonth} isLoading={isBookLoading} onLogPages={() => setIsLogOpen(true)} />
+          <BookOfMonthCard result={bookOfMonth} isLoading={bookQuery.isPending} onLogPages={() => setIsLogOpen(true)} />
         </motion.div>
         <motion.div {...fadeUp(0.14)} whileHover={HOVER_LIFT}>
           <QuizNightCard quizNight={dashboard.quizNight} />
@@ -140,7 +146,7 @@ export default function ReadingHomePage() {
         <StatStrip items={statItems} />
       </motion.div>
       {isLogOpen && bookOfMonth && (
-        <LogPagesModal current={bookOfMonth} onClose={() => setIsLogOpen(false)} onSaved={setBookOfMonth} />
+        <LogPagesModal current={bookOfMonth} onClose={() => setIsLogOpen(false)} onSaved={(result) => queryClient.setQueryData(bookQueryKey, result)} />
       )}
     </div>
   );

@@ -84,7 +84,7 @@ export default function ReadingAdminSettingsPage() {
         <div className="mt-6 flex flex-col gap-4">
           <SettingRow
             title="Season started"
-            description="Off during registration: rounds show as not started and Home, Games, Leaderboard and Profile stay locked. Turn on at kickoff."
+            description="Off during registration: semester rounds haven't started, and Leaderboard, Profile and Quiz stay locked. Home and Book vote are available so students can choose the first book. Turn on at kickoff."
             isOn={settings.season_started}
             isSaving={savingKey === "season_started"}
             onToggle={() => handleToggle("season_started")}

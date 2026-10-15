@@ -26,6 +26,7 @@ from app.domains.reading.model_reading import (
     ReadingSemesterRound,
     ReadingTeam,
     ReadingUser,
+    ReadingVoteOption,
     ReadingVoteRound,
 )
 from app.domains.reading.schema_reading import (
@@ -75,6 +76,7 @@ from app.domains.reading.schema_reading import (
     ReadingVoteOptionResult,
     ReadingVoteRoundCreate,
     ReadingVoteRoundResponse,
+    ReadingVoteSelectionCreate,
 )
 
 TEAM_ENTRY_FEE_TENGE = 3000
@@ -506,32 +508,85 @@ async def _store_refresh_token(user_id: uuid.UUID, token: str, db: AsyncSession)
     await save_refresh_token(user_id, token_hash, expires_at, db)
 
 
+def _vote_winner(round_: ReadingVoteRound, tally: dict[uuid.UUID, int]) -> ReadingVoteOption | None:
+    highest = max(tally.values(), default=0)
+    leaders = [option for option in round_.options if tally.get(option.id, 0) == highest]
+    return leaders[0] if highest and len(leaders) == 1 else None
+
+
+def _current_vote_selection(rounds: list[ReadingVoteRound]) -> list[ReadingVoteRound]:
+    start = next((i for i in range(len(rounds) - 1, -1, -1) if rounds[i].stage == "language"), None)
+    return rounds[start:] if start is not None else []
+
+
+async def create_vote_selection_for_admin(
+    user_id: str, payload: ReadingVoteSelectionCreate, db: AsyncSession
+) -> list[ReadingVoteRoundResponse]:
+    from app.domains.reading.repo_reading import create_vote_round, list_vote_rounds, lock_vote_creation
+
+    await _require_admin(user_id, db)
+    await lock_vote_creation(db)
+    rounds = await list_vote_rounds(db)
+    opens_at = datetime.now(UTC)
+    if any(round_.closes_at > opens_at for round_ in rounds):
+        raise HTTPException(status_code=409, detail="Wait for the current vote to finish")
+    closes_at = opens_at + timedelta(hours=6)
+    language = await create_vote_round(
+        "language", opens_at, closes_at, [(label, None) for label in payload.language_options], db, commit=False
+    )
+    genre = await create_vote_round(
+        "genre", opens_at, closes_at,
+        [(label, None) for label in payload.genre_options], db, commit=False,
+    )
+    await db.commit()
+    return [await _to_vote_round_response(round_, user_id, db) for round_ in (language, genre)]
+
+
 async def create_vote_round_for_admin(
     user_id: str, payload: ReadingVoteRoundCreate, db: AsyncSession
 ) -> ReadingVoteRoundResponse:
-    from app.domains.reading.repo_reading import create_vote_round
+    from app.domains.reading.repo_reading import (
+        create_vote_round,
+        get_books_by_ids,
+        get_vote_tally,
+        list_vote_rounds,
+        lock_vote_creation,
+    )
 
     await _require_admin(user_id, db)
+    if payload.stage != "book":
+        raise HTTPException(status_code=422, detail="Start language and genre together using a six-hour selection")
+    await lock_vote_creation(db)
+    rounds = await list_vote_rounds(db)
     opens_at = datetime.now(UTC)
+    if any(round_.closes_at > opens_at for round_ in rounds):
+        raise HTTPException(status_code=409, detail="Wait for the current vote to finish")
+    selection = _current_vote_selection(rounds)
+    winners: dict[str, str] = {}
+    for stage in ("language", "genre"):
+        previous = next((round_ for round_ in reversed(selection) if round_.stage == stage), None)
+        winner = _vote_winner(previous, await get_vote_tally(previous.id, db)) if previous else None
+        if not winner:
+            raise HTTPException(status_code=409, detail=f"The {stage} vote needs a winner. Start a new selection.")
+        winners[stage] = winner.label.casefold()
+    previous_book = next((round_ for round_ in reversed(selection) if round_.stage == "book"), None)
+    if previous_book and _vote_winner(previous_book, await get_vote_tally(previous_book.id, db)):
+        raise HTTPException(status_code=409, detail="This selection already has a book. Start a new selection.")
+    unique_ids = list(dict.fromkeys(payload.book_ids or []))
+    books = await get_books_by_ids(unique_ids, db)
+    if len(books) != len(unique_ids):
+        raise HTTPException(status_code=422, detail="Some of those books no longer exist")
+    if any(
+        (book.language or "").strip().casefold() != winners["language"]
+        or (book.genre or "").strip().casefold() != winners["genre"]
+        for book in books
+    ):
+        raise HTTPException(status_code=422, detail="Books must match the winning language and genre")
     closes_at = opens_at + timedelta(hours=payload.duration_hours)
-    options = await _vote_round_options(payload, db)
+    books_by_id = {book.id: book for book in books}
+    options = [(books_by_id[book_id].title[:120], book_id) for book_id in unique_ids]
     round_ = await create_vote_round(payload.stage, opens_at, closes_at, options, db)
     return await _to_vote_round_response(round_, None, db)
-
-
-async def _vote_round_options(
-    payload: ReadingVoteRoundCreate, db: AsyncSession
-) -> list[tuple[str, uuid.UUID | None]]:
-    from app.domains.reading.repo_reading import get_books_by_ids
-
-    if payload.book_ids is None:
-        return [(label, None) for label in payload.options]
-
-    unique_ids = list(dict.fromkeys(payload.book_ids))
-    books = {book.id: book for book in await get_books_by_ids(unique_ids, db)}
-    if len(books) != len(unique_ids):
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Some of those books no longer exist")
-    return [(books[book_id].title[:120], book_id) for book_id in unique_ids]
 
 
 async def list_vote_rounds_for_user(user_id: str, db: AsyncSession) -> list[ReadingVoteRoundResponse]:
@@ -544,18 +599,37 @@ async def list_vote_rounds_for_user(user_id: str, db: AsyncSession) -> list[Read
 async def cast_vote_for_user(
     round_id: str, user_id: str, payload: ReadingVoteCastRequest, db: AsyncSession
 ) -> ReadingVoteRoundResponse:
-    from app.domains.reading.repo_reading import cast_vote, get_user_by_id, get_vote_round_by_id
+    from app.domains.reading.repo_reading import (
+        cast_vote,
+        get_user_by_id,
+        get_user_vote,
+        get_vote_round_by_id,
+        list_vote_rounds,
+    )
 
     user = await get_user_by_id(uuid.UUID(user_id), db)
     if not user or not user.team_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Join a team before voting")
-    round_ = await get_vote_round_by_id(uuid.UUID(round_id), db)
+    try:
+        round_uuid = uuid.UUID(round_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail="Vote round not found") from exc
+    round_ = await get_vote_round_by_id(round_uuid, db, for_update=True)
     if not round_:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vote round not found")
-    if datetime.now(UTC) >= round_.closes_at:
+    now = datetime.now(UTC)
+    if now < round_.opens_at:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="This voting round has not opened yet")
+    if now >= round_.closes_at:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Voting has closed for this round")
     if payload.option_id not in {option.id for option in round_.options}:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="That option isn't part of this round")
+    if round_.stage == "genre":
+        rounds = await list_vote_rounds(db)
+        preceding = rounds[:next(i for i, item in enumerate(rounds) if item.id == round_.id)]
+        language = next((item for item in reversed(preceding) if item.stage == "language"), None)
+        if language is None or not await get_user_vote(language.id, user.id, db):
+            raise HTTPException(status_code=409, detail="Choose a language before choosing a genre")
 
     await cast_vote(round_.id, payload.option_id, uuid.UUID(user_id), db)
     return await _to_vote_round_response(round_, user_id, db)
@@ -568,7 +642,9 @@ async def _to_vote_round_response(
 
     tally = await get_vote_tally(round_.id, db)
     total_votes = sum(tally.values())
-    is_open = datetime.now(UTC) < round_.closes_at
+    now = datetime.now(UTC)
+    round_status = "scheduled" if now < round_.opens_at else "open" if now < round_.closes_at else "closed"
+    is_open = round_status == "open"
 
     options = [
         ReadingVoteOptionResult(
@@ -578,12 +654,11 @@ async def _to_vote_round_response(
             vote_count=tally.get(option.id, 0),
             percent=round((tally.get(option.id, 0) / total_votes) * 100) if total_votes else 0,
         )
-        for option in round_.options
+        for option in sorted(round_.options, key=lambda option: (option.label.casefold(), str(option.id)))
     ]
 
-    winner_option_id = None
-    if not is_open and total_votes:
-        winner_option_id = max(options, key=lambda option: option.vote_count).id
+    winner = _vote_winner(round_, tally) if round_status == "closed" else None
+    winner_option_id = winner.id if winner else None
 
     your_vote_option_id = None
     if user_id:
@@ -594,6 +669,8 @@ async def _to_vote_round_response(
         id=round_.id,
         stage=round_.stage,  # type: ignore[arg-type]
         is_open=is_open,
+        status=round_status,
+        is_tied=round_status == "closed" and total_votes > 0 and winner is None,
         opens_at=round_.opens_at,
         closes_at=round_.closes_at,
         total_votes=total_votes,
@@ -912,8 +989,8 @@ async def _current_book_of_month(db: AsyncSession) -> tuple[ReadingBook, int] | 
         total_votes = sum(tally.values())
         if not total_votes:
             continue
-        winner = max(round_.options, key=lambda option: tally.get(option.id, 0))
-        if winner.book_id is None:
+        winner = _vote_winner(round_, tally)
+        if winner is None or winner.book_id is None:
             continue
         book = await get_book(winner.book_id, db)
         if book:
