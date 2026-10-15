@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { ReadingRegisterForm } from "@/features/reading/components/auth/RegisterForm";
-import { ReadingGoogleButton } from "@/features/reading/components/auth/ReadingGoogleButton";
 import { RegistrationSteps } from "@/features/reading/components/auth/RegistrationSteps";
 
 export default function ReadingRegisterPage() {
@@ -17,14 +16,6 @@ export default function ReadingRegisterPage() {
       <Suspense fallback={null}>
         <ReadingRegisterForm />
       </Suspense>
-
-      <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.14em] text-[var(--rd-text-muted)]">
-        <span className="h-px flex-1 bg-[var(--rd-border)]" />
-        or
-        <span className="h-px flex-1 bg-[var(--rd-border)]" />
-      </div>
-
-      <ReadingGoogleButton />
 
       <p className="text-center text-[13px] text-[var(--rd-text-muted)]">
         Already have an account?{" "}
