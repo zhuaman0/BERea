@@ -5,6 +5,7 @@ from fastapi.responses import FileResponse
 
 from app.dependencies import CurrentUserId, DbSession
 from app.domains.reading.schema_reading import (
+    ReadingAdminUserResponse,
     ReadingAppSettingsResponse,
     ReadingAppSettingsUpdate,
     ReadingBookOfMonthResponse,
@@ -166,6 +167,13 @@ async def submit_team_payment(
     from app.domains.reading.service_reading import register_team as register_team_service
 
     return await register_team_service(user_id, receipt, db)
+
+
+@router.get("/users", response_model=list[ReadingAdminUserResponse])
+async def list_users(user_id: CurrentUserId, db: DbSession) -> list[ReadingAdminUserResponse]:
+    from app.domains.reading.service_reading import list_users_for_admin
+
+    return await list_users_for_admin(user_id, db)
 
 
 @router.get("/team-payments", response_model=list[ReadingTeamPaymentAdminResponse])

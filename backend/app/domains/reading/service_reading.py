@@ -30,6 +30,7 @@ from app.domains.reading.model_reading import (
 )
 from app.domains.reading.schema_reading import (
     TEAM_MAX_MEMBERS,
+    ReadingAdminUserResponse,
     ReadingAppSettingsResponse,
     ReadingAppSettingsUpdate,
     ReadingBookOfMonthResponse,
@@ -765,6 +766,26 @@ async def _require_admin(user_id: str, db: AsyncSession) -> None:
     user = await get_user_by_id(uuid.UUID(user_id), db)
     if not user or not user.is_admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admins only")
+
+
+async def list_users_for_admin(user_id: str, db: AsyncSession) -> list[ReadingAdminUserResponse]:
+    from app.domains.reading.repo_reading import list_users
+
+    await _require_admin(user_id, db)
+    today = _today()
+    return [
+        ReadingAdminUserResponse(
+            id=user.id,
+            full_name=user.full_name,
+            email=user.email,
+            team_name=user.team.name if user.team else None,
+            is_admin=user.is_admin,
+            current_streak=_effective_streak(user, today),
+            last_active_date=user.last_active_date,
+            created_at=user.created_at,
+        )
+        for user in await list_users(db)
+    ]
 
 
 async def list_team_payments_for_admin(
