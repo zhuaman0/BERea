@@ -40,6 +40,13 @@ async def get_user_by_email(email: str, db: AsyncSession) -> ReadingUser | None:
     return result.scalar_one_or_none()
 
 
+async def list_users(db: AsyncSession) -> list[ReadingUser]:
+    result = await db.execute(
+        select(ReadingUser).options(selectinload(ReadingUser.team)).order_by(ReadingUser.created_at.desc())
+    )
+    return list(result.scalars().all())
+
+
 async def get_user_by_id(user_id: uuid.UUID, db: AsyncSession) -> ReadingUser | None:
     result = await db.execute(
         select(ReadingUser)
