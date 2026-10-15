@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, ValidationInfo, field_validator, model_validator
@@ -46,6 +46,17 @@ class ReadingTeamInvitePreview(BaseModel):
     captain_name: str | None
     member_count: int
     max_members: int
+
+
+class ReadingAdminUserResponse(BaseModel):
+    id: uuid.UUID
+    full_name: str
+    email: EmailStr
+    team_name: str | None
+    is_admin: bool
+    current_streak: int
+    last_active_date: date | None
+    created_at: datetime
 
 
 class ReadingUserResponse(BaseModel):
