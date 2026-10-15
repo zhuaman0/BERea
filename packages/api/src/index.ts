@@ -1,6 +1,7 @@
 export * from "./readingApiClient";
 export * from "./types";
 export * from "./services/AuthService";
+export * from "./adminApi";
 export * from "./authApi";
 export * from "./authTypes";
 export * from "./bookApi";
