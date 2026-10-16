@@ -6,6 +6,7 @@ export interface ReadingAdminUser {
   email:            string;
   team_name:        string | null;
   is_admin:         boolean;
+  is_tester:        boolean;
   current_streak:   number;
   last_active_date: string | null;
   created_at:       string;

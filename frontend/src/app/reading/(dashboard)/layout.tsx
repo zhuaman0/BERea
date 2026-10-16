@@ -20,6 +20,7 @@ import type { SemesterRound } from "@berea/api";
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const userName = useReadingAuthStore((s) => s.user?.full_name ?? null);
+  const canPreviewSeason = useReadingAuthStore((s) => Boolean(s.user?.is_admin || s.user?.is_tester));
   const [team, setTeam] = useState<ReadingTeam | null>(null);
   const [rounds, setRounds] = useState<SemesterRound[]>([]);
   const [roundsLoadedAt, setRoundsLoadedAt] = useState<number | null>(null);
@@ -43,7 +44,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const activeRound = rounds.find((r) => r.status === "in_progress");
   const roundIndex = activeRound?.index ?? rounds.filter((r) => r.status === "done").length;
   const roundTotal = rounds.length;
-  const seasonStarted = settings?.season_started ?? false;
+  // Testers and admins get every section before kickoff; everyone else waits for "Season started".
+  const seasonStarted = (settings?.season_started ?? false) || canPreviewSeason;
   const isRegistrationPhase = roundsLoadedAt !== null && !rounds.some((r) => r.status !== "locked");
   const dayProgress = activeRound && roundsLoadedAt !== null ? roundDayProgress(activeRound, roundsLoadedAt) : null;
 
