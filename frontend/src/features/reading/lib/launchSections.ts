@@ -1,6 +1,5 @@
-// Home and book voting stay available so students can choose the first book before kickoff.
+// The leaderboard has its own admin toggle, so it does not also inherit the season-start lock.
 const SEASON_ROUTES: ReadonlySet<string> = new Set([
-  "/reading/leaderboard",
   "/reading/profile",
   "/reading/quiz",
 ]);

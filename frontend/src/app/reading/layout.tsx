@@ -24,7 +24,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 export default function ReadingRootLayout({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className={`reading-theme h-screen overflow-hidden ${spaceGrotesk.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable}`}
+      className={`reading-theme fixed inset-0 overflow-hidden ${spaceGrotesk.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable}`}
     >
       {children}
     </div>
