@@ -117,7 +117,9 @@ export function VoteOptionCard({
         <motion.button
           type="button"
           onClick={onVote}
-          disabled={isLocked}
+          disabled={isLocked || isYourVote}
+          aria-pressed={isYourVote}
+          aria-label={isYourVote ? `Your vote: ${option.label}` : `Vote for ${option.label}`}
           whileTap={isInteractive ? { scale: 0.96 } : undefined}
           aria-busy={isPending}
           className={cn(
@@ -144,7 +146,7 @@ export function VoteOptionCard({
                   Saving…
                 </>
               ) : isYourVote ? (
-                "Voted · change"
+                "Your vote"
               ) : (
                 "Vote"
               )}

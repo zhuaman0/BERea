@@ -11,14 +11,6 @@ interface SectionCopy {
 }
 
 const SECTION_COPY: Record<string, SectionCopy> = {
-  "/reading": {
-    title: "Registration is open",
-    body:  "The season hasn't started yet. Set up your team and learn the rules — your dashboard lights up on kickoff day.",
-  },
-  "/reading/games": {
-    title: "Games unlock at kickoff",
-    body:  "Bonus challenges and mini-games open once the first book of the season is chosen.",
-  },
   "/reading/leaderboard": {
     title: "The leaderboard is warming up",
     body:  "Team rankings appear after the first points of the season are scored.",

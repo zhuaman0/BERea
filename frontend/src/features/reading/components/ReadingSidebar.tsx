@@ -5,7 +5,7 @@ import type { Route } from "next";
 import { usePathname } from "next/navigation";
 import {
   Home,
-  Gamepad2,
+  Vote,
   Trophy,
   Users,
   BookOpen,
@@ -28,7 +28,7 @@ interface NavItem {
 
 const BASE_NAV_ITEMS: NavItem[] = [
   { href: "/reading",             label: "Home",        icon: Home },
-  { href: "/reading/games",       label: "Games",       icon: Gamepad2 },
+  { href: "/reading/games",       label: "Book vote",   icon: Vote },
   { href: "/reading/leaderboard", label: "Leaderboard", icon: Trophy },
   { href: "/reading/team",        label: "My team",     icon: Users },
   { href: "/reading/rules",       label: "Rules",       icon: BookOpen },

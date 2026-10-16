@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, date, datetime
 
-from sqlalchemy import Select, func, select
+from sqlalchemy import Select, case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, undefer
 
@@ -321,18 +321,27 @@ async def resubmit_team_registration(
     return registration
 
 
+async def lock_vote_creation(db: AsyncSession) -> None:
+    # Also serializes the first selection, when there is no round row to lock yet.
+    await db.execute(select(func.pg_advisory_xact_lock(451, 1)))
+
+
 async def create_vote_round(
     stage: str,
     opens_at: datetime,
     closes_at: datetime,
     options: list[tuple[str, uuid.UUID | None]],
     db: AsyncSession,
+    *,
+    commit: bool = True,
 ) -> ReadingVoteRound:
     round_ = ReadingVoteRound(stage=stage, opens_at=opens_at, closes_at=closes_at)
     db.add(round_)
     await db.flush()
     db.add_all([ReadingVoteOption(round_id=round_.id, label=label, book_id=book_id) for label, book_id in options])
-    await db.commit()
+    await db.flush()
+    if commit:
+        await db.commit()
     await db.refresh(round_, attribute_names=["options"])
     return round_
 
@@ -341,17 +350,26 @@ async def list_vote_rounds(db: AsyncSession) -> list[ReadingVoteRound]:
     result = await db.execute(
         select(ReadingVoteRound)
         .options(selectinload(ReadingVoteRound.options))
-        .order_by(ReadingVoteRound.opens_at.asc())
+        .order_by(
+            ReadingVoteRound.opens_at.asc(),
+            case((ReadingVoteRound.stage == "language", 0), (ReadingVoteRound.stage == "genre", 1), else_=2),
+            ReadingVoteRound.id.asc(),
+        )
     )
     return list(result.scalars().all())
 
 
-async def get_vote_round_by_id(round_id: uuid.UUID, db: AsyncSession) -> ReadingVoteRound | None:
-    result = await db.execute(
+async def get_vote_round_by_id(
+    round_id: uuid.UUID, db: AsyncSession, *, for_update: bool = False
+) -> ReadingVoteRound | None:
+    query = (
         select(ReadingVoteRound)
         .where(ReadingVoteRound.id == round_id)
         .options(selectinload(ReadingVoteRound.options))
     )
+    if for_update:
+        query = query.with_for_update()
+    result = await db.execute(query)
     return result.scalar_one_or_none()
 
 

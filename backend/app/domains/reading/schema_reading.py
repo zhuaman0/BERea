@@ -182,24 +182,49 @@ class ReadingTeamPaymentStatusUpdate(BaseModel):
 VoteStage = Literal["language", "genre", "book"]
 
 
+def _clean_vote_options(value: list[str]) -> list[str]:
+    options = [option.strip() for option in value if option.strip()]
+    if not 2 <= len(options) <= 12:
+        raise ValueError("Add between 2 and 12 options")
+    if any(len(option) > 120 for option in options):
+        raise ValueError("Options must be at most 120 characters")
+    if len({option.casefold() for option in options}) != len(options):
+        raise ValueError("Options must be unique")
+    return options
+
+
+class ReadingVoteSelectionCreate(BaseModel):
+    language_options: list[str] = Field(min_length=2, max_length=12)
+    genre_options: list[str] = Field(min_length=2, max_length=12)
+
+    @field_validator("language_options", "genre_options")
+    @classmethod
+    def _clean_options(cls, value: list[str]) -> list[str]:
+        return _clean_vote_options(value)
+
+
 class ReadingVoteRoundCreate(BaseModel):
     stage: VoteStage
     options: list[str] = Field(default_factory=list, max_length=12)
     book_ids: list[uuid.UUID] | None = Field(default=None, max_length=12)
-    duration_hours: float = Field(gt=0, le=168)
+    duration_hours: float = Field(default=6, gt=0, le=168, allow_inf_nan=False)
 
     @field_validator("options")
     @classmethod
     def _clean_options(cls, value: list[str]) -> list[str]:
-        return [option.strip() for option in value if option.strip()]
+        return _clean_vote_options(value) if value else value
 
     @model_validator(mode="after")
     def _options_or_books(self) -> ReadingVoteRoundCreate:
+        if self.stage == "book" and self.book_ids is None:
+            raise ValueError("Book rounds must use catalog books")
         if self.book_ids is not None:
             if self.stage != "book":
                 raise ValueError("Catalog books can only be offered in a book round")
             if len(set(self.book_ids)) < 2:
                 raise ValueError("Pick at least 2 books")
+            if self.options:
+                raise ValueError("Use catalog books instead of text options")
         elif len(self.options) < 2:
             raise ValueError("Add at least 2 options")
         return self
@@ -221,6 +246,8 @@ class ReadingVoteRoundResponse(BaseModel):
     id: uuid.UUID
     stage: VoteStage
     is_open: bool
+    status: Literal["scheduled", "open", "closed"]
+    is_tied: bool
     opens_at: datetime
     closes_at: datetime
     total_votes: int

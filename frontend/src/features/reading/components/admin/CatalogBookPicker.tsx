@@ -14,26 +14,18 @@ interface CatalogBookPickerProps {
   books:          ReadingBook[];
   languageWinner: string | null;
   genreWinner:    string | null;
-  onlyMatching:   boolean;
-  onOnlyMatchingChange: (value: boolean) => void;
   selectedIds:    string[];
   onToggle:       (id: string) => void;
 }
 
-/** Book-round options come from the catalog, narrowed to the winning language and genre by default. */
 export function CatalogBookPicker({
   books,
   languageWinner,
   genreWinner,
-  onlyMatching,
-  onOnlyMatchingChange,
   selectedIds,
   onToggle,
 }: CatalogBookPickerProps) {
-  const hasWinners = Boolean(languageWinner || genreWinner);
-  const visible = onlyMatching
-    ? books.filter((b) => matches(b.language, languageWinner) && matches(b.genre, genreWinner))
-    : books;
+  const visible = books.filter((b) => matches(b.language, languageWinner) && matches(b.genre, genreWinner));
 
   return (
     <div className="flex flex-col gap-3">
@@ -41,17 +33,7 @@ export function CatalogBookPicker({
         <label className="text-xs font-medium uppercase tracking-wide text-[var(--rd-text-muted)]">
           Books from the catalog · {selectedIds.length} selected
         </label>
-        {hasWinners && (
-          <label className="inline-flex cursor-pointer items-center gap-2 text-[12px] text-[var(--rd-text-muted)]">
-            <input
-              type="checkbox"
-              checked={onlyMatching}
-              onChange={(e) => onOnlyMatchingChange(e.target.checked)}
-              className="accent-[var(--rd-accent-from)]"
-            />
-            Only {[languageWinner, genreWinner].filter(Boolean).join(" · ")} books
-          </label>
-        )}
+        <span className="text-xs text-[var(--rd-text-muted)]">{[languageWinner, genreWinner].filter(Boolean).join(" · ")} · Up to 12 books</span>
       </div>
 
       {books.length === 0 ? (
@@ -64,7 +46,8 @@ export function CatalogBookPicker({
         </p>
       ) : visible.length === 0 ? (
         <p className="rounded-lg border border-dashed border-[var(--rd-border)] p-4 text-[13px] text-[var(--rd-text-muted)]">
-          No catalog books match the winning language and genre. Untick the filter or add matching books.
+          No catalog books match the winning language and genre.{" "}
+          <Link href="/reading/admin/books/new" className="underline">Add matching books</Link> to continue.
         </p>
       ) : (
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -78,8 +61,9 @@ export function CatalogBookPicker({
                 role="checkbox"
                 aria-checked={isSelected}
                 onClick={() => onToggle(book.id)}
+                disabled={!isSelected && selectedIds.length >= 12}
                 className={cn(
-                  "flex items-center gap-3 rounded-xl border p-2.5 text-left transition-colors",
+                  "flex items-center gap-3 rounded-xl border p-2.5 text-left transition-colors disabled:opacity-40",
                   isSelected
                     ? "border-[var(--rd-accent-from)] bg-[var(--rd-accent-from)]/[0.06]"
                     : "border-[var(--rd-border)] hover:border-[var(--rd-accent-from)]/50"

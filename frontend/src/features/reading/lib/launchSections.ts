@@ -1,10 +1,5 @@
-/**
- * Sections that stay visible in the navigation but are locked until an admin starts the season
- * (Admin → Settings → Season started).
- */
+// Home and book voting stay available so students can choose the first book before kickoff.
 const SEASON_ROUTES: ReadonlySet<string> = new Set([
-  "/reading",
-  "/reading/games",
   "/reading/leaderboard",
   "/reading/profile",
   "/reading/quiz",
