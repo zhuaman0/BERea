@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 import secrets
 import uuid
 from datetime import UTC, date, datetime, timedelta
@@ -865,6 +866,36 @@ async def list_users_for_admin(user_id: str, db: AsyncSession) -> list[ReadingAd
         )
         for user in await list_users(db)
     ]
+
+
+async def delete_user_for_admin(user_id: str, target_user_id: uuid.UUID, db: AsyncSession) -> None:
+    from app.domains.reading.repo_reading import delete_user, get_user_by_id
+
+    await _require_admin(user_id, db)
+    if uuid.UUID(user_id) == target_user_id:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="You can't delete your own admin account")
+    user = await get_user_by_id(target_user_id, db)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    await delete_user(user, db)
+
+
+async def delete_team_for_admin(user_id: str, team_id: uuid.UUID, db: AsyncSession) -> None:
+    from app.domains.reading.repo_reading import delete_team, get_team_by_id, get_team_registration_by_team_id
+
+    await _require_admin(user_id, db)
+    team = await get_team_by_id(team_id, db)
+    if not team:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found")
+    registration = await get_team_registration_by_team_id(team_id, db)
+    receipt_path = Path(registration.receipt_path) if registration else None
+    await delete_team(team, db)
+    if receipt_path:
+        try:
+            receipt_path.unlink(missing_ok=True)
+        except OSError:
+            # The deletion is already committed; a storage failure must not report it as unsuccessful.
+            logging.getLogger(__name__).exception("Could not remove receipt for deleted team %s", team_id)
 
 
 async def list_team_payments_for_admin(

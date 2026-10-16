@@ -14,4 +14,6 @@ export interface ReadingAdminUser {
 
 export const readingAdminApi = {
   listUsers: () => readingApiClient.get<ReadingAdminUser[]>("/v1/reading/users"),
+  deleteUser: (id: string) => readingApiClient.delete(`/v1/reading/users/${id}`),
+  deleteTeam: (id: string) => readingApiClient.delete(`/v1/reading/teams/${id}`),
 };

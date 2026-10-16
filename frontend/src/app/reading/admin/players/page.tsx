@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search } from "lucide-react";
+import { Search, Trash2 } from "lucide-react";
 import { readingAdminApi } from "@berea/api";
 import type { ReadingAdminUser } from "@berea/api";
 import { initials } from "@berea/core";
 import { isApiError } from "@/features/auth/utils";
+import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
@@ -32,10 +33,13 @@ function SummaryTile({ label, value }: SummaryTileProps) {
 }
 
 export default function ReadingAdminPlayersPage() {
+  const currentUserId = useReadingAuthStore((s) => s.user?.id);
   const [users, setUsers] = useState<ReadingAdminUser[]>([]);
   const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     readingAdminApi
@@ -44,6 +48,23 @@ export default function ReadingAdminPlayersPage() {
       .catch((err) => setLoadError(isApiError(err) ? err.detail : "Couldn't load players."))
       .finally(() => setIsLoading(false));
   }, []);
+
+  async function handleDelete(user: ReadingAdminUser) {
+    if (deletingId || user.id === currentUserId) return;
+    if (!window.confirm(
+      `Delete "${user.full_name}" (${user.email})? Their account, votes, reading progress and quiz results will be permanently removed. If they are a captain, another team member will become captain. This can't be undone.`,
+    )) return;
+    setDeleteError(null);
+    setDeletingId(user.id);
+    try {
+      await readingAdminApi.deleteUser(user.id);
+      setUsers((prev) => prev.filter((player) => player.id !== user.id));
+    } catch (err) {
+      setDeleteError(isApiError(err) ? err.detail : "Couldn't delete that player.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   const visibleUsers = users.filter((user) => matchesQuery(user, query));
   const withTeam = users.filter((user) => user.team_name).length;
@@ -54,6 +75,12 @@ export default function ReadingAdminPlayersPage() {
       <p className="mt-1 text-sm text-[var(--rd-text-muted)]">
         Everyone who has created an account, newest first.
       </p>
+
+      {deleteError && (
+        <p role="alert" className="mt-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm text-red-400">
+          {deleteError}
+        </p>
+      )}
 
       {isLoading ? (
         <p className="mt-6 text-sm text-[var(--rd-text-muted)]">Loading players…</p>
@@ -93,6 +120,7 @@ export default function ReadingAdminPlayersPage() {
                     <th className="px-6 py-4 font-medium">Streak</th>
                     <th className="px-6 py-4 font-medium">Last active</th>
                     <th className="px-6 py-4 font-medium">Joined</th>
+                    <th className="px-6 py-4 text-right font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--rd-border)]">
@@ -132,6 +160,22 @@ export default function ReadingAdminPlayersPage() {
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-[var(--rd-text-muted)]">
                         {formatDate(user.created_at)}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        {user.id === currentUserId ? (
+                          <span className="text-xs text-[var(--rd-text-muted)]">Your account</span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(user)}
+                            disabled={deletingId !== null}
+                            aria-label={`Delete player ${user.full_name} (${user.email})`}
+                            className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg border border-red-500/30 px-3 py-2 text-xs font-medium text-red-400 transition-colors hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <Trash2 size={14} aria-hidden="true" />
+                            {deletingId === user.id ? "Deleting…" : "Delete"}
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
