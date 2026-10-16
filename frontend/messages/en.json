@@ -318,6 +318,7 @@
       }
     },
     "settings": {
+      "eyebrow": "Account",
       "title": "Settings",
       "subtitle": "Account and notification preferences are coming in a later step.",
       "signedIn": "Signed in",

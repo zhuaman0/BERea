@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search, Trash2 } from "lucide-react";
+import { Search, Trash2, Users } from "lucide-react";
 import { readingAdminApi } from "@berea/api";
 import type { ReadingAdminUser } from "@berea/api";
 import { initials } from "@berea/core";
 import { isApiError } from "@/features/auth/utils";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
+import { ReadingPageHero } from "@/features/reading/components/layout/ReadingPageHero";
+import { READING_PAGE_CONTAINER } from "@/features/reading/lib/pageContainer";
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
@@ -70,11 +72,8 @@ export default function ReadingAdminPlayersPage() {
   const withTeam = users.filter((user) => user.team_name).length;
 
   return (
-    <div className="w-full px-4 py-6 sm:px-8 sm:py-10 lg:px-12">
-      <h1 className="font-display text-2xl font-semibold text-[var(--rd-text)]">Players</h1>
-      <p className="mt-1 text-sm text-[var(--rd-text-muted)]">
-        Everyone who has created an account, newest first.
-      </p>
+    <div className={READING_PAGE_CONTAINER}>
+      <ReadingPageHero eyebrow="Admin" eyebrowIcon={Users} title="Players" description="Everyone who has created an account, newest first." />
 
       {deleteError && (
         <p role="alert" className="mt-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm text-red-400">

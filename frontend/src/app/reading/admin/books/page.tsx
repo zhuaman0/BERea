@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
-import { ImageIcon, Pencil, Plus, Trash2 } from "lucide-react";
+import { ImageIcon, Library, Pencil, Plus, Trash2 } from "lucide-react";
 import { isApiError } from "@/features/auth/utils";
 import { bookCoverSrc, readingBookApi } from "@berea/api";
 import type { ReadingBook } from "@berea/api";
+import { ReadingPageHero } from "@/features/reading/components/layout/ReadingPageHero";
+import { READING_PAGE_CONTAINER } from "@/features/reading/lib/pageContainer";
 
 interface BookCardProps {
   book:     ReadingBook;
@@ -76,22 +78,22 @@ export default function ReadingAdminBooksPage() {
   }
 
   return (
-    <div className="w-full px-4 py-6 sm:px-8 sm:py-10 lg:px-12">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-semibold text-[var(--rd-text)]">Books</h1>
-          <p className="mt-1 text-sm text-[var(--rd-text-muted)]">
-            Add the book of the month, with a cover and description.
-          </p>
-        </div>
-        <Link
-          href={"/reading/admin/books/new" as Route}
-          className="rd-accent-gradient inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-black/85 transition-opacity hover:opacity-90"
-        >
-          <Plus size={15} />
-          Add a book
-        </Link>
-      </div>
+    <div className={READING_PAGE_CONTAINER}>
+      <ReadingPageHero
+        eyebrow="Admin"
+        eyebrowIcon={Library}
+        title="Books"
+        description="Add the book of the month, with a cover and description."
+        aside={
+            <Link
+              href={"/reading/admin/books/new" as Route}
+              className="rd-accent-gradient inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-black/85 transition-opacity hover:opacity-90"
+            >
+              <Plus size={15} />
+              Add a book
+            </Link>
+        }
+      />
 
       {error && (
         <p role="alert" className="mt-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm text-red-400">

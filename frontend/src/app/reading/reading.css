@@ -151,8 +151,17 @@ body:has(.reading-theme) {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .rd-node-dot, .rd-fuse-spark {
-    animation: none;
-  }
+/* ── Page hero (shared header for every reading page) ───────────────────── */
+
+.rd-hero-glow {
+  background-image:
+    radial-gradient(circle at 9% 10%, rgba(255, 107, 44, 0.28), transparent 28%),
+    radial-gradient(circle at 92% 0%, rgba(255, 194, 77, 0.13), transparent 25%);
+}
+
+.rd-hero-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.8) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.8) 1px, transparent 1px);
+  background-size: 44px 44px;
 }

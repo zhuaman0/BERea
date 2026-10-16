@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Route } from "next";
-import { Loader2, Pencil, Plus, Radio, Trash2 } from "lucide-react";
+import { Gamepad2, Loader2, Pencil, Plus, Radio, Trash2 } from "lucide-react";
 import { isApiError } from "@/features/auth/utils";
 import { readingQuizApi } from "@berea/api";
 import { readingLiveQuizApi } from "@berea/api";
 import type { Quiz } from "@berea/api";
+import { ReadingPageHero } from "@/features/reading/components/layout/ReadingPageHero";
+import { READING_PAGE_CONTAINER } from "@/features/reading/lib/pageContainer";
 
 function countdownLabel(scheduledFor: string | null): string {
   if (!scheduledFor) return "Not scheduled";
@@ -114,22 +116,22 @@ export default function ReadingAdminOverviewPage() {
   }
 
   return (
-    <div className="w-full px-4 py-6 sm:px-8 sm:py-10 lg:px-12">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-semibold text-[var(--rd-text)]">Quizzes</h1>
-          <p className="mt-1 text-sm text-[var(--rd-text-muted)]">
-            Build the questions and answers for each quiz night.
-          </p>
-        </div>
-        <Link
-          href={"/reading/admin/quizzes/new" as Route}
-          className="rd-accent-gradient inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-black/85 transition-opacity hover:opacity-90"
-        >
-          <Plus size={15} />
-          Create Quiz
-        </Link>
-      </div>
+    <div className={READING_PAGE_CONTAINER}>
+      <ReadingPageHero
+        eyebrow="Admin"
+        eyebrowIcon={Gamepad2}
+        title="Quizzes"
+        description="Build the questions and answers for each quiz night."
+        aside={
+            <Link
+              href={"/reading/admin/quizzes/new" as Route}
+              className="rd-accent-gradient inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-black/85 transition-opacity hover:opacity-90"
+            >
+              <Plus size={15} />
+              Create Quiz
+            </Link>
+        }
+      />
 
       {error && (
         <p role="alert" className="mt-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm text-red-400">

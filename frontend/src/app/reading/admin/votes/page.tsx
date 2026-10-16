@@ -1,14 +1,19 @@
+import { Vote } from "lucide-react";
 import { VoteRoundManager } from "@/features/reading/components/admin/VoteRoundManager";
+import { ReadingPageHero } from "@/features/reading/components/layout/ReadingPageHero";
+import { READING_PAGE_CONTAINER } from "@/features/reading/lib/pageContainer";
 
 export default function ReadingAdminVotesPage() {
   return (
-    <div className="mx-auto w-full max-w-[1200px] px-8 py-10 lg:px-12">
-      <h1 className="font-display text-2xl font-semibold text-[var(--rd-text)]">Book vote</h1>
-      <p className="mt-1 text-sm text-[var(--rd-text-muted)]">
-        Language and genre together, with one 6-hour deadline, followed by a book vote. Manage options and results here.
-      </p>
+    <div className={READING_PAGE_CONTAINER}>
+      <ReadingPageHero
+        eyebrow="Admin"
+        eyebrowIcon={Vote}
+        title="Book vote"
+        description="Language and genre together, with one 6-hour deadline, followed by a book vote. Manage options and results here."
+      />
 
-      <div className="mt-6">
+      <div className="mt-8">
         <VoteRoundManager />
       </div>
     </div>

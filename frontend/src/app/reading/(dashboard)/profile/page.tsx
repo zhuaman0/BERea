@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
-import { Flame } from "lucide-react";
+import { BookOpen, Flame } from "lucide-react";
 import { readingAuthApi } from "@berea/api";
 import { initials } from "@berea/core";
 import type { ReadingProfileStats, ReadingTeam } from "@berea/api";
@@ -12,6 +12,7 @@ import { isApiError } from "@/features/auth/utils";
 import { ReaderShelf } from "@/features/reading/components/ReaderShelf";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
 import { READING_PAGE_CONTAINER } from "@/features/reading/lib/pageContainer";
+import { ReadingPageHero } from "@/features/reading/components/layout/ReadingPageHero";
 
 function memberSinceLabel(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", { month: "long", year: "numeric" });
@@ -59,54 +60,51 @@ export default function ReadingProfilePage() {
 
   return (
     <div className={READING_PAGE_CONTAINER}>
-      <section className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-        <div className="flex items-center gap-5">
-          <span className="rd-accent-gradient flex h-20 w-20 shrink-0 items-center justify-center rounded-full font-display text-2xl font-bold text-black/80">
+      <ReadingPageHero
+        eyebrow="Reader profile"
+        eyebrowIcon={BookOpen}
+        leading={
+          <span className="rd-accent-gradient flex h-20 w-20 items-center justify-center rounded-full font-display text-2xl font-bold text-black/80">
             {initials(user.full_name)}
           </span>
-          <div className="min-w-0">
-            <h1 className="font-display text-3xl font-semibold leading-tight text-[var(--rd-text)] sm:text-4xl">
-              {user.full_name}
-            </h1>
-            <p className="mt-1.5 text-sm text-[var(--rd-text-muted)]">
-              @{user.email.split("@")[0]}, reading since {memberSinceLabel(user.created_at)}
-            </p>
-          </div>
-        </div>
+        }
+        title={user.full_name}
+        description={`@${user.email.split("@")[0]}, reading since ${memberSinceLabel(user.created_at)}`}
+        aside={
+          <div className="flex flex-wrap gap-3">
+            <div className="flex items-center gap-3 rounded-xl border border-[var(--rd-border)] bg-black/20 px-4 py-3">
+              <Flame
+                size={22}
+                className={cn(
+                  streak > 0
+                    ? "fill-[var(--rd-accent-from)]/35 text-[var(--rd-accent-from)] drop-shadow-[0_0_6px_rgba(255,107,44,0.6)]"
+                    : "text-[var(--rd-text-muted)]/50"
+                )}
+              />
+              <div>
+                <p className="font-display text-[15px] font-semibold leading-tight text-[var(--rd-text)]">
+                  {streak}-day streak
+                </p>
+                <p className="text-[11px] text-[var(--rd-text-muted)]">
+                  {streak > 0 ? "Keep it lit: open the app tomorrow" : "Check in daily to start one"}
+                </p>
+              </div>
+            </div>
 
-        <div className="flex flex-wrap gap-3">
-          <div className="flex items-center gap-3 rounded-xl border border-[var(--rd-border)] bg-[var(--rd-panel)] px-4 py-3">
-            <Flame
-              size={22}
-              className={cn(
-                streak > 0
-                  ? "fill-[var(--rd-accent-from)]/35 text-[var(--rd-accent-from)] drop-shadow-[0_0_6px_rgba(255,107,44,0.6)]"
-                  : "text-[var(--rd-text-muted)]/50"
-              )}
-            />
-            <div>
+            <Link
+              href={"/reading/team" as Route}
+              className="rounded-xl border border-[var(--rd-border)] bg-black/20 px-4 py-3 transition-colors hover:border-[var(--rd-accent-from)]/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-accent-from)]"
+            >
               <p className="font-display text-[15px] font-semibold leading-tight text-[var(--rd-text)]">
-                {streak}-day streak
+                {user.team_name ?? "No team yet"}
               </p>
               <p className="text-[11px] text-[var(--rd-text-muted)]">
-                {streak > 0 ? "Keep it lit: open the app tomorrow" : "Check in daily to start one"}
+                {team ? `Place ${team.place} of ${team.teams_total}, ${team.points} team points` : "Team standing loading"}
               </p>
-            </div>
+            </Link>
           </div>
-
-          <Link
-            href={"/reading/team" as Route}
-            className="rounded-xl border border-[var(--rd-border)] bg-[var(--rd-panel)] px-4 py-3 transition-colors hover:border-[var(--rd-accent-from)]/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-accent-from)]"
-          >
-            <p className="font-display text-[15px] font-semibold leading-tight text-[var(--rd-text)]">
-              {user.team_name ?? "No team yet"}
-            </p>
-            <p className="text-[11px] text-[var(--rd-text-muted)]">
-              {team ? `Place ${team.place} of ${team.teams_total}, ${team.points} team points` : "Team standing loading"}
-            </p>
-          </Link>
-        </div>
-      </section>
+        }
+      />
 
       {loadError ? (
         <p className="mt-10 text-sm text-[var(--rd-text-muted)]">{loadError} Refresh the page to try again.</p>
