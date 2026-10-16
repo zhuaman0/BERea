@@ -44,7 +44,7 @@ export default function ReadingAdminTeamsPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1600px] px-8 py-10 lg:px-12">
+    <div className="w-full px-4 py-6 sm:px-8 sm:py-10 lg:px-12">
       <h1 className="font-display text-2xl font-semibold text-[var(--rd-text)]">Teams</h1>
       <p className="mt-1 text-sm text-[var(--rd-text-muted)]">
         Every registered team, pulled live from the database.
