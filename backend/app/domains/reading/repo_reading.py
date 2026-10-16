@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, date, datetime
 
-from sqlalchemy import Select, case, func, select
+from sqlalchemy import Select, case, delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, undefer
 
@@ -54,6 +54,35 @@ async def get_user_by_id(user_id: uuid.UUID, db: AsyncSession) -> ReadingUser | 
         .options(selectinload(ReadingUser.team))
     )
     return result.scalar_one_or_none()
+
+
+async def delete_user(user: ReadingUser, db: AsyncSession) -> None:
+    if user.team_id:
+        # Serialize deletions in a team so a departing captain's replacement stays valid.
+        await db.execute(select(ReadingTeam.id).where(ReadingTeam.id == user.team_id).with_for_update())
+        await db.refresh(user, attribute_names=["team_id", "is_captain"])
+        if user.team_id and user.is_captain:
+            successor_id = await db.scalar(
+                select(ReadingUser.id)
+                .where(ReadingUser.team_id == user.team_id, ReadingUser.id != user.id)
+                .order_by(ReadingUser.created_at, ReadingUser.id)
+                .limit(1)
+            )
+            if successor_id:
+                await db.execute(update(ReadingUser).where(ReadingUser.id == successor_id).values(is_captain=True))
+    # Foreign keys remove tokens, votes, progress and quiz participation in this transaction.
+    await db.execute(delete(ReadingUser).where(ReadingUser.id == user.id))
+    await db.commit()
+
+
+async def delete_team(team: ReadingTeam, db: AsyncSession) -> None:
+    await db.execute(select(ReadingTeam.id).where(ReadingTeam.id == team.id).with_for_update())
+    await db.execute(
+        update(ReadingUser).where(ReadingUser.team_id == team.id).values(team_id=None, is_captain=False)
+    )
+    # Keep accounts and individual quiz results; the database clears team references and payment records.
+    await db.execute(delete(ReadingTeam).where(ReadingTeam.id == team.id))
+    await db.commit()
 
 
 async def get_team_by_name(name: str, db: AsyncSession) -> ReadingTeam | None:

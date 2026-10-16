@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from uuid import UUID
+
 from fastapi import APIRouter, File, Response, UploadFile
 from fastapi.responses import FileResponse
 
@@ -175,6 +177,22 @@ async def list_users(user_id: CurrentUserId, db: DbSession) -> list[ReadingAdmin
     from app.domains.reading.service_reading import list_users_for_admin
 
     return await list_users_for_admin(user_id, db)
+
+
+@router.delete("/users/{target_user_id}", status_code=204)
+async def delete_user(target_user_id: UUID, user_id: CurrentUserId, db: DbSession) -> Response:
+    from app.domains.reading.service_reading import delete_user_for_admin
+
+    await delete_user_for_admin(user_id, target_user_id, db)
+    return Response(status_code=204)
+
+
+@router.delete("/teams/{team_id}", status_code=204)
+async def delete_team(team_id: UUID, user_id: CurrentUserId, db: DbSession) -> Response:
+    from app.domains.reading.service_reading import delete_team_for_admin
+
+    await delete_team_for_admin(user_id, team_id, db)
+    return Response(status_code=204)
 
 
 @router.get("/team-payments", response_model=list[ReadingTeamPaymentAdminResponse])
