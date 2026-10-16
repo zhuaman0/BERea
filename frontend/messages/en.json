@@ -115,5 +115,406 @@
   "callback": {
     "signingIn": "Signing you in",
     "pleaseWait": "Completing authentication, please wait…"
+  },
+  "reading": {
+    "shell": {
+      "nav": {
+        "home": "Home",
+        "vote": "Book vote",
+        "leaderboard": "Leaderboard",
+        "team": "My team",
+        "rules": "Rules",
+        "profile": "Profile",
+        "settings": "Settings"
+      },
+      "lockedHint": "Opens when the season starts",
+      "soon": "Soon",
+      "teamHeading": "Team · {name}",
+      "logout": "Log out",
+      "loggingOut": "Logging out…",
+      "topbar": {
+        "semester": "{term, select, spring {Spring semester} summer {Summer semester} other {Fall semester}} {year}",
+        "registrationOpen": "Registration open",
+        "round": "Round {index} of {total}",
+        "day": "Day {day} of {total}",
+        "daysLeft": "{count, plural, one {# day left} other {# days left}}",
+        "lastDay": "Last day",
+        "pointsTitle": "Team points this season",
+        "points": "{count} pts"
+      },
+      "liveQuiz": {
+        "banner": "Quiz night is live: {title} — tap to join",
+        "pin": "PIN {pin}"
+      }
+    },
+    "locked": {
+      "badge": "Coming soon",
+      "goToTeam": "Go to my team",
+      "readRules": "Read the rules",
+      "sections": {
+        "leaderboard": {
+          "title": "The leaderboard is warming up",
+          "body": "Team rankings appear after the first points of the season are scored."
+        },
+        "profile": {
+          "title": "Your profile is on its way",
+          "body": "Reading stats, streaks and badges show up here once the season begins."
+        },
+        "quiz": {
+          "title": "Quiz nights start with the season",
+          "body": "The first live quiz runs at the end of month one, on the book your league votes for."
+        },
+        "fallback": {
+          "title": "Opens when the season starts",
+          "body": "This section unlocks on kickoff day. For now, get your team ready."
+        }
+      }
+    },
+    "team": {
+      "loading": "Loading your team",
+      "loadError": "Couldn't load your team.",
+      "noTeam": "You haven't joined a team yet.",
+      "place": "Place {place} of {total}",
+      "playersCount": "{count} of {max} players",
+      "invitePlayers": "Invite players",
+      "stats": {
+        "points": "Team points",
+        "books": "Books finished by everyone",
+        "roundInProgress": "{round} in progress",
+        "noActiveRound": "No active round",
+        "streak": "Your streak",
+        "streakDays": "{count, plural, one {# day} other {# days}}",
+        "checkedIn": "Checked in today",
+        "keepStreak": "Open the app today to keep it"
+      },
+      "hero": {
+        "teamNameLabel": "Team name",
+        "saveName": "Save name",
+        "cancel": "Cancel",
+        "renameError": "Couldn't rename your team.",
+        "captain": "Captain {name}",
+        "captainYou": "Captain (you)",
+        "rename": "Rename team",
+        "captainManages": "Your captain manages the team name, invites and entry fee."
+      },
+      "roster": {
+        "title": "Players",
+        "teamStreak": "Team streak: {count, plural, one {# day} other {# days}}. It counts the days everyone opened the app.",
+        "teamStreakEmpty": "Team streak starts when every player opens the app on the same days.",
+        "captain": "Captain",
+        "you": "You",
+        "memberStreak": "{count}-day streak",
+        "openSpot": "Open spot",
+        "invite": "Invite",
+        "openSpotWaiting": "Open spot, waiting for the captain's invite"
+      },
+      "invite": {
+        "intro": "Send this link to your teammates. They create an account, confirm their email and land in <team>{name}</team>. {count, plural, one {# spot is} other {# spots are}} left.",
+        "loadError": "Couldn't create an invite link.",
+        "creating": "Creating your link…",
+        "linkLabel": "Invite link",
+        "copied": "Copied",
+        "copy": "Copy",
+        "expiry": "Works until {date} or until the team is full. Players already on another team can't use it.",
+        "shareTitle": "Join {team} on NATS Spirea",
+        "shareText": "Join my reading team “{team}” on NATS Spirea:",
+        "share": "Share via apps"
+      },
+      "kickoff": {
+        "title": "Before kickoff",
+        "progress": "{done} of {total} done",
+        "fill": {
+          "title": "Fill the team",
+          "full": "All {count} players are in.",
+          "partial": "{count} of {max} players joined.",
+          "captainHint": "Share your invite link with the rest.",
+          "memberHint": "Your captain sends the invite link."
+        },
+        "payment": {
+          "title": "Pay the entry fee",
+          "approved": "Paid and confirmed by the organisers.",
+          "pending": "Receipt sent. The organisers are checking it.",
+          "rejected": "The receipt was rejected. Upload a new one.",
+          "unpaid": "Not paid yet.",
+          "upload": "Upload receipt"
+        },
+        "start": {
+          "title": "Kickoff",
+          "date": "{round} starts {date}.",
+          "tba": "The start date is announced in the 451° Telegram channel."
+        }
+      },
+      "clock": {
+        "title": "Season clock",
+        "registrationTitle": "Registration is open",
+        "registrationBody": "The season hasn't started yet. Round 1 opens at kickoff — the date is announced in the 451° Telegram channel.",
+        "complete": "Season complete",
+        "scheduleSoon": "Schedule coming soon",
+        "roundShort": "R{index}",
+        "startsSoon": "{round} starts soon",
+        "daysToGo": "{count, plural, one {day} other {days}} to go",
+        "hoursToGo": "{count, plural, one {hour} other {hours}} to go",
+        "daysLeft": "{count, plural, one {day left} other {days left}}",
+        "hoursLeft": "{count, plural, one {hour left} other {hours left}}",
+        "dayOf": "Day {day} of {total}",
+        "lastDayOf": "Last day of {total}"
+      },
+      "cover": {
+        "modalTitle": "Design your team's book cover",
+        "previewHint": "Your teammates and every other team see this cover on the leaderboard.",
+        "titleLabel": "Title",
+        "titleTooLong": "Keep it under {max} characters",
+        "titleHint": "Leave empty to use your team name.",
+        "colorLabel": "Color · {name}",
+        "colorGroup": "Cover color",
+        "emblemLabel": "Emblem",
+        "emblemGroup": "Cover emblem",
+        "patternLabel": "Pattern",
+        "patternGroup": "Cover pattern",
+        "animationLabel": "Animation",
+        "animationGroup": "Cover animation",
+        "saveError": "Couldn't save your cover.",
+        "cancel": "Cancel",
+        "saving": "Saving…",
+        "save": "Save cover",
+        "bookAria": "{name} team book cover",
+        "colors": {
+          "ember": "Ember",
+          "crimson": "Crimson",
+          "ocean": "Ocean",
+          "forest": "Forest",
+          "plum": "Plum",
+          "midnight": "Midnight",
+          "parchment": "Parchment"
+        },
+        "patterns": {
+          "plain": "Plain",
+          "stripes": "Stripes",
+          "dots": "Dots",
+          "lines": "Lines"
+        },
+        "emblems": {
+          "monogram": "Initials",
+          "flame": "Flame",
+          "star": "Star",
+          "feather": "Feather",
+          "crown": "Crown",
+          "moon": "Moon"
+        },
+        "animations": {
+          "float": {
+            "label": "Float",
+            "hint": "Gently drifts"
+          },
+          "glow": {
+            "label": "Glow",
+            "hint": "Pulses with light"
+          },
+          "still": {
+            "label": "Still",
+            "hint": "No motion"
+          }
+        }
+      }
+    },
+    "settings": {
+      "title": "Settings",
+      "subtitle": "Account and notification preferences are coming in a later step.",
+      "signedIn": "Signed in",
+      "noTeam": "No team yet",
+      "logout": "Log out",
+      "loggingOut": "Logging out…"
+    },
+    "member": {
+      "backToTeam": "Back to team",
+      "loading": "Loading profile…",
+      "loadError": "Couldn't load this profile.",
+      "notFound": "Profile not found.",
+      "teamLabel": "Team:",
+      "memberSinceLabel": "Member since:",
+      "streakLabel": "Reading streak:",
+      "streakDays": "{count, plural, one {# day} other {# days}}"
+    },
+    "auth": {
+      "layout": {
+        "headline": "Read four books.",
+        "headlineSecond": "Win the semester.",
+        "tagline": "Teams of 3, one book a month, live quiz nights, and bonus tasks — the top team on the leaderboard takes the prize.",
+        "streaks": "Reading streaks",
+        "leaderboard": "Team leaderboard"
+      },
+      "fields": {
+        "email": "Email",
+        "password": "Password",
+        "fullName": "Full name",
+        "showPassword": "Show password",
+        "hidePassword": "Hide password"
+      },
+      "errors": {
+        "invalidEmail": "Enter a valid email address",
+        "passwordRequired": "Enter your password",
+        "nameRequired": "Enter your name",
+        "passwordTooShort": "At least 8 characters",
+        "generic": "Something went wrong. Please try again."
+      },
+      "login": {
+        "title": "Sign in to your account",
+        "submit": "Sign in",
+        "noAccount": "Still don't have an account?",
+        "createAccount": "Create account"
+      },
+      "register": {
+        "title": "Create your account",
+        "submit": "Create account",
+        "hasAccount": "Already have an account?",
+        "signIn": "Sign in"
+      },
+      "steps": {
+        "progress": "Registration step {current} of {total}",
+        "account": "Account",
+        "team": "Team",
+        "payment": "Payment"
+      },
+      "team": {
+        "title": "Your team",
+        "subtitle": "Teams have up to 3 players. Create one and invite your friends, or join with your captain's invite link.",
+        "teamNamePlaceholder": "Team name",
+        "teamNameRequired": "Enter a team name",
+        "teamNameTooShort": "At least 2 characters",
+        "captainHint": "You'll be the captain: you invite players and design the team cover.",
+        "captainHintWithPayment": "You'll be the captain: you invite players, pay the entry fee and design the team cover.",
+        "createTeam": "Create team",
+        "joinFriendHint": "Joining a friend's team? Ask your captain for the invite link and open it.",
+        "inviteLoadFailed": "Couldn't open this invite.",
+        "askForNewLink": "{error} Ask your captain for a new link.",
+        "openingInvite": "Opening your invite…",
+        "invitedToJoin": "You're invited to join",
+        "captain": "Captain {name}",
+        "players": "{count}/{max, plural, one {# player} other {# players}}",
+        "join": "Join {team}",
+        "teamFull": "This team is full",
+        "createInstead": "Create your own team instead"
+      },
+      "payment": {
+        "title": "Confirm your team payment",
+        "subtitle": "The team captain sends the {fee} entry fee once for the whole team and uploads the receipt. Everyone can use the app right away while we review it.",
+        "yourTeam": "Your team",
+        "waitingTitle": "{team} is waiting on the entry fee",
+        "waitingBody": "Your team captain pays the {fee} fee for the whole team. You'll get into the app as soon as they upload the receipt.",
+        "checking": "Checking…",
+        "checkAgain": "Check again",
+        "teamPayment": "Team payment",
+        "sendTo": "Send {fee} to this number",
+        "copy": "Copy",
+        "copied": "Copied",
+        "transferHint": "Transfer the entry fee, then upload the receipt below.",
+        "receiptLabel": "Payment receipt",
+        "clickToReplace": "Click to replace",
+        "uploadReceipt": "Upload the {fee} receipt",
+        "receiptFormats": "PDF, JPG, PNG, or WebP · up to {size} MB",
+        "invalidType": "Upload a PDF, JPG, PNG, or WebP file",
+        "tooLarge": "Receipt must be under {size} MB",
+        "receiptRequired": "Attach the {fee} payment receipt",
+        "uploadFailed": "Could not upload the receipt. Please try again.",
+        "submit": "Submit receipt — {fee}"
+      }
+    },
+    "landing": {
+      "nav": {
+        "home": "Main",
+        "rules": "Rules"
+      },
+      "logoAlt": "451° logo",
+      "signIn": "Sign in",
+      "openTeam": "Open my team",
+      "hero": {
+        "eyebrow": "NATS Spirea presents",
+        "title": "451° is a <accent>book battle</accent>",
+        "subtitle": "Immerse yourself in the world of literature — team up, read, and compete for the semester crown.",
+        "join": "Join the Book Battle",
+        "goToTeam": "Go to my team",
+        "viewRules": "View the Rules",
+        "scroll": "Scroll"
+      },
+      "rulebook": {
+        "eyebrow": "The 451° rulebook",
+        "title": "How the season works"
+      },
+      "footer": {
+        "privacy": "Privacy Policy",
+        "contact": "Contact us",
+        "support": "Support us",
+        "about": "About us"
+      }
+    },
+    "rulebook": {
+      "page": {
+        "eyebrow": "The 451° rulebook",
+        "title": "Read together. <accent>Win the semester.</accent>",
+        "subtitle": "451° is a game where teams of students compete by reading books — one book a month, one semester, one champion."
+      },
+      "facts": {
+        "months": "{count, plural, one {Month} other {Months}}",
+        "books": "{count, plural, one {Book} other {Books}}",
+        "languages": "{count, plural, one {Language} other {Languages}}",
+        "players": "{count, plural, one {Player per team} other {Players per team}}"
+      },
+      "why": {
+        "eyebrow": "The name",
+        "title": "Why 451°?",
+        "coverAlt": "Fahrenheit 451 by Ray Bradbury — book cover",
+        "lead": "Named after Ray Bradbury’s <em>Fahrenheit 451</em>.",
+        "body": "451 °F is the temperature at which book paper catches fire. In Bradbury’s world, books are burned. In ours, books are what set readers on fire."
+      },
+      "goals": {
+        "eyebrow": "Our mission",
+        "title": "What the game is for",
+        "habit": "Build a lasting reading habit among students through gamification.",
+        "readers": "Grow the number of young people who read.",
+        "community": "Bring young people with shared interests together into one community."
+      },
+      "howToPlay": {
+        "eyebrow": "How to play",
+        "title": "The six rules",
+        "ruleNumber": "Rule {number}"
+      },
+      "rules": {
+        "entryFee": {
+          "title": "Entry fee",
+          "body": "Taking part costs {fee} per team.",
+          "bodyWithReceipt": "Taking part costs {fee}. Pay by bank transfer and attach the receipt when you register your team."
+        },
+        "team": {
+          "title": "Play as a team",
+          "body": "You compete as a team of 3 players. Every point a teammate earns counts toward the team total."
+        },
+        "telegram": {
+          "title": "Join the Telegram channel",
+          "body": "Every participant must subscribe to the 451° Telegram channel. Announcements, votes and quiz dates are posted there."
+        },
+        "vote": {
+          "title": "Books are chosen by vote",
+          "body": "Players vote on what the league reads next. The book with the most votes becomes the read of the month."
+        },
+        "season": {
+          "title": "4 months, 4 books, 3 languages",
+          "body": "The season runs for one semester: one book each month, with books in three languages across the season."
+        },
+        "winner": {
+          "title": "Highest score wins",
+          "body": "At the end of the semester, the team with the most points is crowned the 451° champion."
+        }
+      },
+      "gamification": {
+        "title": "Gamification means using game elements to make something genuinely fun.",
+        "body": "Teams, votes, points and live quiz nights turn reading into a season worth winning."
+      },
+      "champion": {
+        "title": "One team takes the crown",
+        "body": "When the semester ends, the team with the most points is named the 451° champion and takes home the season’s prizes.",
+        "motto": "Today a reader, tomorrow a leader."
+      },
+      "copyright": "The 451° game format is protected by copyright · © 2026 NATS Spirea"
+    }
   }
 }
