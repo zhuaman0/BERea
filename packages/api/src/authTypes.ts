@@ -9,6 +9,7 @@ export interface ReadingUser {
   token_balance:  number;
   current_streak: number;
   is_admin:       boolean;
+  is_tester:      boolean;
   is_captain:     boolean;
   created_at:     string;
 }

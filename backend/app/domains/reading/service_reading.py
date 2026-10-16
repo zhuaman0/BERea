@@ -100,6 +100,7 @@ def _to_user_response(user: ReadingUser, payment_status: str | None = None) -> R
         token_balance=user.token_balance,
         current_streak=user.current_streak,
         is_admin=user.is_admin,
+        is_tester=user.is_tester,
         is_captain=user.is_captain,
         created_at=user.created_at,
     )
@@ -857,6 +858,7 @@ async def list_users_for_admin(user_id: str, db: AsyncSession) -> list[ReadingAd
             email=user.email,
             team_name=user.team.name if user.team else None,
             is_admin=user.is_admin,
+            is_tester=user.is_tester,
             current_streak=_effective_streak(user, today),
             last_active_date=user.last_active_date,
             created_at=user.created_at,

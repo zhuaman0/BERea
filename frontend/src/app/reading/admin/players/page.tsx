@@ -111,6 +111,11 @@ export default function ReadingAdminPlayersPage() {
                                   Admin
                                 </span>
                               )}
+                              {user.is_tester && (
+                                <span className="rounded-full border border-sky-400/40 px-1.5 py-px text-[10px] font-semibold uppercase tracking-[0.1em] text-sky-300">
+                                  Tester
+                                </span>
+                              )}
                             </p>
                             <p className="mt-0.5 text-xs text-[var(--rd-text-muted)]">{user.email}</p>
                           </div>

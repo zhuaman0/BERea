@@ -50,6 +50,8 @@ class ReadingUser(TimestampMixin, Base):
     token_balance: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     current_streak: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False)
+    # Testers see every student section before the season starts, so the full app can be checked pre-kickoff.
+    is_tester: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False)
     last_active_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     is_captain: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false(), nullable=False)
 

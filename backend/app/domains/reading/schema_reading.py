@@ -54,6 +54,7 @@ class ReadingAdminUserResponse(BaseModel):
     email: EmailStr
     team_name: str | None
     is_admin: bool
+    is_tester: bool
     current_streak: int
     last_active_date: date | None
     created_at: datetime
@@ -70,6 +71,7 @@ class ReadingUserResponse(BaseModel):
     token_balance: int
     current_streak: int
     is_admin: bool
+    is_tester: bool
     is_captain: bool
     created_at: datetime
 
