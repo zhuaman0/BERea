@@ -115,7 +115,8 @@ scripts/    Dev automation (seed, migrate, reset)
 - **GitHub Actions (`.github/workflows/ci.yml`, runs on every PR and push to `main`)** — frontend lint + typecheck,
   backend `ruff check` + import check, and the commit-message rule for every commit in the PR.
 - Backend lint rules live in `backend/ruff.toml` (ruff pinned in `requirements-dev.txt`).
-- Project skills in `.claude/skills/`: `cleanup-review`, `db-migration`, `new-endpoint`, `verify-in-browser`, `ship-pr`.
+- Project skills in `.claude/skills/`: `cleanup-review`, `db-migration`, `new-endpoint`, `verify-in-browser`, `ship-pr`,
+  `reading-design` (colors, layout and the shared page hero for every 451° page).
 
 ## Module Naming Conventions
 | Layer | Pattern | Example |

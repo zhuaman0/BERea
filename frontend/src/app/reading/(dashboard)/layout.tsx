@@ -69,7 +69,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           seasonStarted={seasonStarted}
           leaderboardEnabled={settings?.leaderboard_enabled ?? true}
         />
-        <main className="flex-1 overflow-y-auto pb-20 md:pb-8">
+        <main className="min-w-0 flex-1 overflow-y-auto pb-20 md:pb-8">
           {settings === null && isSeasonRoute(pathname)
             ? null
             : isReadingRouteLocked(pathname, seasonStarted)

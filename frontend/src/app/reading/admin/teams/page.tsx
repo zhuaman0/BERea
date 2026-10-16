@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Shield, Trash2 } from "lucide-react";
 import { readingAdminApi, readingAuthApi } from "@berea/api";
 import { isApiError } from "@/features/auth/utils";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
 import type { ReadingTeamSummary } from "@berea/api";
+import { ReadingPageHero } from "@/features/reading/components/layout/ReadingPageHero";
+import { READING_PAGE_CONTAINER } from "@/features/reading/lib/pageContainer";
 
 export default function ReadingAdminTeamsPage() {
   const [teams, setTeams] = useState<ReadingTeamSummary[]>([]);
@@ -44,11 +46,8 @@ export default function ReadingAdminTeamsPage() {
   }
 
   return (
-    <div className="w-full px-4 py-6 sm:px-8 sm:py-10 lg:px-12">
-      <h1 className="font-display text-2xl font-semibold text-[var(--rd-text)]">Teams</h1>
-      <p className="mt-1 text-sm text-[var(--rd-text-muted)]">
-        Every registered team, pulled live from the database.
-      </p>
+    <div className={READING_PAGE_CONTAINER}>
+      <ReadingPageHero eyebrow="Admin" eyebrowIcon={Shield} title="Teams" description="Every registered team, pulled live from the database." />
 
       {deleteError && (
         <p role="alert" className="mt-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm text-red-400">

@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { readingSettingsApi } from "@berea/api";
 import type { ReadingAppSettings } from "@berea/api";
 import { isApiError } from "@/features/auth/utils";
+import { SlidersHorizontal } from "lucide-react";
+import { ReadingPageHero } from "@/features/reading/components/layout/ReadingPageHero";
+import { READING_PAGE_CONTAINER } from "@/features/reading/lib/pageContainer";
 
 type SettingKey = keyof ReadingAppSettings;
 
@@ -72,11 +75,8 @@ export default function ReadingAdminSettingsPage() {
   }
 
   return (
-    <div className="w-full px-4 py-6 sm:px-8 sm:py-10 lg:px-12">
-      <h1 className="font-display text-2xl font-semibold text-[var(--rd-text)]">Settings</h1>
-      <p className="mt-1 text-sm text-[var(--rd-text-muted)]">
-        Feature toggles that apply site-wide for every student.
-      </p>
+    <div className={READING_PAGE_CONTAINER}>
+      <ReadingPageHero eyebrow="Admin" eyebrowIcon={SlidersHorizontal} title="Settings" description="Feature toggles that apply site-wide for every student." />
 
       {!settings ? (
         !error && <p className="mt-6 text-sm text-[var(--rd-text-muted)]">Loading settings…</p>

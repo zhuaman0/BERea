@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { LayoutGroup, MotionConfig, motion } from "framer-motion";
-import { Check, Clock, Lock, RefreshCw } from "lucide-react";
+import { Check, Clock, Lock, RefreshCw, Vote } from "lucide-react";
 import type { VoteRound } from "@berea/api";
 import { VoteOptionCard } from "@/features/reading/components/VoteOptionCard";
 import { VoteSelectionSteps } from "@/features/reading/components/VoteSelectionSteps";
@@ -11,6 +11,7 @@ import { useVoteRounds } from "@/features/reading/hooks/useVoteRounds";
 import { formatVoteCountdown, VOTE_LABELS, voteStatus, voteWinner } from "@/features/reading/lib/voteRounds";
 import { isApiError } from "@/features/auth/utils";
 import { READING_PAGE_CONTAINER } from "@/features/reading/lib/pageContainer";
+import { ReadingPageHero } from "@/features/reading/components/layout/ReadingPageHero";
 
 export default function ReadingGamesPage() {
   const { rounds, selection, currentRound, now, isPending, error, refetch, recordVote } = useVoteRounds();
@@ -45,12 +46,19 @@ export default function ReadingGamesPage() {
   return (
     <MotionConfig reducedMotion="user">
       <div className={READING_PAGE_CONTAINER}>
-        <h1 className="font-display text-2xl font-semibold text-[var(--rd-text)]">Choose the book</h1>
-        <p className="mt-2 max-w-2xl text-sm text-[var(--rd-text-muted)]">
-          Choose a language, then immediately choose a genre below. Both choices share one 6-hour deadline.
-          You can change either choice until voting closes.
-        </p>
-        <div className="mt-6"><VoteSelectionSteps rounds={selection} now={now} /></div>
+        <ReadingPageHero
+          eyebrow="Book of the month"
+          eyebrowIcon={Vote}
+          title="Choose the book"
+          accent="you read next."
+          description="Choose a language, then immediately choose a genre below. Both choices share one 6-hour deadline. You can change either choice until voting closes."
+          aside={deadline && isOpen && (
+            <span className="rd-accent-gradient inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold tabular-nums text-black/85">
+              <Clock size={15} aria-hidden="true" /> {formatVoteCountdown(deadline, now)} left
+            </span>
+          )}
+        />
+        <div className="mt-8"><VoteSelectionSteps rounds={selection} now={now} /></div>
 
         {error && <div role="alert" className="mt-5 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-400">
           {isApiError(error) ? error.detail : "Couldn't refresh voting. Please try again."}

@@ -1,10 +1,11 @@
 "use client";
 
-import { LogOut } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useReadingLogout } from "@/features/reading/hooks/useReadingLogout";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
 import { READING_PAGE_CONTAINER } from "@/features/reading/lib/pageContainer";
+import { ReadingPageHero } from "@/features/reading/components/layout/ReadingPageHero";
 
 export default function ReadingSettingsPage() {
   const t = useTranslations("reading.settings");
@@ -13,10 +14,7 @@ export default function ReadingSettingsPage() {
 
   return (
     <div className={READING_PAGE_CONTAINER}>
-      <h1 className="font-display text-2xl font-semibold text-[var(--rd-text)]">{t("title")}</h1>
-      <p className="mt-1 text-[13px] text-[var(--rd-text-muted)]">
-        {t("subtitle")}
-      </p>
+      <ReadingPageHero eyebrow={t("eyebrow")} eyebrowIcon={Settings} title={t("title")} description={t("subtitle")} />
 
       <div className="mt-8 flex items-center justify-between rounded-xl border border-[var(--rd-border)] bg-[var(--rd-panel)] px-5 py-4">
         <div className="flex flex-col gap-0.5">

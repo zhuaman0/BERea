@@ -53,7 +53,7 @@ export default function ReadingLeaderboardPage() {
   }
 
   return (
-    <div className={`${READING_PAGE_CONTAINER} mx-auto max-w-[1480px]`}>
+    <div className={READING_PAGE_CONTAINER}>
       <LeaderboardHero teams={teams} myTeam={myTeam} myRank={myTeamIndex >= 0 ? myTeamIndex + 1 : null} onShowMyPlace={handleShowMyPlace} />
 
       {isLoading ? (
