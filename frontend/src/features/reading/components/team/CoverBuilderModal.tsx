@@ -5,32 +5,24 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Check } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Modal } from "@berea/ui-kit";
 import { readingAuthApi } from "@berea/api";
 import { isApiError } from "@/features/auth/utils";
 import { cn } from "@/shared/lib/utils";
-import type {
-  CoverAnimation,
-  CoverColor,
-  CoverEmblem,
-  CoverPattern,
-  ReadingTeam,
-  TeamCover,
-} from "@berea/api";
+import type { CoverColor, CoverEmblem, ReadingTeam, TeamCover } from "@berea/api";
 import { COVER_ANIMATIONS, COVER_COLORS, COVER_EMBLEMS, COVER_PATTERNS, COVER_TITLE_MAX } from "./coverOptions";
 import { CoverShowcase } from "./CoverShowcase";
 
 const COLOR_KEYS = Object.keys(COVER_COLORS) as [CoverColor, ...CoverColor[]];
-const PATTERN_KEYS = Object.keys(COVER_PATTERNS) as [CoverPattern, ...CoverPattern[]];
 const EMBLEM_KEYS = Object.keys(COVER_EMBLEMS) as [CoverEmblem, ...CoverEmblem[]];
-const ANIMATION_KEYS = Object.keys(COVER_ANIMATIONS) as [CoverAnimation, ...CoverAnimation[]];
 
 const coverSchema = z.object({
-  title:     z.string().max(COVER_TITLE_MAX, `Keep it under ${COVER_TITLE_MAX} characters`),
+  title:     z.string().max(COVER_TITLE_MAX),
   color:     z.enum(COLOR_KEYS),
-  pattern:   z.enum(PATTERN_KEYS),
+  pattern:   z.enum(COVER_PATTERNS),
   emblem:    z.enum(EMBLEM_KEYS),
-  animation: z.enum(ANIMATION_KEYS),
+  animation: z.enum(COVER_ANIMATIONS),
 });
 
 type CoverFormValues = z.infer<typeof coverSchema>;
@@ -62,6 +54,7 @@ interface CoverBuilderModalProps {
 }
 
 export function CoverBuilderModal({ team, onClose, onSaved }: CoverBuilderModalProps) {
+  const t = useTranslations("reading.team.cover");
   const [saveError, setSaveError] = useState<string | null>(null);
   const {
     register,
@@ -89,24 +82,24 @@ export function CoverBuilderModal({ team, onClose, onSaved }: CoverBuilderModalP
       onSaved(updated);
       onClose();
     } catch (err) {
-      setSaveError(isApiError(err) ? err.detail : "Couldn't save your cover.");
+      setSaveError(isApiError(err) ? err.detail : t("saveError"));
     }
   }
 
   return (
-    <Modal title="Design your team's book cover" onClose={onClose} size="xl">
+    <Modal title={t("modalTitle")} onClose={onClose} size="xl">
       <form onSubmit={handleSubmit(onSubmit)} className="grid gap-6 md:grid-cols-[220px_minmax(0,1fr)]">
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-[var(--rd-border)] bg-[var(--rd-ink)] p-5 md:sticky md:top-0 md:self-start">
           <CoverShowcase cover={previewCover} teamName={team.name} className="w-40" />
           <p className="text-center text-[11px] text-[var(--rd-text-muted)]">
-            Your teammates and every other team see this cover on the leaderboard.
+            {t("previewHint")}
           </p>
         </div>
 
         <div className="flex flex-col gap-5">
           <div>
             <label htmlFor="cover-title">
-              <FieldLabel>Title</FieldLabel>
+              <FieldLabel>{t("titleLabel")}</FieldLabel>
             </label>
             <input
               id="cover-title"
@@ -116,7 +109,7 @@ export function CoverBuilderModal({ team, onClose, onSaved }: CoverBuilderModalP
               className="h-11 w-full rounded-lg border border-[var(--rd-border)] bg-[var(--rd-ink)] px-3 text-sm text-[var(--rd-text)] placeholder:text-[var(--rd-text-muted)] focus:border-[var(--rd-accent-from)] focus:outline-none"
             />
             <p className="mt-1.5 text-[11px] text-[var(--rd-text-muted)]">
-              {errors.title?.message ?? "Leave empty to use your team name."}
+              {errors.title ? t("titleTooLong", { max: COVER_TITLE_MAX }) : t("titleHint")}
             </p>
           </div>
 
@@ -125,15 +118,15 @@ export function CoverBuilderModal({ team, onClose, onSaved }: CoverBuilderModalP
             name="color"
             render={({ field }) => (
               <div>
-                <FieldLabel>Color · {COVER_COLORS[field.value].label}</FieldLabel>
-                <div className="flex flex-wrap gap-2.5" role="radiogroup" aria-label="Cover color">
+                <FieldLabel>{t("colorLabel", { name: t(`colors.${field.value}`) })}</FieldLabel>
+                <div className="flex flex-wrap gap-2.5" role="radiogroup" aria-label={t("colorGroup")}>
                   {COLOR_KEYS.map((key) => (
                     <button
                       key={key}
                       type="button"
                       role="radio"
                       aria-checked={field.value === key}
-                      aria-label={COVER_COLORS[key].label}
+                      aria-label={t(`colors.${key}`)}
                       onClick={() => field.onChange(key)}
                       className={cn(
                         "flex h-10 w-10 items-center justify-center rounded-full ring-offset-2 ring-offset-[var(--rd-panel)] transition-transform hover:scale-110 focus-visible:outline-none",
@@ -154,10 +147,10 @@ export function CoverBuilderModal({ team, onClose, onSaved }: CoverBuilderModalP
             name="emblem"
             render={({ field }) => (
               <div>
-                <FieldLabel>Emblem</FieldLabel>
-                <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Cover emblem">
+                <FieldLabel>{t("emblemLabel")}</FieldLabel>
+                <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t("emblemGroup")}>
                   {EMBLEM_KEYS.map((key) => {
-                    const { label, icon: Icon } = COVER_EMBLEMS[key];
+                    const Icon = COVER_EMBLEMS[key];
                     return (
                       <button
                         key={key}
@@ -168,7 +161,7 @@ export function CoverBuilderModal({ team, onClose, onSaved }: CoverBuilderModalP
                         className={cn(chipClass(field.value === key), "inline-flex items-center gap-1.5")}
                       >
                         <Icon size={14} />
-                        {label}
+                        {t(`emblems.${key}`)}
                       </button>
                     );
                   })}
@@ -182,9 +175,9 @@ export function CoverBuilderModal({ team, onClose, onSaved }: CoverBuilderModalP
             name="pattern"
             render={({ field }) => (
               <div>
-                <FieldLabel>Pattern</FieldLabel>
-                <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Cover pattern">
-                  {PATTERN_KEYS.map((key) => (
+                <FieldLabel>{t("patternLabel")}</FieldLabel>
+                <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t("patternGroup")}>
+                  {COVER_PATTERNS.map((key) => (
                     <button
                       key={key}
                       type="button"
@@ -193,7 +186,7 @@ export function CoverBuilderModal({ team, onClose, onSaved }: CoverBuilderModalP
                       onClick={() => field.onChange(key)}
                       className={chipClass(field.value === key)}
                     >
-                      {COVER_PATTERNS[key]}
+                      {t(`patterns.${key}`)}
                     </button>
                   ))}
                 </div>
@@ -206,9 +199,9 @@ export function CoverBuilderModal({ team, onClose, onSaved }: CoverBuilderModalP
             name="animation"
             render={({ field }) => (
               <div>
-                <FieldLabel>Animation</FieldLabel>
-                <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Cover animation">
-                  {ANIMATION_KEYS.map((key) => (
+                <FieldLabel>{t("animationLabel")}</FieldLabel>
+                <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label={t("animationGroup")}>
+                  {COVER_ANIMATIONS.map((key) => (
                     <button
                       key={key}
                       type="button"
@@ -217,8 +210,8 @@ export function CoverBuilderModal({ team, onClose, onSaved }: CoverBuilderModalP
                       onClick={() => field.onChange(key)}
                       className={cn(chipClass(field.value === key), "flex flex-col items-start gap-0.5 text-left")}
                     >
-                      <span>{COVER_ANIMATIONS[key].label}</span>
-                      <span className="text-[10px] font-normal text-[var(--rd-text-muted)]">{COVER_ANIMATIONS[key].hint}</span>
+                      <span>{t(`animations.${key}.label`)}</span>
+                      <span className="text-[10px] font-normal text-[var(--rd-text-muted)]">{t(`animations.${key}.hint`)}</span>
                     </button>
                   ))}
                 </div>
@@ -234,14 +227,14 @@ export function CoverBuilderModal({ team, onClose, onSaved }: CoverBuilderModalP
               onClick={onClose}
               className="flex-1 rounded-xl border border-[var(--rd-border)] px-4 py-3 text-sm font-medium text-[var(--rd-text)] transition-colors hover:border-[var(--rd-accent-from)]"
             >
-              Cancel
+              {t("cancel")}
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
               className="rd-accent-gradient flex-[2] rounded-xl px-4 py-3 text-sm font-semibold text-black/85 transition-opacity hover:opacity-90 disabled:opacity-50"
             >
-              {isSubmitting ? "Saving…" : "Save cover"}
+              {isSubmitting ? t("saving") : t("save")}
             </button>
           </div>
         </div>

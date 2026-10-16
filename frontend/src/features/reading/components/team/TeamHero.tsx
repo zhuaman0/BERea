@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Crown, Pencil, UserPlus } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { isApiError } from "@/features/auth/utils";
 import type { ReadingTeam } from "@berea/api";
 
@@ -18,6 +19,7 @@ interface TeamHeroProps {
 }
 
 export function TeamHero({ team, isCaptain, captainName, seasonStarted, onRename, onInvite }: TeamHeroProps) {
+  const t = useTranslations("reading.team");
   const [isRenaming, setIsRenaming] = useState(false);
   const [draftName, setDraftName] = useState(team.name);
   const [renameError, setRenameError] = useState<string | null>(null);
@@ -34,7 +36,7 @@ export function TeamHero({ team, isCaptain, captainName, seasonStarted, onRename
       await onRename(draftName.trim());
       setIsRenaming(false);
     } catch (err) {
-      setRenameError(isApiError(err) ? err.detail : "Couldn't rename your team.");
+      setRenameError(isApiError(err) ? err.detail : t("hero.renameError"));
     } finally {
       setIsSaving(false);
     }
@@ -61,7 +63,7 @@ export function TeamHero({ team, isCaptain, captainName, seasonStarted, onRename
                 autoFocus
                 value={draftName}
                 onChange={(e) => setDraftName(e.target.value)}
-                aria-label="Team name"
+                aria-label={t("hero.teamNameLabel")}
                 maxLength={120}
                 className="h-12 min-w-0 max-w-md flex-1 rounded-xl border border-[var(--rd-border)] bg-[var(--rd-ink)] px-4 font-display text-xl font-semibold text-[var(--rd-text)] focus:border-[var(--rd-accent-from)] focus:outline-none"
               />
@@ -70,14 +72,14 @@ export function TeamHero({ team, isCaptain, captainName, seasonStarted, onRename
                 disabled={isSaving}
                 className="rd-accent-gradient h-10 rounded-lg px-5 text-sm font-semibold text-black/85 disabled:opacity-50"
               >
-                Save name
+                {t("hero.saveName")}
               </button>
               <button
                 type="button"
                 onClick={cancelRename}
                 className="h-10 rounded-lg border border-[var(--rd-border)] px-5 text-sm text-[var(--rd-text)]"
               >
-                Cancel
+                {t("hero.cancel")}
               </button>
             </form>
           ) : (
@@ -91,17 +93,11 @@ export function TeamHero({ team, isCaptain, captainName, seasonStarted, onRename
             {captainName && (
               <span className="inline-flex items-center gap-1.5">
                 <Crown size={14} className="text-[var(--rd-accent-from)]" />
-                Captain {isCaptain ? "(you)" : captainName}
+                {isCaptain ? t("hero.captainYou") : t("hero.captain", { name: captainName })}
               </span>
             )}
-            <span>
-              {team.members.length} of {team.max_members} players
-            </span>
-            {seasonStarted && (
-              <span>
-                Place {team.place} of {team.teams_total}
-              </span>
-            )}
+            <span>{t("playersCount", { count: team.members.length, max: team.max_members })}</span>
+            {seasonStarted && <span>{t("place", { place: team.place, total: team.teams_total })}</span>}
           </p>
 
           {isCaptain ? (
@@ -113,7 +109,7 @@ export function TeamHero({ team, isCaptain, captainName, seasonStarted, onRename
                   className="rd-accent-gradient inline-flex h-10 items-center gap-2 rounded-xl px-4 text-[13px] font-semibold text-[#1a0e05] transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-accent-from)]"
                 >
                   <UserPlus size={15} />
-                  Invite players
+                  {t("invitePlayers")}
                 </button>
               )}
               {!isRenaming && (
@@ -123,13 +119,13 @@ export function TeamHero({ team, isCaptain, captainName, seasonStarted, onRename
                   className={actionButton}
                 >
                   <Pencil size={15} />
-                  Rename team
+                  {t("hero.rename")}
                 </button>
               )}
             </div>
           ) : (
             <p className="mt-6 text-[13px] text-[var(--rd-text-muted)]">
-              Your captain manages the team name, invites and entry fee.
+              {t("hero.captainManages")}
             </p>
           )}
         </div>

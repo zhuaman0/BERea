@@ -1,11 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Route } from "next";
+import { useTranslations } from "next-intl";
 import { initials } from "@berea/core";
-import type { RoundDayProgress } from "@/features/reading/lib/roundCalendar";
+import type { RoundDayProgress, Semester } from "@/features/reading/lib/roundCalendar";
+import { ReadingLocaleSwitcher } from "@/features/reading/components/ReadingLocaleSwitcher";
 
 interface ReadingTopbarProps {
-  seasonLabel: string | null;
+  semester:    Semester | null;
   roundIndex:  number;
   roundTotal:  number;
   isRegistrationPhase: boolean;
@@ -14,23 +16,20 @@ interface ReadingTopbarProps {
   userName:    string | null;
 }
 
-function roundSummary(
-  seasonLabel: string | null,
-  roundIndex: number,
-  roundTotal: number,
-  isRegistrationPhase: boolean,
-  day: RoundDayProgress | null
-): string {
-  if (isRegistrationPhase) return [seasonLabel, "Registration open"].filter(Boolean).join(" · ");
-  const parts = [seasonLabel, `Round ${roundIndex} of ${roundTotal}`];
-  if (day) {
-    parts.push(`Day ${day.dayNumber} of ${day.totalDays}`);
-    parts.push(day.daysLeft > 0 ? `${day.daysLeft} ${day.daysLeft === 1 ? "day" : "days"} left` : "Last day");
-  }
-  return parts.filter(Boolean).join(" · ");
-}
+export function ReadingTopbar({ semester, roundIndex, roundTotal, isRegistrationPhase, dayProgress, totalPoints, userName }: ReadingTopbarProps) {
+  const t = useTranslations("reading.shell.topbar");
 
-export function ReadingTopbar({ seasonLabel, roundIndex, roundTotal, isRegistrationPhase, dayProgress, totalPoints, userName }: ReadingTopbarProps) {
+  function roundSummary(): string {
+    const semesterLabel = semester ? t("semester", { term: semester.term, year: String(semester.year) }) : null;
+    if (isRegistrationPhase) return [semesterLabel, t("registrationOpen")].filter(Boolean).join(" · ");
+    const parts = [semesterLabel, t("round", { index: roundIndex, total: roundTotal })];
+    if (dayProgress) {
+      parts.push(t("day", { day: dayProgress.dayNumber, total: dayProgress.totalDays }));
+      parts.push(dayProgress.daysLeft > 0 ? t("daysLeft", { count: dayProgress.daysLeft }) : t("lastDay"));
+    }
+    return parts.filter(Boolean).join(" · ");
+  }
+
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-[var(--rd-border)] bg-[var(--rd-panel)] px-4 md:px-6">
       <Link href={"/reading" as Route} className="flex min-w-0 items-center gap-2.5">
@@ -40,17 +39,18 @@ export function ReadingTopbar({ seasonLabel, roundIndex, roundTotal, isRegistrat
         </span>
         {(roundTotal > 0 || isRegistrationPhase) && (
           <span className="hidden truncate text-[12px] text-[var(--rd-text-muted)] sm:inline">
-            · {roundSummary(seasonLabel, roundIndex, roundTotal, isRegistrationPhase, dayProgress)}
+            · {roundSummary()}
           </span>
         )}
       </Link>
 
       <div className="flex shrink-0 items-center gap-3">
+        <ReadingLocaleSwitcher className="hidden sm:flex" />
         <span
-          title="Team points this season"
+          title={t("pointsTitle")}
           className="rd-accent-gradient rounded-full px-3 py-1 text-[12px] font-semibold text-black/80"
         >
-          {totalPoints} pts
+          {t("points", { count: totalPoints })}
         </span>
         <span
           title={userName ?? undefined}

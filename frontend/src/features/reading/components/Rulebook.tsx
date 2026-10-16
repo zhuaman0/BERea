@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { Flame, HeartHandshake, Sparkles, TrendingUp, Trophy, type LucideIcon } from "lucide-react";
-import { SEASON_FACTS, SEASON_GOALS, SEASON_RULES } from "@/features/reading/lib/seasonRules";
+import { ENTRY_FEE, SEASON_FACTS, SEASON_GOALS, SEASON_RULES } from "@/features/reading/lib/seasonRules";
 
 const GOAL_ICONS: readonly LucideIcon[] = [Flame, TrendingUp, HeartHandshake];
 
@@ -42,13 +43,15 @@ function SectionHeading({ eyebrow, title }: SectionHeadingProps) {
 
 /** The full season rulebook, shared by the in-app Rules page and the public landing page. */
 export function Rulebook() {
+  const t = useTranslations("reading.rulebook");
+
   return (
     <>
       {/* ── Season at a glance ───────────────────────────────────────────── */}
       <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
         {SEASON_FACTS.map((fact, i) => (
           <motion.div
-            key={fact.label}
+            key={fact.id}
             {...fadeUp(0.1 + i * 0.06)}
             className="rounded-2xl border border-[var(--rd-border)] bg-[var(--rd-panel)] px-5 py-5"
           >
@@ -56,7 +59,7 @@ export function Rulebook() {
               {fact.value}
             </p>
             <p className="mt-2 text-[12px] font-medium uppercase tracking-[0.15em] text-[var(--rd-text-muted)]">
-              {fact.label}
+              {t(`facts.${fact.id}`, { count: fact.value })}
             </p>
           </motion.div>
         ))}
@@ -64,7 +67,7 @@ export function Rulebook() {
 
       {/* ── Why 451° ─────────────────────────────────────────────────────── */}
       <section className="mt-16">
-        <SectionHeading eyebrow="The name" title="Why 451°?" />
+        <SectionHeading eyebrow={t("why.eyebrow")} title={t("why.title")} />
         <motion.div
           {...revealOnScroll(0.05)}
           className="grid grid-cols-1 items-center gap-8 rounded-[28px] border border-[var(--rd-border)] bg-[var(--rd-panel)] p-6 sm:grid-cols-[auto_1fr] sm:p-10"
@@ -72,7 +75,7 @@ export function Rulebook() {
           <div className="relative mx-auto w-36 shrink-0 -rotate-3 transition-transform duration-500 hover:rotate-0 sm:w-40">
             <Image
               src="/fahrenheit-451-cover.png"
-              alt="Fahrenheit 451 by Ray Bradbury — book cover"
+              alt={t("why.coverAlt")}
               width={527}
               height={828}
               className="h-auto w-full rounded-r-lg rounded-l-sm shadow-[0_30px_60px_-20px_rgba(255,107,44,0.55)]"
@@ -82,11 +85,10 @@ export function Rulebook() {
 
           <div>
             <p className="font-display text-lg font-semibold text-[var(--rd-text)] sm:text-xl">
-              Named after Ray Bradbury&apos;s <em>Fahrenheit 451</em>.
+              {t.rich("why.lead", { em: (chunks) => <em>{chunks}</em> })}
             </p>
             <p className="mt-3 text-[14px] leading-relaxed text-[var(--rd-text-muted)]">
-              451 °F is the temperature at which book paper catches fire. In Bradbury&apos;s world,
-              books are burned. In ours, books are what set readers on fire.
+              {t("why.body")}
             </p>
           </div>
         </motion.div>
@@ -94,7 +96,7 @@ export function Rulebook() {
 
       {/* ── Goals ────────────────────────────────────────────────────────── */}
       <section className="mt-16">
-        <SectionHeading eyebrow="Our mission" title="What the game is for" />
+        <SectionHeading eyebrow={t("goals.eyebrow")} title={t("goals.title")} />
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {SEASON_GOALS.map((goal, i) => {
             const Icon = GOAL_ICONS[i] ?? Sparkles;
@@ -107,7 +109,7 @@ export function Rulebook() {
                 <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-[var(--rd-accent-from)]/30 bg-[var(--rd-ink)] text-[var(--rd-accent-from)] transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110">
                   <Icon size={20} />
                 </span>
-                <p className="mt-5 text-[14px] leading-relaxed text-[var(--rd-text)]">{goal}</p>
+                <p className="mt-5 text-[14px] leading-relaxed text-[var(--rd-text)]">{t(`goals.${goal}`)}</p>
               </motion.div>
             );
           })}
@@ -116,11 +118,11 @@ export function Rulebook() {
 
       {/* ── Rules ────────────────────────────────────────────────────────── */}
       <section className="mt-16">
-        <SectionHeading eyebrow="How to play" title="The six rules" />
+        <SectionHeading eyebrow={t("howToPlay.eyebrow")} title={t("howToPlay.title")} />
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {SEASON_RULES.map(({ title, body, icon: Icon }, i) => (
+          {SEASON_RULES.map(({ id, bodyKey, icon: Icon }, i) => (
             <motion.div
-              key={title}
+              key={id}
               {...revealOnScroll((i % 2) * 0.08)}
               className="group relative overflow-hidden rounded-2xl border border-[var(--rd-border)] bg-[var(--rd-panel)] p-6 transition-all duration-300 hover:-translate-y-1 hover:border-[var(--rd-accent-from)]/50"
             >
@@ -136,10 +138,12 @@ export function Rulebook() {
                 </span>
                 <div className="min-w-0">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--rd-text-muted)]">
-                    Rule {String(i + 1).padStart(2, "0")}
+                    {t("howToPlay.ruleNumber", { number: String(i + 1).padStart(2, "0") })}
                   </p>
-                  <p className="font-display mt-1 text-[17px] font-semibold text-[var(--rd-text)]">{title}</p>
-                  <p className="mt-2 text-[13px] leading-relaxed text-[var(--rd-text-muted)]">{body}</p>
+                  <p className="font-display mt-1 text-[17px] font-semibold text-[var(--rd-text)]">{t(`rules.${id}.title`)}</p>
+                  <p className="mt-2 text-[13px] leading-relaxed text-[var(--rd-text-muted)]">
+                    {t(`rules.${id}.${bodyKey}`, { fee: ENTRY_FEE })}
+                  </p>
                 </div>
               </div>
             </motion.div>
@@ -154,10 +158,10 @@ export function Rulebook() {
       >
         <Sparkles size={22} className="mx-auto text-[var(--rd-accent-to)]" />
         <p className="font-display mx-auto mt-4 max-w-2xl text-xl font-semibold leading-snug text-[var(--rd-text)] sm:text-2xl">
-          Gamification means using game elements to make something genuinely fun.
+          {t("gamification.title")}
         </p>
         <p className="mx-auto mt-3 max-w-xl text-[14px] leading-relaxed text-[var(--rd-text-muted)]">
-          Teams, votes, points and live quiz nights turn reading into a season worth winning.
+          {t("gamification.body")}
         </p>
       </motion.section>
 
@@ -174,19 +178,18 @@ export function Rulebook() {
           <Trophy size={28} className="text-[#1a0e05]" />
         </span>
         <h2 className="font-display relative mt-6 text-2xl font-semibold text-[var(--rd-text)] sm:text-3xl">
-          One team takes the crown
+          {t("champion.title")}
         </h2>
         <p className="relative mx-auto mt-3 max-w-md text-[14px] leading-relaxed text-[var(--rd-text-muted)]">
-          When the semester ends, the team with the most points is named the 451° champion and
-          takes home the season&apos;s prizes.
+          {t("champion.body")}
         </p>
         <p className="font-display relative mt-6 bg-gradient-to-r from-[var(--rd-accent-from)] to-[var(--rd-accent-to)] bg-clip-text text-lg font-bold text-transparent">
-          Today a reader, tomorrow a leader.
+          {t("champion.motto")}
         </p>
       </motion.section>
 
       <p className="mt-8 text-center text-[11px] text-[var(--rd-text-muted)]">
-        The 451° game format is protected by copyright · © 2026 NATS Spirea
+        {t("copyright")}
       </p>
     </>
   );

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   Home,
   Vote,
@@ -20,19 +21,21 @@ import { isReadingRouteLocked } from "@/features/reading/lib/launchSections";
 import type { ReadingTeam } from "@berea/api";
 import { useReadingLogout } from "../hooks/useReadingLogout";
 
+type NavKey = "home" | "vote" | "leaderboard" | "team" | "rules" | "profile";
+
 interface NavItem {
-  href:  string;
-  label: string;
-  icon:  LucideIcon;
+  href:   string;
+  navKey: NavKey;
+  icon:   LucideIcon;
 }
 
 const BASE_NAV_ITEMS: NavItem[] = [
-  { href: "/reading",             label: "Home",        icon: Home },
-  { href: "/reading/games",       label: "Book vote",   icon: Vote },
-  { href: "/reading/leaderboard", label: "Leaderboard", icon: Trophy },
-  { href: "/reading/team",        label: "My team",     icon: Users },
-  { href: "/reading/rules",       label: "Rules",       icon: BookOpen },
-  { href: "/reading/profile",     label: "Profile",     icon: UserCircle },
+  { href: "/reading",             navKey: "home",        icon: Home },
+  { href: "/reading/games",       navKey: "vote",        icon: Vote },
+  { href: "/reading/leaderboard", navKey: "leaderboard", icon: Trophy },
+  { href: "/reading/team",        navKey: "team",        icon: Users },
+  { href: "/reading/rules",       navKey: "rules",       icon: BookOpen },
+  { href: "/reading/profile",     navKey: "profile",     icon: UserCircle },
 ];
 
 interface ReadingSidebarProps {
@@ -41,19 +44,22 @@ interface ReadingSidebarProps {
   leaderboardEnabled: boolean;
 }
 
-const LOCKED_HINT = "Opens when the season starts";
-
-interface NavEntryProps extends NavItem {
+interface NavEntryProps {
+  href:     string;
+  label:    string;
+  icon:     LucideIcon;
   isActive: boolean;
   isLocked: boolean;
 }
 
 function NavLink({ href, label, icon: Icon, isActive, isLocked }: NavEntryProps) {
+  const t = useTranslations("reading.shell");
+
   if (isLocked) {
     return (
       <span
         aria-disabled="true"
-        title={LOCKED_HINT}
+        title={t("lockedHint")}
         className={`flex cursor-not-allowed select-none items-center gap-3 rounded-lg px-3 py-2 text-[13px] ${
           isActive ? "bg-white/[0.04] text-[var(--rd-text-muted)]" : "text-[var(--rd-text-muted)]/50"
         }`}
@@ -62,7 +68,7 @@ function NavLink({ href, label, icon: Icon, isActive, isLocked }: NavEntryProps)
         <span className="flex-1">{label}</span>
         <span className="inline-flex items-center gap-1 rounded-full border border-[var(--rd-border)] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-[var(--rd-text-muted)]">
           <Lock size={9} strokeWidth={2.25} />
-          Soon
+          {t("soon")}
         </span>
       </span>
     );
@@ -84,11 +90,13 @@ function NavLink({ href, label, icon: Icon, isActive, isLocked }: NavEntryProps)
 }
 
 function MobileTab({ href, label, icon: Icon, isActive, isLocked }: NavEntryProps) {
+  const t = useTranslations("reading.shell");
+
   if (isLocked) {
     return (
       <span
         aria-disabled="true"
-        title={LOCKED_HINT}
+        title={t("lockedHint")}
         className="flex flex-col items-center gap-1 px-2 py-1 text-[10px] text-[var(--rd-text-muted)]/50"
       >
         <span className="relative">
@@ -120,6 +128,7 @@ function MobileTab({ href, label, icon: Icon, isActive, isLocked }: NavEntryProp
 export function ReadingSidebar({ team, seasonStarted, leaderboardEnabled }: ReadingSidebarProps) {
   const pathname = usePathname();
   const { logout, isLoggingOut } = useReadingLogout();
+  const t = useTranslations("reading.shell");
 
   const navItems = leaderboardEnabled
     ? BASE_NAV_ITEMS
@@ -133,7 +142,9 @@ export function ReadingSidebar({ team, seasonStarted, leaderboardEnabled }: Read
           {navItems.map((item) => (
             <NavLink
               key={item.href}
-              {...item}
+              href={item.href}
+              label={t(`nav.${item.navKey}`)}
+              icon={item.icon}
               isActive={pathname === item.href}
               isLocked={isReadingRouteLocked(item.href, seasonStarted)}
             />
@@ -143,7 +154,7 @@ export function ReadingSidebar({ team, seasonStarted, leaderboardEnabled }: Read
         {team && (
           <div className="mt-6 flex-1 overflow-y-auto px-3">
             <p className="mb-2 px-3 text-[10px] uppercase tracking-[0.2em] text-[var(--rd-text-muted)]">
-              Team · {team.name}
+              {t("teamHeading", { name: team.name })}
             </p>
             <div className="flex flex-col gap-1">
               {team.members.map((member) => (
@@ -166,7 +177,7 @@ export function ReadingSidebar({ team, seasonStarted, leaderboardEnabled }: Read
         <div className="flex flex-col gap-1 border-t border-[var(--rd-border)] px-3 py-3">
           <NavLink
             href="/reading/settings"
-            label="Settings"
+            label={t("nav.settings")}
             icon={Settings}
             isActive={pathname === "/reading/settings"}
             isLocked={false}
@@ -178,7 +189,7 @@ export function ReadingSidebar({ team, seasonStarted, leaderboardEnabled }: Read
             className="flex items-center gap-3 rounded-lg px-3 py-2 text-left text-[13px] text-[var(--rd-text-muted)] transition-colors duration-150 hover:text-red-400 disabled:opacity-50"
           >
             <LogOut size={16} strokeWidth={1.75} className="shrink-0" />
-            {isLoggingOut ? "Logging out…" : "Log out"}
+            {isLoggingOut ? t("loggingOut") : t("logout")}
           </button>
         </div>
       </aside>
@@ -188,7 +199,9 @@ export function ReadingSidebar({ team, seasonStarted, leaderboardEnabled }: Read
         {navItems.map((item) => (
           <MobileTab
             key={item.href}
-            {...item}
+            href={item.href}
+            label={t(`nav.${item.navKey}`)}
+            icon={item.icon}
             isActive={pathname === item.href}
             isLocked={isReadingRouteLocked(item.href, seasonStarted)}
           />

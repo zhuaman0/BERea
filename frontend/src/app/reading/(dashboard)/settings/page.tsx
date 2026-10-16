@@ -1,28 +1,30 @@
 "use client";
 
 import { LogOut } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useReadingLogout } from "@/features/reading/hooks/useReadingLogout";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
 import { READING_PAGE_CONTAINER } from "@/features/reading/lib/pageContainer";
 
 export default function ReadingSettingsPage() {
+  const t = useTranslations("reading.settings");
   const user = useReadingAuthStore((s) => s.user);
   const { logout, isLoggingOut } = useReadingLogout();
 
   return (
     <div className={READING_PAGE_CONTAINER}>
-      <h1 className="font-display text-2xl font-semibold text-[var(--rd-text)]">Settings</h1>
+      <h1 className="font-display text-2xl font-semibold text-[var(--rd-text)]">{t("title")}</h1>
       <p className="mt-1 text-[13px] text-[var(--rd-text-muted)]">
-        Account and notification preferences are coming in a later step.
+        {t("subtitle")}
       </p>
 
       <div className="mt-8 flex items-center justify-between rounded-xl border border-[var(--rd-border)] bg-[var(--rd-panel)] px-5 py-4">
         <div className="flex flex-col gap-0.5">
           <span className="text-[13px] font-medium text-[var(--rd-text)]">
-            {user?.full_name || "Signed in"}
+            {user?.full_name || t("signedIn")}
           </span>
           <span className="text-[12px] text-[var(--rd-text-muted)]">
-            {user?.email} · {user?.team_name ?? "No team yet"}
+            {user?.email} · {user?.team_name ?? t("noTeam")}
           </span>
         </div>
         <button
@@ -32,7 +34,7 @@ export default function ReadingSettingsPage() {
           className="inline-flex items-center gap-2 rounded-lg border border-[var(--rd-border)] px-4 py-2 text-[12px] font-semibold text-[var(--rd-text)] transition-colors hover:border-red-400 hover:text-red-400"
         >
           <LogOut size={14} />
-          {isLoggingOut ? "Logging out…" : "Log out"}
+          {isLoggingOut ? t("loggingOut") : t("logout")}
         </button>
       </div>
     </div>

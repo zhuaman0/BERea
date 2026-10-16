@@ -9,7 +9,7 @@ import { LockedSection } from "@/features/reading/components/LockedSection";
 import { ReadingStageGuard } from "@/features/reading/components/auth/ReadingStageGuard";
 import { isReadingRouteLocked, isSeasonRoute } from "@/features/reading/lib/launchSections";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
-import { roundDayProgress, seasonLabel } from "@/features/reading/lib/roundCalendar";
+import { roundDayProgress, semesterOf } from "@/features/reading/lib/roundCalendar";
 import { readingAuthApi } from "@berea/api";
 import { readingSemesterApi } from "@berea/api";
 import { readingSettingsApi } from "@berea/api";
@@ -53,7 +53,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="flex h-screen flex-col overflow-hidden">
       <ReadingStageGuard mode="require-team" />
       <ReadingTopbar
-        seasonLabel={seasonLabel(rounds)}
+        semester={semesterOf(rounds)}
         roundIndex={roundIndex}
         roundTotal={roundTotal}
         isRegistrationPhase={isRegistrationPhase}

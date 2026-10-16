@@ -3,31 +3,15 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { ArrowRight, BookOpen, Lock, Users } from "lucide-react";
 
-interface SectionCopy {
-  title: string;
-  body:  string;
-}
+type SectionKey = "leaderboard" | "profile" | "quiz" | "fallback";
 
-const SECTION_COPY: Record<string, SectionCopy> = {
-  "/reading/leaderboard": {
-    title: "The leaderboard is warming up",
-    body:  "Team rankings appear after the first points of the season are scored.",
-  },
-  "/reading/profile": {
-    title: "Your profile is on its way",
-    body:  "Reading stats, streaks and badges show up here once the season begins.",
-  },
-  "/reading/quiz": {
-    title: "Quiz nights start with the season",
-    body:  "The first live quiz runs at the end of month one, on the book your league votes for.",
-  },
-};
-
-const FALLBACK_COPY: SectionCopy = {
-  title: "Opens when the season starts",
-  body:  "This section unlocks on kickoff day. For now, get your team ready.",
+const SECTION_KEYS: Record<string, SectionKey> = {
+  "/reading/leaderboard": "leaderboard",
+  "/reading/profile":     "profile",
+  "/reading/quiz":        "quiz",
 };
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -37,7 +21,8 @@ interface LockedSectionProps {
 }
 
 export function LockedSection({ pathname }: LockedSectionProps) {
-  const { title, body } = SECTION_COPY[pathname] ?? FALLBACK_COPY;
+  const t = useTranslations("reading.locked");
+  const section = SECTION_KEYS[pathname] ?? "fallback";
 
   return (
     <div className="relative flex min-h-full items-center justify-center overflow-hidden px-6 py-16">
@@ -66,13 +51,13 @@ export function LockedSection({ pathname }: LockedSectionProps) {
 
         <span className="mt-8 inline-flex items-center gap-2 rounded-full border border-[var(--rd-border)] bg-[var(--rd-panel)] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.2em] text-[var(--rd-text-muted)]">
           <span className="h-1.5 w-1.5 rounded-full bg-[var(--rd-accent-from)]" />
-          Coming soon
+          {t("badge")}
         </span>
 
         <h1 className="font-display mt-4 text-3xl font-semibold leading-tight text-[var(--rd-text)] sm:text-4xl">
-          {title}
+          {t(`sections.${section}.title`)}
         </h1>
-        <p className="mt-3 text-[14px] leading-relaxed text-[var(--rd-text-muted)]">{body}</p>
+        <p className="mt-3 text-[14px] leading-relaxed text-[var(--rd-text-muted)]">{t(`sections.${section}.body`)}</p>
 
         <div className="mt-9 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
           <Link
@@ -80,7 +65,7 @@ export function LockedSection({ pathname }: LockedSectionProps) {
             className="rd-accent-gradient inline-flex h-11 items-center justify-center gap-2 rounded-xl px-6 text-[13px] font-semibold text-[#1a0e05] transition-opacity hover:opacity-90"
           >
             <Users size={15} />
-            Go to my team
+            {t("goToTeam")}
             <ArrowRight size={15} />
           </Link>
           <Link
@@ -88,7 +73,7 @@ export function LockedSection({ pathname }: LockedSectionProps) {
             className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[var(--rd-border)] px-6 text-[13px] font-semibold text-[var(--rd-text)] transition-colors hover:border-white/25 hover:bg-white/[0.04]"
           >
             <BookOpen size={15} />
-            Read the rules
+            {t("readRules")}
           </Link>
         </div>
       </motion.div>

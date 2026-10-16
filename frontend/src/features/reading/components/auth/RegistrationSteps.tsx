@@ -1,19 +1,24 @@
 import { Check } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/shared/lib/utils";
 import { PAYMENT_STEP_ENABLED } from "@/features/reading/lib/paymentStatus";
 
-const STEPS: readonly string[] = PAYMENT_STEP_ENABLED ? ["Account", "Team", "Payment"] : ["Account", "Team"];
+type StepKey = "account" | "team" | "payment";
+
+const STEPS: readonly StepKey[] = PAYMENT_STEP_ENABLED ? ["account", "team", "payment"] : ["account", "team"];
 
 export function RegistrationSteps({ current }: { current: 1 | 2 | 3 }) {
+  const t = useTranslations("reading.auth.steps");
+
   return (
-    <ol className="flex items-center" aria-label={`Registration step ${current} of ${STEPS.length}`}>
-      {STEPS.map((label, index) => {
+    <ol className="flex items-center" aria-label={t("progress", { current, total: STEPS.length })}>
+      {STEPS.map((stepKey, index) => {
         const step = index + 1;
         const isDone = step < current;
         const isCurrent = step === current;
 
         return (
-          <li key={label} className={cn("flex items-center", index < STEPS.length - 1 && "flex-1")}>
+          <li key={stepKey} className={cn("flex items-center", index < STEPS.length - 1 && "flex-1")}>
             <div className="flex flex-col items-center gap-1.5">
               <span
                 className={cn(
@@ -27,7 +32,7 @@ export function RegistrationSteps({ current }: { current: 1 | 2 | 3 }) {
                 {isDone ? <Check size={14} /> : step}
               </span>
               <span className={cn("text-[10px]", isCurrent ? "text-[var(--rd-text)]" : "text-[var(--rd-text-muted)]")}>
-                {label}
+                {t(stepKey)}
               </span>
             </div>
             {index < STEPS.length - 1 && (

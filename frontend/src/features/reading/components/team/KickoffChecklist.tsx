@@ -3,9 +3,11 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { Check, Clock } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { cn } from "@/shared/lib/utils";
 import type { ReadingTeam, SemesterRound } from "@berea/api";
 import { PAYMENT_STEP_ENABLED } from "@/features/reading/lib/paymentStatus";
+import { formatReadingDate } from "@/features/reading/lib/formatReadingDate";
 
 type ItemState = "done" | "waiting" | "todo";
 
@@ -16,8 +18,8 @@ interface ChecklistItem {
   action?: React.ReactNode;
 }
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long" });
+function formatDate(iso: string, locale: string): string {
+  return formatReadingDate(iso, locale, "weekdayDayMonth");
 }
 
 const actionClass =
@@ -50,41 +52,44 @@ interface KickoffChecklistProps {
 }
 
 export function KickoffChecklist({ team, paymentStatus, rounds, isCaptain, onInvite }: KickoffChecklistProps) {
+  const t = useTranslations("reading.team.kickoff");
+  const tTeam = useTranslations("reading.team");
+  const locale = useLocale();
   const openSpots = team.max_members - team.members.length;
   const firstRound = [...rounds].sort((a, b) => a.index - b.index)[0];
 
   const paymentItem: ChecklistItem = {
-    title:  "Pay the entry fee",
+    title:  t("payment.title"),
     detail: paymentStatus === "approved"
-      ? "Paid and confirmed by the organisers."
+      ? t("payment.approved")
       : paymentStatus === "pending"
-        ? "Receipt sent. The organisers are checking it."
+        ? t("payment.pending")
         : paymentStatus === "rejected"
-          ? "The receipt was rejected. Upload a new one."
-          : "Not paid yet.",
+          ? t("payment.rejected")
+          : t("payment.unpaid"),
     state:  paymentStatus === "approved" ? "done" : paymentStatus === "pending" ? "waiting" : "todo",
     action: isCaptain && (paymentStatus === "rejected" || !paymentStatus)
-      ? <Link href={"/reading/payment" as Route} className={actionClass}>Upload receipt</Link>
+      ? <Link href={"/reading/payment" as Route} className={actionClass}>{t("payment.upload")}</Link>
       : undefined,
   };
 
   const items: ChecklistItem[] = [
     {
-      title:  "Fill the team",
+      title:  t("fill.title"),
       detail: openSpots === 0
-        ? `All ${team.max_members} players are in.`
-        : `${team.members.length} of ${team.max_members} players joined. ${isCaptain ? "Share your invite link with the rest." : "Your captain sends the invite link."}`,
+        ? t("fill.full", { count: team.max_members })
+        : `${t("fill.partial", { count: team.members.length, max: team.max_members })} ${isCaptain ? t("fill.captainHint") : t("fill.memberHint")}`,
       state:  openSpots === 0 ? "done" : "todo",
       action: isCaptain && openSpots > 0
-        ? <button type="button" onClick={onInvite} className={actionClass}>Invite players</button>
+        ? <button type="button" onClick={onInvite} className={actionClass}>{tTeam("invitePlayers")}</button>
         : undefined,
     },
     ...(PAYMENT_STEP_ENABLED ? [paymentItem] : []),
     {
-      title:  "Kickoff",
+      title:  t("start.title"),
       detail: firstRound
-        ? `${firstRound.label} starts ${formatDate(firstRound.starts_at)}.`
-        : "The start date is announced in the 451° Telegram channel.",
+        ? t("start.date", { round: firstRound.label, date: formatDate(firstRound.starts_at, locale) })
+        : t("start.tba"),
       state:  "waiting",
     },
   ];
@@ -94,8 +99,8 @@ export function KickoffChecklist({ team, paymentStatus, rounds, isCaptain, onInv
   return (
     <section className="rounded-2xl border border-[var(--rd-border)] bg-[var(--rd-panel)] p-6 sm:p-7">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="font-display text-xl font-semibold text-[var(--rd-text)]">Before kickoff</h2>
-        <p className="text-sm text-[var(--rd-text-muted)]">{doneCount} of {items.length - 1} done</p>
+        <h2 className="font-display text-xl font-semibold text-[var(--rd-text)]">{t("title")}</h2>
+        <p className="text-sm text-[var(--rd-text-muted)]">{t("progress", { done: doneCount, total: items.length - 1 })}</p>
       </div>
 
       <ul className="mt-5 divide-y divide-[var(--rd-border)]">

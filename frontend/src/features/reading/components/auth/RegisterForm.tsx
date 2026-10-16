@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { z } from "zod";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
@@ -11,13 +12,17 @@ import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStor
 import { nextReadingStage } from "@/features/reading/lib/nextStage";
 import type { ReadingUser } from "@berea/api";
 
-const registerSchema = z.object({
-  full_name: z.string().min(1, "Enter your name").max(120),
-  email:     z.string().email("Enter a valid email address"),
-  password:  z.string().min(8, "At least 8 characters"),
-});
+type RegisterErrorKey = "nameRequired" | "invalidEmail" | "passwordTooShort";
 
-type RegisterValues = z.infer<typeof registerSchema>;
+function createRegisterSchema(tErrors: (key: RegisterErrorKey) => string) {
+  return z.object({
+    full_name: z.string().min(1, tErrors("nameRequired")).max(120),
+    email:     z.string().email(tErrors("invalidEmail")),
+    password:  z.string().min(8, tErrors("passwordTooShort")),
+  });
+}
+
+type RegisterValues = z.infer<ReturnType<typeof createRegisterSchema>>;
 type FieldErrors = Partial<Record<keyof RegisterValues, string>>;
 
 const inputBase =
@@ -28,6 +33,10 @@ export function ReadingRegisterForm() {
   const searchParams = useSearchParams();
   const invite = searchParams.get("invite");
   const { setSession, updateUser } = useReadingAuthStore();
+  const t       = useTranslations("reading.auth.register");
+  const tFields = useTranslations("reading.auth.fields");
+  const tErrors = useTranslations("reading.auth.errors");
+  const registerSchema = useMemo(() => createRegisterSchema(tErrors), [tErrors]);
 
   const [values, setValues] = useState<RegisterValues>({ full_name: "", email: "", password: "" });
   const [fieldErrors,  setFieldErrors]  = useState<FieldErrors>({});
@@ -75,7 +84,7 @@ export function ReadingRegisterForm() {
       router.push(nextReadingStage(profile, invite));
     } catch (err: unknown) {
       setServerError(
-        isApiError(err) ? err.detail : "Something went wrong. Please try again."
+        isApiError(err) ? err.detail : tErrors("generic")
       );
     } finally {
       setIsSubmitting(false);
@@ -97,9 +106,9 @@ export function ReadingRegisterForm() {
           type="text"
           value={values.full_name}
           onChange={(e) => setField("full_name", e.target.value)}
-          placeholder="Full name"
+          placeholder={tFields("fullName")}
           autoComplete="name"
-          aria-label="Full name"
+          aria-label={tFields("fullName")}
           className={cn(inputBase, fieldErrors.full_name && "border-red-400 focus:border-red-400")}
         />
         {fieldErrors.full_name && <p className="text-[11px] text-red-400">{fieldErrors.full_name}</p>}
@@ -113,7 +122,7 @@ export function ReadingRegisterForm() {
           onChange={(e) => setField("email", e.target.value)}
           placeholder="you@example.com"
           autoComplete="email"
-          aria-label="Email"
+          aria-label={tFields("email")}
           className={cn(inputBase, fieldErrors.email && "border-red-400 focus:border-red-400")}
         />
         {fieldErrors.email && <p className="text-[11px] text-red-400">{fieldErrors.email}</p>}
@@ -126,14 +135,15 @@ export function ReadingRegisterForm() {
             type={showPassword ? "text" : "password"}
             value={values.password}
             onChange={(e) => setField("password", e.target.value)}
-            placeholder="Password"
+            placeholder={tFields("password")}
             autoComplete="new-password"
-            aria-label="Password"
+            aria-label={tFields("password")}
             className={cn(inputBase, "pr-11", fieldErrors.password && "border-red-400 focus:border-red-400")}
           />
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
+            aria-label={tFields(showPassword ? "hidePassword" : "showPassword")}
             className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--rd-text-muted)] hover:text-[var(--rd-text)] transition-colors"
           >
             {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -150,7 +160,7 @@ export function ReadingRegisterForm() {
         {isSubmitting && (
           <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#1a0e05] border-t-transparent" />
         )}
-        Create account
+        {t("submit")}
       </button>
     </form>
   );

@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { Route } from "next";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { Radio } from "lucide-react";
 import { readingLiveQuizApi } from "@berea/api";
 import { usePolling } from "@berea/core";
@@ -13,6 +14,7 @@ const LIVE_CHECK_INTERVAL_MS = 5000;
 
 /** Invites students into a running quiz from any page of the app. */
 export function LiveQuizBanner() {
+  const t = useTranslations("reading.shell.liveQuiz");
   const pathname = usePathname();
   const load = useCallback(() => readingLiveQuizApi.live(), []);
   const { data: live } = usePolling(load, LIVE_CHECK_INTERVAL_MS);
@@ -36,8 +38,8 @@ export function LiveQuizBanner() {
               <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-black/70" />
             </span>
             <Radio size={15} />
-            Quiz night is live: {live.quiz_title} — tap to join
-            <span className="rounded-full bg-black/15 px-2 py-0.5 font-mono tracking-widest">PIN {live.pin}</span>
+            {t("banner", { title: live.quiz_title })}
+            <span className="rounded-full bg-black/15 px-2 py-0.5 font-mono tracking-widest">{t("pin", { pin: live.pin })}</span>
           </Link>
         </motion.div>
       )}
