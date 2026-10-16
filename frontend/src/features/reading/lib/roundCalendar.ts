@@ -17,12 +17,19 @@ export function roundDayProgress(round: SemesterRound, now: number): RoundDayPro
   return { dayNumber, totalDays, daysLeft: totalDays - dayNumber };
 }
 
-/** "Fall semester 2026" — named after the month and year the first round starts in. */
-export function seasonLabel(rounds: SemesterRound[]): string | null {
+export type SemesterTerm = "spring" | "summer" | "fall";
+
+export interface Semester {
+  term: SemesterTerm;
+  year: number;
+}
+
+/** Named after the month and year the first round starts in, e.g. fall 2026. */
+export function semesterOf(rounds: SemesterRound[]): Semester | null {
   const first = [...rounds].sort((a, b) => a.index - b.index)[0];
   if (!first) return null;
   const start = new Date(first.starts_at);
   const month = start.getMonth();
-  const term = month <= 4 ? "Spring" : month <= 6 ? "Summer" : "Fall";
-  return `${term} semester ${start.getFullYear()}`;
+  const term: SemesterTerm = month <= 4 ? "spring" : month <= 6 ? "summer" : "fall";
+  return { term, year: start.getFullYear() };
 }

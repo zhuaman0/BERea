@@ -1,5 +1,7 @@
 import Image from "next/image";
 import { BookOpen, Flame, Trophy } from "lucide-react";
+import { getTranslations } from "next-intl/server";
+import { ReadingLocaleSwitcher } from "@/features/reading/components/ReadingLocaleSwitcher";
 
 const FLAME_PATH =
   "M0,200 L0,65 L43,134 L86,70 L129,166 L171,48 L214,129 L257,79 L300,131 L343,68 L386,162 L429,48 L471,157 L514,58 L557,127 L600,50 L643,152 L686,71 L729,129 L771,60 L814,130 L857,80 L900,152 L943,48 L986,161 L1029,52 L1071,139 L1114,85 L1157,165 L1200,82 L1200,200 Z";
@@ -13,7 +15,9 @@ const EMBERS = [
   { left: "88%", size: 4, delay: "1.9s", duration: "7.5s", drift: "-11px" },
 ] as const;
 
-export default function ReadingAuthLayout({ children }: { children: React.ReactNode }) {
+export default async function ReadingAuthLayout({ children }: { children: React.ReactNode }) {
+  const t = await getTranslations("reading.auth.layout");
+
   return (
     <div className="flex h-screen overflow-y-auto lg:overflow-hidden">
       {/* Form side */}
@@ -24,6 +28,7 @@ export default function ReadingAuthLayout({ children }: { children: React.ReactN
             <span className="font-display text-[13px] font-semibold tracking-[0.28em] text-[var(--rd-text-muted)]">
               NATS SPIREA
             </span>
+            <ReadingLocaleSwitcher className="ml-auto" />
           </div>
           {children}
         </div>
@@ -100,23 +105,22 @@ export default function ReadingAuthLayout({ children }: { children: React.ReactN
           </div>
           <div className="flex flex-col gap-3">
             <h2 className="font-display text-3xl font-semibold text-[var(--rd-text)]">
-              Read four books.
+              {t("headline")}
               <br />
-              Win the semester.
+              {t("headlineSecond")}
             </h2>
             <p className="max-w-[320px] text-[14px] leading-relaxed text-[var(--rd-text-muted)]">
-              Teams of 3, one book a month, live quiz nights, and bonus tasks — the
-              top team on the leaderboard takes the prize.
+              {t("tagline")}
             </p>
           </div>
           <div className="flex items-center gap-6 text-[12px] text-[var(--rd-text-muted)]">
             <span className="flex items-center gap-2">
               <Flame size={15} className="text-[var(--rd-accent-from)]" />
-              Reading streaks
+              {t("streaks")}
             </span>
             <span className="flex items-center gap-2">
               <Trophy size={15} className="text-[var(--rd-accent-from)]" />
-              Team leaderboard
+              {t("leaderboard")}
             </span>
           </div>
         </div>

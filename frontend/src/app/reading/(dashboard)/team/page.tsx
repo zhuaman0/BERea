@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { MotionConfig } from "framer-motion";
 import { BookOpen, Flame, Trophy } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { StatStrip, type StatStripItem } from "@berea/ui-kit";
 import { InvitePlayersModal } from "@/features/reading/components/team/InvitePlayersModal";
 import { KickoffChecklist } from "@/features/reading/components/team/KickoffChecklist";
@@ -16,8 +17,10 @@ import type { ReadingTeam, SemesterRound } from "@berea/api";
 import { READING_PAGE_CONTAINER } from "@/features/reading/lib/pageContainer";
 
 function TeamPageSkeleton() {
+  const t = useTranslations("reading.team");
+
   return (
-    <div className="flex animate-pulse flex-col gap-6" aria-label="Loading your team">
+    <div className="flex animate-pulse flex-col gap-6" aria-label={t("loading")}>
       <div className="h-64 rounded-[28px] bg-[var(--rd-panel)]" />
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="h-80 rounded-2xl bg-[var(--rd-panel)]" />
@@ -28,6 +31,7 @@ function TeamPageSkeleton() {
 }
 
 export default function ReadingTeamPage() {
+  const t = useTranslations("reading.team");
   const { user, updateUser } = useReadingAuthStore();
 
   const [team, setTeam] = useState<ReadingTeam | null>(null);
@@ -46,9 +50,9 @@ export default function ReadingTeamPage() {
       .catch(() => { /* still load the team below */ })
       .then(() => readingAuthApi.myTeam())
       .then(setTeam)
-      .catch((err) => setLoadError(isApiError(err) ? err.detail : "Couldn't load your team."))
+      .catch((err) => setLoadError(isApiError(err) ? err.detail : t("loadError")))
       .finally(() => setIsLoading(false));
-  }, [updateUser]);
+  }, [updateUser, t]);
 
   useEffect(() => {
     readingSemesterApi.listRounds().then(setRounds).catch(() => { /* kickoff shows "date announced" */ });
@@ -69,17 +73,21 @@ export default function ReadingTeamPage() {
 
   const statItems: StatStripItem[] = team
     ? [
-        { icon: Trophy, label: "Team points", value: `${team.points}`, note: `Place ${team.place} of ${team.teams_total}`, accent: false },
         {
-          icon: BookOpen, label: "Books finished by everyone",
-          value: rounds.length > 0 ? `${team.books_finished}/${rounds.length}` : `${team.books_finished}`,
-          note: activeRound ? `${activeRound.label} in progress` : "No active round",
+          icon: Trophy, label: t("stats.points"), value: `${team.points}`,
+          note: t("place", { place: team.place, total: team.teams_total }),
           accent: false,
         },
         {
-          icon: Flame, label: "Your streak",
-          value: `${me?.current_streak ?? 0} ${(me?.current_streak ?? 0) === 1 ? "day" : "days"}`,
-          note: me?.active_today ? "Checked in today" : "Open the app today to keep it",
+          icon: BookOpen, label: t("stats.books"),
+          value: rounds.length > 0 ? `${team.books_finished}/${rounds.length}` : `${team.books_finished}`,
+          note: activeRound ? t("stats.roundInProgress", { round: activeRound.label }) : t("stats.noActiveRound"),
+          accent: false,
+        },
+        {
+          icon: Flame, label: t("stats.streak"),
+          value: t("stats.streakDays", { count: me?.current_streak ?? 0 }),
+          note: me?.active_today ? t("stats.checkedIn") : t("stats.keepStreak"),
           accent: true,
         },
       ]
@@ -91,7 +99,7 @@ export default function ReadingTeamPage() {
       {isLoading ? (
         <TeamPageSkeleton />
       ) : loadError || !team ? (
-        <p className="text-sm text-[var(--rd-text-muted)]">{loadError ?? "You haven't joined a team yet."}</p>
+        <p className="text-sm text-[var(--rd-text-muted)]">{loadError ?? t("noTeam")}</p>
       ) : (
         <div className="flex flex-col gap-6">
           <TeamHero

@@ -2,16 +2,18 @@ import Image from "next/image";
 import Link from "next/link";
 import { Space_Grotesk, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import { cookies } from "next/headers";
+import { getTranslations } from "next-intl/server";
 import { ArrowRight, ChevronDown, Flame } from "lucide-react";
 import "@/app/reading/reading.css";
 import { Rulebook } from "@/features/reading/components/Rulebook";
+import { ReadingLocaleSwitcher } from "@/features/reading/components/ReadingLocaleSwitcher";
 
 const spaceGrotesk = Space_Grotesk({ variable: "--font-space-grotesk", subsets: ["latin"], display: "swap" });
 const ibmPlexSans  = IBM_Plex_Sans({ variable: "--font-ibm-plex-sans", subsets: ["latin"], weight: ["400", "500", "600"], display: "swap" });
 const ibmPlexMono  = IBM_Plex_Mono({ variable: "--font-ibm-plex-mono", subsets: ["latin"], weight: ["400", "500"], display: "swap" });
 
 const NAV_LINKS = [
-  { href: "#rules", label: "Rules" },
+  { href: "#rules", labelKey: "nav.rules" },
 ];
 
 const FLAME_PATH =
@@ -30,6 +32,7 @@ const EMBERS = [
 
 export default async function LandingPage() {
   const isSignedIn = (await cookies()).has("nats-session");
+  const t = await getTranslations("reading.landing");
 
   return (
     <div className={`reading-theme ${spaceGrotesk.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable}`}>
@@ -37,13 +40,13 @@ export default async function LandingPage() {
       <header className="fixed inset-x-0 top-0 z-20 border-b border-white/5 bg-[var(--rd-ink)]/75 backdrop-blur-md">
         <div className="mx-auto flex h-20 max-w-6xl items-center justify-between px-6 lg:px-10">
           <Link href="/" className="flex items-center gap-3">
-            <Image src="/logo_451.png" alt="451" width={36} height={36} className="rounded-lg" />
+            <Image src="/logo_451.png" alt={t("logoAlt")} width={36} height={36} className="rounded-lg" />
             <span className="font-display text-lg font-semibold tracking-wide text-[var(--rd-text)]">451°</span>
           </Link>
 
           <nav className="font-display hidden items-center gap-1 sm:flex">
             <span className="rd-accent-gradient rounded-full px-4 py-2 text-sm font-semibold text-[#1a0e05]">
-              Main
+              {t("nav.home")}
             </span>
             {NAV_LINKS.map((link) => (
               <a
@@ -51,17 +54,20 @@ export default async function LandingPage() {
                 href={link.href}
                 className="rounded-full px-4 py-2 text-sm font-medium text-[var(--rd-text-muted)] transition-colors hover:bg-white/5 hover:text-[var(--rd-text)]"
               >
-                {link.label}
+                {t(link.labelKey)}
               </a>
             ))}
           </nav>
 
-          <Link
-            href={isSignedIn ? "/reading/team" : "/reading/login"}
-            className="font-display rounded-lg border border-white/15 px-5 py-2 text-sm font-medium text-[var(--rd-text)] transition-colors hover:border-white/30 hover:bg-white/5"
-          >
-            {isSignedIn ? "Open my team" : "Sign in"}
-          </Link>
+          <div className="flex items-center gap-3">
+            <ReadingLocaleSwitcher />
+            <Link
+              href={isSignedIn ? "/reading/team" : "/reading/login"}
+              className="font-display rounded-lg border border-white/15 px-5 py-2 text-sm font-medium text-[var(--rd-text)] transition-colors hover:border-white/30 hover:bg-white/5"
+            >
+              {isSignedIn ? t("openTeam") : t("signIn")}
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -114,31 +120,33 @@ export default async function LandingPage() {
         <div className="relative z-10 mx-auto flex max-w-4xl flex-col items-center">
           <span className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-[var(--rd-text-muted)]">
             <Flame size={13} className="text-[var(--rd-accent-from)]" />
-            NATS Spirea presents
+            {t("hero.eyebrow")}
           </span>
           <h1 className="font-display mt-5 max-w-4xl text-5xl font-semibold leading-[1.05] text-[var(--rd-text)] sm:text-6xl lg:text-7xl">
-            451° is a{" "}
-            <span className="bg-gradient-to-r from-[var(--rd-accent-from)] to-[var(--rd-accent-to)] bg-clip-text text-transparent">
-              book battle
-            </span>
+            {t.rich("hero.title", {
+              accent: (chunks) => (
+                <span className="bg-gradient-to-r from-[var(--rd-accent-from)] to-[var(--rd-accent-to)] bg-clip-text text-transparent">
+                  {chunks}
+                </span>
+              ),
+            })}
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-lg text-[var(--rd-text-muted)]">
-            Immerse yourself in the world of literature — team up, read, and compete for
-            the semester crown.
+            {t("hero.subtitle")}
           </p>
           <div className="mt-9 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
             <Link
               href={isSignedIn ? "/reading/team" : "/reading/register"}
               className="rd-accent-gradient inline-flex items-center justify-center gap-2 rounded-lg px-7 py-3.5 text-sm font-semibold text-[#1a0e05] transition-all hover:-translate-y-0.5 hover:opacity-90"
             >
-              {isSignedIn ? "Go to my team" : "Join the Book Battle"}
+              {isSignedIn ? t("hero.goToTeam") : t("hero.join")}
               <ArrowRight size={16} />
             </Link>
             <a
               href="#rules"
               className="group inline-flex items-center justify-center gap-2 rounded-lg border border-white/20 bg-white/[0.04] px-7 py-3.5 text-sm font-semibold text-[var(--rd-text)] backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-[var(--rd-accent-from)]/60 hover:bg-[var(--rd-accent-from)]/[0.08]"
             >
-              View the Rules
+              {t("hero.viewRules")}
               <ChevronDown
                 size={15}
                 className="text-[var(--rd-accent-from)] transition-transform group-hover:translate-y-0.5"
@@ -152,7 +160,7 @@ export default async function LandingPage() {
           href="#rules"
           className="absolute bottom-10 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-2 text-[var(--rd-text-muted)] transition-colors hover:text-[var(--rd-text)]"
         >
-          <span className="text-[10px] uppercase tracking-[0.25em]">Scroll</span>
+          <span className="text-[10px] uppercase tracking-[0.25em]">{t("hero.scroll")}</span>
           <ChevronDown size={18} className="animate-bounce" />
         </a>
       </section>
@@ -161,10 +169,10 @@ export default async function LandingPage() {
       <section id="rules" className="scroll-mt-20 border-t border-white/5 px-6 py-24 lg:px-10">
         <div className="mx-auto max-w-5xl">
           <span className="block text-center text-xs uppercase tracking-[0.3em] text-[var(--rd-accent-from)]">
-            The 451° rulebook
+            {t("rulebook.eyebrow")}
           </span>
           <h2 className="font-display mt-3 text-center text-3xl font-semibold text-[var(--rd-text)] sm:text-4xl">
-            How the season works
+            {t("rulebook.title")}
           </h2>
           <div className="mt-12">
             <Rulebook />
@@ -177,10 +185,10 @@ export default async function LandingPage() {
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 text-xs text-[var(--rd-text-muted)] sm:flex-row">
           <span>© 2026 451° · NATS Spirea</span>
           <div className="flex flex-wrap justify-center gap-6">
-            <span className="cursor-default hover:text-[var(--rd-text)]">Privacy Policy</span>
-            <span className="cursor-default hover:text-[var(--rd-text)]">Contact us</span>
-            <span className="cursor-default hover:text-[var(--rd-text)]">Support us</span>
-            <span className="cursor-default hover:text-[var(--rd-text)]">About us</span>
+            <span className="cursor-default hover:text-[var(--rd-text)]">{t("footer.privacy")}</span>
+            <span className="cursor-default hover:text-[var(--rd-text)]">{t("footer.contact")}</span>
+            <span className="cursor-default hover:text-[var(--rd-text)]">{t("footer.support")}</span>
+            <span className="cursor-default hover:text-[var(--rd-text)]">{t("footer.about")}</span>
           </div>
         </div>
       </footer>

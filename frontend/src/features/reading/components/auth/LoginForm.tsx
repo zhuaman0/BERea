@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { z } from "zod";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
@@ -11,12 +12,16 @@ import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStor
 import { nextReadingStage } from "@/features/reading/lib/nextStage";
 import type { ReadingUser } from "@berea/api";
 
-const loginSchema = z.object({
-  email:    z.string().email("Enter a valid email address"),
-  password: z.string().min(1, "Enter your password"),
-});
+type LoginErrorKey = "invalidEmail" | "passwordRequired";
 
-type LoginValues = z.infer<typeof loginSchema>;
+function createLoginSchema(tErrors: (key: LoginErrorKey) => string) {
+  return z.object({
+    email:    z.string().email(tErrors("invalidEmail")),
+    password: z.string().min(1, tErrors("passwordRequired")),
+  });
+}
+
+type LoginValues = z.infer<ReturnType<typeof createLoginSchema>>;
 type FieldErrors = Partial<Record<keyof LoginValues, string>>;
 
 const inputBase =
@@ -26,6 +31,10 @@ export function ReadingLoginForm() {
   const router = useRouter();
   const invite = useSearchParams().get("invite");
   const { setSession, updateUser } = useReadingAuthStore();
+  const t       = useTranslations("reading.auth.login");
+  const tFields = useTranslations("reading.auth.fields");
+  const tErrors = useTranslations("reading.auth.errors");
+  const loginSchema = useMemo(() => createLoginSchema(tErrors), [tErrors]);
 
   const [values,       setValues]       = useState<LoginValues>({ email: "", password: "" });
   const [fieldErrors,  setFieldErrors]  = useState<FieldErrors>({});
@@ -73,7 +82,7 @@ export function ReadingLoginForm() {
       router.push(nextReadingStage(profile, invite));
     } catch (err: unknown) {
       setServerError(
-        isApiError(err) ? err.detail : "Something went wrong. Please try again."
+        isApiError(err) ? err.detail : tErrors("generic")
       );
     } finally {
       setIsSubmitting(false);
@@ -98,7 +107,7 @@ export function ReadingLoginForm() {
           onChange={(e) => setField("email", e.target.value)}
           placeholder="you@example.com"
           autoComplete="email"
-          aria-label="Email"
+          aria-label={tFields("email")}
           className={cn(inputBase, fieldErrors.email && "border-red-400 focus:border-red-400")}
         />
         {fieldErrors.email && <p className="text-[11px] text-red-400">{fieldErrors.email}</p>}
@@ -112,14 +121,15 @@ export function ReadingLoginForm() {
             type={showPassword ? "text" : "password"}
             value={values.password}
             onChange={(e) => setField("password", e.target.value)}
-            placeholder="Password"
+            placeholder={tFields("password")}
             autoComplete="current-password"
-            aria-label="Password"
+            aria-label={tFields("password")}
             className={cn(inputBase, "pr-11", fieldErrors.password && "border-red-400 focus:border-red-400")}
           />
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
+            aria-label={tFields(showPassword ? "hidePassword" : "showPassword")}
             className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--rd-text-muted)] hover:text-[var(--rd-text)] transition-colors"
           >
             {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -137,7 +147,7 @@ export function ReadingLoginForm() {
         {isSubmitting && (
           <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#1a0e05] border-t-transparent" />
         )}
-        Sign in
+        {t("submit")}
       </button>
     </form>
   );

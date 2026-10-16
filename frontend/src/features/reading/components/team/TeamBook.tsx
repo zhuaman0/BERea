@@ -2,6 +2,7 @@
 
 import { useId } from "react";
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { cn } from "@/shared/lib/utils";
 import type { TeamCover } from "@berea/api";
 import { COVER_COLORS, COVER_EMBLEMS } from "./coverOptions";
@@ -39,6 +40,7 @@ interface TeamBookProps {
 
 /** The team's emblem: a hardcover book whose cover each team designs itself. */
 export function TeamBook({ cover, teamName, compact = false, className }: TeamBookProps) {
+  const t = useTranslations("reading.team.cover");
   const baseId = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const clipId = `book-clip-${baseId}`;
   const gradientId = `book-color-${baseId}`;
@@ -46,7 +48,7 @@ export function TeamBook({ cover, teamName, compact = false, className }: TeamBo
   const patternId = `book-pattern-${baseId}`;
 
   const color = COVER_COLORS[cover.color];
-  const EmblemIcon = COVER_EMBLEMS[cover.emblem].icon;
+  const EmblemIcon = COVER_EMBLEMS[cover.emblem];
   const isAnimated = !compact && cover.animation !== "still";
   const titleLines = wrapTitle(cover.title ?? teamName);
 
@@ -58,7 +60,7 @@ export function TeamBook({ cover, teamName, compact = false, className }: TeamBo
   const emblemSize = compact ? 64 : 46;
 
   return (
-    <svg viewBox="0 0 200 200" role="img" aria-label={`${teamName} team book cover`} className={cn("overflow-visible", className)}>
+    <svg viewBox="0 0 200 200" role="img" aria-label={t("bookAria", { name: teamName })} className={cn("overflow-visible", className)}>
       <defs>
         <clipPath id={clipId}>
           <rect x={x} y={y} width={width} height={height} rx={radius} />

@@ -2,12 +2,15 @@
 
 import { motion } from "framer-motion";
 import { Flame } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Rulebook } from "@/features/reading/components/Rulebook";
 import { READING_PAGE_CONTAINER } from "@/features/reading/lib/pageContainer";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 export default function ReadingRulesPage() {
+  const t = useTranslations("reading.rulebook.page");
+
   return (
     <div className={READING_PAGE_CONTAINER}>
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
@@ -35,17 +38,19 @@ export default function ReadingRulesPage() {
         <div className="relative max-w-2xl">
           <span className="inline-flex items-center gap-2 rounded-full border border-[var(--rd-accent-from)]/30 bg-[var(--rd-accent-from)]/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.2em] text-[var(--rd-accent-from)]">
             <Flame size={12} />
-            The 451° rulebook
+            {t("eyebrow")}
           </span>
           <h1 className="font-display mt-5 text-4xl font-semibold leading-[1.05] text-[var(--rd-text)] sm:text-5xl">
-            Read together.{" "}
-            <span className="bg-gradient-to-r from-[var(--rd-accent-from)] to-[var(--rd-accent-to)] bg-clip-text text-transparent">
-              Win the semester.
-            </span>
+            {t.rich("title", {
+              accent: (chunks) => (
+                <span className="bg-gradient-to-r from-[var(--rd-accent-from)] to-[var(--rd-accent-to)] bg-clip-text text-transparent">
+                  {chunks}
+                </span>
+              ),
+            })}
           </h1>
           <p className="mt-5 max-w-lg text-[15px] leading-relaxed text-[var(--rd-text-muted)]">
-            451° is a game where teams of students compete by reading books — one book a month,
-            one semester, one champion.
+            {t("subtitle")}
           </p>
         </div>
       </motion.section>

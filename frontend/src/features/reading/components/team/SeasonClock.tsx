@@ -3,9 +3,11 @@
 import { useSyncExternalStore } from "react";
 import { motion } from "framer-motion";
 import { Hourglass } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { cn } from "@/shared/lib/utils";
 import type { SemesterRound } from "@berea/api";
 import { roundDayProgress } from "@/features/reading/lib/roundCalendar";
+import { formatReadingDate } from "@/features/reading/lib/formatReadingDate";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 const MINUTE_MS = 60_000;
@@ -26,17 +28,18 @@ function getServerSnapshot(): null {
   return null;
 }
 
-function formatShortDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+function formatShortDate(iso: string, locale: string): string {
+  return formatReadingDate(iso, locale, "dayMonthShort");
 }
 
-function formatDuration(ms: number): { value: number; unit: string } {
-  if (ms >= DAY_MS) {
-    const days = Math.ceil(ms / DAY_MS);
-    return { value: days, unit: days === 1 ? "day" : "days" };
-  }
-  const hours = Math.max(Math.ceil(ms / HOUR_MS), 1);
-  return { value: hours, unit: hours === 1 ? "hour" : "hours" };
+interface Duration {
+  value: number;
+  unit:  "day" | "hour";
+}
+
+function toDuration(ms: number): Duration {
+  if (ms >= DAY_MS) return { value: Math.ceil(ms / DAY_MS), unit: "day" };
+  return { value: Math.max(Math.ceil(ms / HOUR_MS), 1), unit: "hour" };
 }
 
 interface SeasonClockProps {
@@ -44,6 +47,7 @@ interface SeasonClockProps {
 }
 
 export function SeasonClock({ rounds }: SeasonClockProps) {
+  const t = useTranslations("reading.team.clock");
   const now = useSyncExternalStore<number | null>(subscribeToMinutes, getMinuteSnapshot, getServerSnapshot);
 
   const timed = [...rounds].sort((a, b) => a.index - b.index).map((r) => ({
@@ -52,10 +56,10 @@ export function SeasonClock({ rounds }: SeasonClockProps) {
     end: new Date(r.ends_at).getTime(),
   }));
   const hasBegun = rounds.some((r) => r.status !== "locked");
-  const active = timed.find((t) => t.round.status === "in_progress");
+  const active = timed.find((slot) => slot.round.status === "in_progress");
   // Before kickoff only Round 1 can be "next"; a later round never jumps the queue because Round 1's date passed.
-  const candidates = hasBegun ? timed.filter((t) => t.round.status === "locked") : timed.slice(0, 1);
-  const next = now === null ? undefined : candidates.find((t) => t.start > now);
+  const candidates = hasBegun ? timed.filter((slot) => slot.round.status === "locked") : timed.slice(0, 1);
+  const next = now === null ? undefined : candidates.find((slot) => slot.start > now);
 
   return (
     <motion.section
@@ -66,7 +70,7 @@ export function SeasonClock({ rounds }: SeasonClockProps) {
     >
       <div className="flex items-center gap-2 text-[var(--rd-text-muted)]">
         <Hourglass size={14} />
-        <p className="text-[11px] font-semibold uppercase tracking-[0.2em]">Season clock</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em]">{t("title")}</p>
       </div>
 
       {now === null ? (
@@ -77,26 +81,23 @@ export function SeasonClock({ rounds }: SeasonClockProps) {
         <UpcomingRound round={next.round} msUntilStart={next.start - now} />
       ) : !hasBegun ? (
         <div className="mt-4">
-          <p className="font-display text-xl font-semibold text-[var(--rd-text)]">Registration is open</p>
-          <p className="mt-2 text-xs leading-relaxed text-[var(--rd-text-muted)]">
-            The season hasn&apos;t started yet. Round 1 opens at kickoff — the date is announced in the
-            451° Telegram channel.
-          </p>
+          <p className="font-display text-xl font-semibold text-[var(--rd-text)]">{t("registrationTitle")}</p>
+          <p className="mt-2 text-xs leading-relaxed text-[var(--rd-text-muted)]">{t("registrationBody")}</p>
         </div>
       ) : (
         <p className="mt-4 font-display text-xl font-semibold text-[var(--rd-text)]">
-          {rounds.length > 0 ? "Season complete" : "Schedule coming soon"}
+          {rounds.length > 0 ? t("complete") : t("scheduleSoon")}
         </p>
       )}
 
       {now !== null && timed.length > 0 && (
         <div className="mt-6 flex gap-1.5">
-          {timed.map((t, i) => {
-            const isDone = t.round.status === "done";
-            const isActive = t.round.status === "in_progress";
-            const fill = isActive ? Math.min(Math.max((now - t.start) / (t.end - t.start), 0), 1) : isDone ? 1 : 0;
+          {timed.map((slot, i) => {
+            const isDone = slot.round.status === "done";
+            const isActive = slot.round.status === "in_progress";
+            const fill = isActive ? Math.min(Math.max((now - slot.start) / (slot.end - slot.start), 0), 1) : isDone ? 1 : 0;
             return (
-              <div key={t.round.id} className="flex flex-1 flex-col gap-1.5">
+              <div key={slot.round.id} className="flex flex-1 flex-col gap-1.5">
                 <div className={cn("h-1.5 overflow-hidden rounded-full", isActive ? "bg-white/[0.08]" : "bg-[var(--rd-border)]")}>
                   <motion.div
                     initial={{ width: 0 }}
@@ -106,7 +107,7 @@ export function SeasonClock({ rounds }: SeasonClockProps) {
                   />
                 </div>
                 <span className={cn("text-[10px]", isActive ? "font-semibold text-[var(--rd-text)]" : "text-[var(--rd-text-muted)]")}>
-                  R{t.round.index}
+                  {t("roundShort", { index: slot.round.index })}
                 </span>
               </div>
             );
@@ -129,41 +130,46 @@ interface UpcomingRoundProps {
 }
 
 function UpcomingRound({ round, msUntilStart }: UpcomingRoundProps) {
-  const until = formatDuration(msUntilStart);
+  const t = useTranslations("reading.team.clock");
+  const until = toDuration(msUntilStart);
 
   return (
     <div className="mt-4">
-      <p className="font-display text-xl font-semibold text-[var(--rd-text)]">{round.label} starts soon</p>
+      <p className="font-display text-xl font-semibold text-[var(--rd-text)]">{t("startsSoon", { round: round.label })}</p>
       <p className="mt-3 flex items-baseline gap-2">
         <span className="font-display text-5xl font-semibold text-[var(--rd-text)]">{until.value}</span>
-        <span className="text-sm text-[var(--rd-text-muted)]">{until.unit} to go</span>
+        <span className="text-sm text-[var(--rd-text-muted)]">
+          {until.unit === "day" ? t("daysToGo", { count: until.value }) : t("hoursToGo", { count: until.value })}
+        </span>
       </p>
     </div>
   );
 }
 
 function ActiveRound({ round, end, now }: ActiveRoundProps) {
+  const t = useTranslations("reading.team.clock");
+  const locale = useLocale();
   const { dayNumber, totalDays, daysLeft } = roundDayProgress(round, now);
-  const remaining = daysLeft > 0
-    ? { value: daysLeft, unit: daysLeft === 1 ? "day left" : "days left" }
-    : { value: formatDuration(end - now).value, unit: `${formatDuration(end - now).unit} left` };
+  const remaining: Duration = daysLeft > 0 ? { value: daysLeft, unit: "day" } : toDuration(end - now);
 
   return (
     <div className="mt-4">
       <div className="flex items-baseline justify-between gap-3">
         <p className="font-display text-xl font-semibold text-[var(--rd-text)]">{round.label}</p>
         <p className="text-xs text-[var(--rd-text-muted)]">
-          {formatShortDate(round.starts_at)} – {formatShortDate(round.ends_at)}
+          {formatShortDate(round.starts_at, locale)} – {formatShortDate(round.ends_at, locale)}
         </p>
       </div>
       <p className="mt-3 flex items-baseline gap-2">
         <span className="bg-gradient-to-r from-[var(--rd-accent-from)] to-[var(--rd-accent-to)] bg-clip-text font-display text-5xl font-semibold text-transparent">
           {remaining.value}
         </span>
-        <span className="text-sm text-[var(--rd-text-muted)]">{remaining.unit}</span>
+        <span className="text-sm text-[var(--rd-text-muted)]">
+          {remaining.unit === "day" ? t("daysLeft", { count: remaining.value }) : t("hoursLeft", { count: remaining.value })}
+        </span>
       </p>
       <p className="mt-1 text-xs text-[var(--rd-text-muted)]">
-        {daysLeft > 0 ? `Day ${dayNumber} of ${totalDays}` : `Last day of ${totalDays}`}
+        {daysLeft > 0 ? t("dayOf", { day: dayNumber, total: totalDays }) : t("lastDayOf", { total: totalDays })}
       </p>
     </div>
   );
