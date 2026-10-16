@@ -24,6 +24,11 @@
   font-family: var(--font-ibm-plex-sans), system-ui, sans-serif;
 }
 
+/* Keep the browser canvas dark when zooming or overscrolling beyond the module shell. */
+body:has(.reading-theme) {
+  background-color: #0b0b0c;
+}
+
 .reading-theme .font-display {
   font-family: var(--font-space-grotesk), system-ui, sans-serif;
 }

@@ -50,7 +50,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const dayProgress = activeRound && roundsLoadedAt !== null ? roundDayProgress(activeRound, roundsLoadedAt) : null;
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden">
+    <div className="flex h-full flex-col overflow-hidden">
       <ReadingStageGuard mode="require-team" />
       <ReadingTopbar
         semester={semesterOf(rounds)}
