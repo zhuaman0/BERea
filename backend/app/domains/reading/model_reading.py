@@ -4,6 +4,7 @@ import uuid
 from datetime import date, datetime
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     Date,
     DateTime,
@@ -183,6 +184,8 @@ class ReadingQuiz(TimestampMixin, Base):
     month_label: Mapped[str] = mapped_column(String(60), nullable=False)
     scheduled_for: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     status: Mapped[str] = mapped_column(String(20), default="draft", server_default="draft", nullable=False)
+    # "instant" reveals after every question (Kahoot-style); "rounds" is the quiz-night format.
+    format: Mapped[str] = mapped_column(String(20), default="instant", server_default="instant", nullable=False)
 
     questions: Mapped[list[ReadingQuizQuestion]] = relationship(
         back_populates="quiz", cascade="all, delete-orphan", order_by="ReadingQuizQuestion.position"
@@ -200,6 +203,13 @@ class ReadingQuizQuestion(Base):
     text: Mapped[str] = mapped_column(Text, nullable=False)
     time_limit_seconds: Mapped[int] = mapped_column(Integer, nullable=False)
     points: Mapped[int] = mapped_column(Integer, nullable=False)
+    round_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    kind: Mapped[str] = mapped_column(String(20), default="choice", server_default="choice", nullable=False)
+    correct_text: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    accepted_answers: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+    # Book passage shown on the answer card; `*italic*` and `==highlight==` markup.
+    quote: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_ref: Mapped[str | None] = mapped_column(String(120), nullable=True)
 
     quiz: Mapped[ReadingQuiz] = relationship(back_populates="questions")
     answers: Mapped[list[ReadingQuizAnswer]] = relationship(
@@ -235,6 +245,10 @@ class ReadingQuizSession(TimestampMixin, Base):
     status: Mapped[str] = mapped_column(String(20), default="lobby", nullable=False)
     current_index: Mapped[int] = mapped_column(Integer, default=-1, nullable=False)
     question_started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Quiz-night cursor: the stored phase in `status`, plus which round/question it is on.
+    round_number: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
+    question_number: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
+    phase_started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     quiz: Mapped[ReadingQuiz] = relationship()
     participants: Mapped[list[ReadingQuizParticipant]] = relationship(
@@ -281,6 +295,35 @@ class ReadingQuizSubmission(Base):
     is_correct: Mapped[bool] = mapped_column(Boolean, nullable=False)
     points: Mapped[int] = mapped_column(Integer, nullable=False)
     answered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ReadingQuizTeamAnswer(Base):
+    """A team's typed answer to one quiz-night question. `grade` is the host's override;
+    when it is None the service grades the text against the question's accepted answers."""
+
+    __tablename__ = "reading_quiz_team_answers"
+    __table_args__ = (UniqueConstraint("session_id", "question_id", "team_id", name="uq_quiz_team_answer"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    session_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("reading_quiz_sessions.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    question_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("reading_quiz_questions.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    team_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("reading_teams.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    text: Mapped[str] = mapped_column(String(300), nullable=False)
+    last_edited_by: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("reading_users.id", ondelete="SET NULL"), nullable=True
+    )
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    grade: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    # Written once when the night finishes; the leaderboard sums it.
+    points: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
+
+    team: Mapped[ReadingTeam] = relationship()
 
 
 class ReadingAppSettings(TimestampMixin, Base):
