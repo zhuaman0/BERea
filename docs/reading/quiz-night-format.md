@@ -22,8 +22,11 @@ questions, then all the answers.
 | 65 | **"ANSWERS"** | A wide orange banner saying ANSWERS, with a small timer graphic top-right: the break between the halves |
 | 66 | Number card "1" | The answer review starts again from question 1 |
 | 67 | Question 1 (again) | The same question, now **without the timer** |
-| 68 | **Answer 1** | The correct answer as the title (e.g. "Seventy-nine days"), with **the passage from the book that proves it** underneath and the key phrase **highlighted** |
-| … | … | Number → question → answer, for every question |
+| 68 | **Answer 1** | Inside the same orange frame: the correct answer as a big white title (e.g. "Seventy-nine days"), and under it **the passage from the book that proves it** |
+| 69 | Number card "1" | Closes answer 1, mirroring how question 1 closed |
+| 70 | Number card "2" | Answer review for question 2 starts |
+| 71 | Question 2 (again) | No timer |
+| … | … | Number → question → answer → number, for every question |
 
 ### What the design does
 
@@ -36,6 +39,12 @@ questions, then all the answers.
 - **The timer is a ring of tick marks that counts down from 30**, not a progress bar.
 - **There are no answer options.** Every question is open-ended ("In how many days…", "What was
   the name of the steamer…", "By what treaty…"), so teams write the answer themselves.
+- **The answer looks like a page cut from the book**: a white box with black **serif** text
+  (book typography, with the original italics kept, e.g. *eighty*) on the black slide. The
+  words that answer the question get a **yellow highlighter** mark (e.g. *seventy-nine*). The
+  answer title above it stays white bold sans-serif.
+- **The answers half mirrors the questions half**: every answer opens and closes with its number
+  card, just as every question did.
 - **The answer slide teaches**: it gives the answer plus the line from the book, so the review
   half doubles as discussion of the book.
 - The three dots and blue corner triangles on the thumbnails are Keynote's own indicators
@@ -88,11 +97,14 @@ For each question *i*:
 
 For each question *i*:
 5. **Number card "*i*"**, then the **question again** (no timer).
-6. **Answer card**: the correct answer, the book quote with its highlighted phrase, and
+6. **Answer card** (same orange frame): the correct answer as a big title, then the book quote
+   shown as a **white "book page" clipping** (serif, black text, original italics, the key words
+   with a yellow highlighter), and
    optionally the chapter or page.
    - Each team also sees **its own answer** with ✓ or ✗ and the points it got.
    - The host screen can show a list of how many teams got it right.
-7. After the last answer: **final scores**, which are added to the leaderboard.
+7. **Number card "*i*" again** closes the answer, then on to number *i+1*.
+8. After the last answer: **final scores**, which are added to the leaderboard.
 
 The host moves through everything with **Next**. The questions half can also auto-advance on
 the timer, as it does now.
@@ -130,7 +142,9 @@ Each question gets a **type** setting:
   - Question text
   - **Correct answer** (shown on the answer card, e.g. "Seventy-nine days")
   - **Accepted answers** (chips, e.g. `79`, `79 days`, `seventy nine`)
-  - **Book quote** (the passage) and the **phrase to highlight** in it
+  - **Book quote** (the passage, with *italics* allowed) and the **phrase to highlight** in it.
+    Alternatively, a **photo or screenshot of the book page** (stored like book covers are) for
+    when retyping isn't worth it.
   - Chapter or page (optional)
   - Time limit (default 30 s) and points (default 1)
 
@@ -177,7 +191,8 @@ at the end)"**.
   - `QuizNumberCard`: the orange square, with a framer-motion `layoutId` shared with
     `QuizQuestionFrame` to recreate the Magic Move
   - `CountdownRing`: the 30 tick marks
-  - `AnswerCard`: the answer plus the book quote with a highlighted `<mark>`
+  - `AnswerCard`: the answer title plus `BookExcerpt`, a white panel with serif text, `<em>`
+    for italics and a yellow `<mark>` for the highlighted phrase (or the uploaded page image)
 - **Player:** `TeamAnswerBox`, a textarea that auto-saves with a short debounce, shows "Saved ✓"
   and locks at 0 s.
 - **Host:**
