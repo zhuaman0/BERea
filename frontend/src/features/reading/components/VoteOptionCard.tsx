@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { AnimatedNumber, ProgressBar } from "@berea/ui-kit";
 import { Check, Crown, Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/shared/lib/utils";
 import type { VoteOptionResult } from "@berea/api";
 
@@ -31,6 +32,7 @@ export function VoteOptionCard({
   justVoted,
   onVote,
 }: VoteOptionCardProps) {
+  const t = useTranslations("reading.vote");
   const isInteractive = canVote && !isLocked;
 
   return (
@@ -80,7 +82,7 @@ export function VoteOptionCard({
             className="rd-accent-gradient absolute -top-2.5 right-3 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-black/80"
           >
             <Crown size={11} />
-            Winner
+            {t("option.winner")}
           </motion.span>
         )}
       </AnimatePresence>
@@ -108,7 +110,7 @@ export function VoteOptionCard({
           <AnimatedNumber value={option.percent} />%
         </span>
         <span className="text-[var(--rd-text-muted)]">
-          <AnimatedNumber value={option.vote_count} /> {option.vote_count === 1 ? "vote" : "votes"}
+          {t.rich("option.votes", { count: option.vote_count, num: () => <AnimatedNumber value={option.vote_count} /> })}
         </span>
       </div>
       <ProgressBar percent={option.percent} size="sm" delay={0.15 + index * 0.05} className="relative mt-1" />
@@ -119,7 +121,7 @@ export function VoteOptionCard({
           onClick={onVote}
           disabled={isLocked || isYourVote}
           aria-pressed={isYourVote}
-          aria-label={isYourVote ? `Your vote: ${option.label}` : `Vote for ${option.label}`}
+          aria-label={isYourVote ? t("option.yourVoteAria", { label: option.label }) : t("option.voteForAria", { label: option.label })}
           whileTap={isInteractive ? { scale: 0.96 } : undefined}
           aria-busy={isPending}
           className={cn(
@@ -143,12 +145,12 @@ export function VoteOptionCard({
               {isPending ? (
                 <>
                   <Loader2 size={13} className="animate-spin" />
-                  Saving…
+                  {t("option.saving")}
                 </>
               ) : isYourVote ? (
-                "Your vote"
+                t("option.yourVote")
               ) : (
-                "Vote"
+                t("option.vote")
               )}
             </motion.span>
           </AnimatePresence>

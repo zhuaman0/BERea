@@ -1,5 +1,6 @@
 import { Crown, Medal, Trophy } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useFormatter, useTranslations } from "next-intl";
 import type { ReadingTeamSummary } from "@berea/api";
 import { CoverShowcase } from "@/features/reading/components/team/CoverShowcase";
 
@@ -9,7 +10,7 @@ interface LeaderboardPodiumProps {
 }
 
 interface PlaceStyle {
-  label: string;
+  labelKey: "champion" | "runnerUp" | "third";
   icon: LucideIcon;
   order: string;
   card: string;
@@ -20,7 +21,7 @@ interface PlaceStyle {
 
 const PLACE_STYLES: PlaceStyle[] = [
   {
-    label: "Champion",
+    labelKey: "champion",
     icon: Crown,
     order: "sm:order-2",
     card: "sm:min-h-[390px] border-[#f5b942]/35 bg-[radial-gradient(circle_at_50%_0%,rgba(245,185,66,0.18),transparent_45%),var(--rd-panel)] shadow-[0_24px_70px_rgba(245,145,42,0.11)]",
@@ -29,7 +30,7 @@ const PLACE_STYLES: PlaceStyle[] = [
     bookWidth: "w-32 sm:w-36",
   },
   {
-    label: "Runner-up",
+    labelKey: "runnerUp",
     icon: Trophy,
     order: "sm:order-1",
     card: "sm:min-h-[350px] border-[#b9c3d3]/25 bg-[radial-gradient(circle_at_50%_0%,rgba(185,195,211,0.13),transparent_42%),var(--rd-panel)]",
@@ -38,7 +39,7 @@ const PLACE_STYLES: PlaceStyle[] = [
     bookWidth: "w-28 sm:w-30",
   },
   {
-    label: "Third place",
+    labelKey: "third",
     icon: Medal,
     order: "sm:order-3",
     card: "sm:min-h-[330px] border-[#c47b52]/25 bg-[radial-gradient(circle_at_50%_0%,rgba(196,123,82,0.13),transparent_42%),var(--rd-panel)]",
@@ -49,6 +50,8 @@ const PLACE_STYLES: PlaceStyle[] = [
 ];
 
 export function LeaderboardPodium({ teams, myTeamName }: LeaderboardPodiumProps) {
+  const t = useTranslations("reading.leaderboard.podium");
+  const format = useFormatter();
   const gridWidth = teams.length === 1
     ? "sm:mx-auto sm:max-w-md sm:grid-cols-1"
     : teams.length === 2
@@ -59,10 +62,10 @@ export function LeaderboardPodium({ teams, myTeamName }: LeaderboardPodiumProps)
     <section className="mt-10" aria-labelledby="podium-title">
       <div className="mb-5 flex items-end justify-between gap-4">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--rd-accent-from)]">Front runners</p>
-          <h2 id="podium-title" className="font-display mt-1 text-2xl font-semibold tracking-tight text-[var(--rd-text)] sm:text-3xl">This season&apos;s podium</h2>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--rd-accent-from)]">{t("eyebrow")}</p>
+          <h2 id="podium-title" className="font-display mt-1 text-2xl font-semibold tracking-tight text-[var(--rd-text)] sm:text-3xl">{t("title")}</h2>
         </div>
-        <p className="hidden max-w-xs text-right text-xs leading-5 text-[var(--rd-text-muted)] sm:block">Live standings update as points land.</p>
+        <p className="hidden max-w-xs text-right text-xs leading-5 text-[var(--rd-text-muted)] sm:block">{t("hint")}</p>
       </div>
 
       <div className={`grid grid-cols-1 items-end gap-4 ${gridWidth}`}>
@@ -80,7 +83,7 @@ export function LeaderboardPodium({ teams, myTeamName }: LeaderboardPodiumProps)
               <div className="relative flex w-full flex-col items-center text-center">
                 <div className="flex w-full items-center justify-between">
                   <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] ${style.badge}`}>
-                    <PlaceIcon size={11} aria-hidden="true" />{style.label}
+                    <PlaceIcon size={11} aria-hidden="true" />{t(`places.${style.labelKey}`)}
                   </span>
                   <span className="font-mono text-xs text-[var(--rd-text-muted)]">#{place}</span>
                 </div>
@@ -90,13 +93,13 @@ export function LeaderboardPodium({ teams, myTeamName }: LeaderboardPodiumProps)
                 <div className="mt-auto w-full">
                   <div className="flex min-w-0 items-center justify-center gap-2">
                     <h3 className="font-display truncate text-lg font-semibold text-[var(--rd-text)]">{team.name}</h3>
-                    {isMine && <span className="shrink-0 rounded-full bg-[var(--rd-accent-from)]/15 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[var(--rd-accent-to)]">You</span>}
+                    {isMine && <span className="shrink-0 rounded-full bg-[var(--rd-accent-from)]/15 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[var(--rd-accent-to)]">{t("you")}</span>}
                   </div>
                   <div className="mt-3 flex items-end justify-center gap-2 border-t border-white/[0.07] pt-3">
-                    <strong className="font-display text-3xl font-semibold tabular-nums text-[var(--rd-text)]">{team.points.toLocaleString()}</strong>
-                    <span className="pb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--rd-text-muted)]">points</span>
+                    <strong className="font-display text-3xl font-semibold tabular-nums text-[var(--rd-text)]">{format.number(team.points)}</strong>
+                    <span className="pb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--rd-text-muted)]">{t("pointsLabel", { count: team.points })}</span>
                   </div>
-                  <p className="mt-1 text-xs text-[var(--rd-text-muted)]">{team.member_count} {team.member_count === 1 ? "reader" : "readers"}</p>
+                  <p className="mt-1 text-xs text-[var(--rd-text-muted)]">{t("readers", { count: team.member_count })}</p>
                 </div>
               </div>
             </article>

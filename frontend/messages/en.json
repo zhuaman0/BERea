@@ -516,6 +516,626 @@
         "motto": "Today a reader, tomorrow a leader."
       },
       "copyright": "The 451° game format is protected by copyright · © 2026 NATS Spirea"
+    },
+    "home": {
+      "fallbackName": "reader",
+      "greeting": "{period, select, morning {Good morning, {name}} afternoon {Good afternoon, {name}} evening {Good evening, {name}} other {Hello, {name}}}",
+      "rank": "Challenger",
+      "streakBadge": "{count}-day streak",
+      "greetingNote": "Keep reading — every page you log adds to your team's score.",
+      "logPages": "Log pages",
+      "logPagesDisabled": "Available once the book of the month is chosen",
+      "bookError": "Couldn't refresh the book of the month.",
+      "retry": "Retry",
+      "stats": {
+        "place": "Team place",
+        "placeNote": "Ranked by roster size for now",
+        "points": "Your points",
+        "pointsNote": "Points start counting at the first quiz night",
+        "books": "Books finished",
+        "roundInProgress": "{round} in progress",
+        "noActiveRound": "No active round",
+        "streak": "Reading streak",
+        "streakDays": "{count, plural, one {# day} other {# days}}",
+        "streakNote": "+5 pts per 7-day streak"
+      }
+    },
+    "bookOfMonth": {
+      "eyebrow": "Book of the month",
+      "emptyTitle": "Not chosen yet",
+      "emptyBody": "It appears here as soon as the book vote closes — language, then genre, then the book.",
+      "goToVote": "Go to the vote",
+      "coverAlt": "{title} cover",
+      "chosenBy": "Chosen by {percent}% of voters",
+      "pageCount": "{count, plural, one {# page} other {# pages}}",
+      "yourProgress": "Your progress · p. {page}",
+      "yourProgressOf": "Your progress · p. {page} of {total}",
+      "teamAverage": "Team average",
+      "logPages": "Log pages"
+    },
+    "quizNight": {
+      "title": "Next quiz night",
+      "units": {
+        "days": "days",
+        "hours": "hrs",
+        "minutes": "min"
+      },
+      "location": "{location} · {count, plural, one {# team} other {# teams}}",
+      "reserve": "I'm in — reserve seat",
+      "entryNote": "Entry: 1 game token or semester pass"
+    },
+    "bonus": {
+      "title": "Bonus tasks open",
+      "left": "{open} of {total} left",
+      "done": "done",
+      "points": "{count, plural, one {# pt} other {# pts}}"
+    },
+    "semesterMap": {
+      "title": "Semester map",
+      "subtitle": "One book a round, shelved as you finish it.",
+      "empty": "The season schedule isn't set yet.",
+      "inProgress": "in progress"
+    },
+    "logPages": {
+      "title": "Log pages · {title}",
+      "label": "Which page are you on?",
+      "ofTotal": "of {total}",
+      "saving": "Saving…",
+      "save": "Save progress",
+      "errors": {
+        "notANumber": "Enter a page number",
+        "wholePages": "Whole pages only",
+        "negative": "Pages can't be negative",
+        "tooMany": "{count, plural, one {This book has # page} other {This book has # pages}}",
+        "saveFailed": "Couldn't save your progress."
+      }
+    },
+    "shelf": {
+      "emptyTitle": "Your shelf is empty.",
+      "emptyBody": "Log the pages you read on the book of the month and it lands here.",
+      "logPages": "Log pages",
+      "spine": "{title}: page {page}",
+      "spineOf": "{title}: page {page} of {total}",
+      "spineFinished": "{title}: page {page} of {total}, finished",
+      "readingNow": "Reading now: <book>{title}</book>, page {page}",
+      "readingNowOf": "Reading now: <book>{title}</book>, page {page} of {total} ({percent}%)",
+      "allFinished": "Every book on your shelf is finished."
+    },
+    "vote": {
+      "stages": {
+        "language": "Language",
+        "genre": "Genre",
+        "book": "Book"
+      },
+      "loading": "Loading the vote…",
+      "retry": "Retry",
+      "tied": "Tied vote",
+      "yourChoice": "Your choice: {choice}",
+      "timeLeft": "{time} left",
+      "votes": "{count, plural, one {# vote} other {# votes}}",
+      "errors": {
+        "saveFailed": "Couldn't save your vote. Please try again.",
+        "refreshFailed": "Couldn't refresh voting. Please try again."
+      },
+      "status": {
+        "title": "Our next book",
+        "unavailable": "Voting status is temporarily unavailable.",
+        "notStarted": "Language and genre voting will open here. Students have 6 hours in total.",
+        "bookOpen": "The book vote is open. Have your say!",
+        "bothSaved": "Your language and genre choices are saved. You can change either before the shared deadline.",
+        "languageSaved": "Language saved. Choose your genre now — no waiting needed.",
+        "chooseBoth": "Choose a language, then a genre. Both share one 6-hour deadline.",
+        "opensSoon": "The next voting stage opens soon.",
+        "updating": "Updating voting results…",
+        "noWinner": "No clear winner yet. Waiting for another vote.",
+        "bookChosen": "The students chose {winner}.",
+        "bookNext": "Language and genre are chosen. The book vote is next.",
+        "viewYourVote": "View your vote",
+        "voteNow": "Vote now",
+        "viewVoting": "View voting",
+        "leftBook": "{time} left in the book vote",
+        "leftBoth": "{time} left for both choices"
+      },
+      "steps": {
+        "ariaLabel": "Book selection stages",
+        "chooseLanguageFirst": "Choose language first",
+        "voteNow": "Vote now",
+        "updating": "Updating results…",
+        "noVotes": "No votes",
+        "upNext": "Up next",
+        "opensAt": "Opens {time}",
+        "closesAt": "Closes {time}",
+        "closedAt": "Closed {time}",
+        "afterLanguageGenre": "After language and genre",
+        "waitingForAdmin": "Waiting for the admin"
+      },
+      "option": {
+        "winner": "Winner",
+        "votes": "{count, plural, one {<num></num> vote} other {<num></num> votes}}",
+        "yourVoteAria": "Your vote: {label}",
+        "voteForAria": "Vote for {label}",
+        "saving": "Saving…",
+        "yourVote": "Your vote",
+        "vote": "Vote"
+      },
+      "page": {
+        "eyebrow": "Book of the month",
+        "title": "Choose the book",
+        "accent": "you read next.",
+        "description": "Choose a language, then immediately choose a genre below. Both choices share one 6-hour deadline. You can change either choice until voting closes.",
+        "notStarted": "Voting hasn't started yet. Language and genre choices will appear here when the admin opens the selection.",
+        "bookVoteTitle": "Book vote",
+        "selectionTitle": "Language + genre",
+        "bookVoteBody": "Vote for a book matching the winning language and genre.",
+        "selectionBody": "Two choices, one shared voting window. One vote per student for each choice.",
+        "closed": "Voting closed",
+        "deadline": "Deadline: {date}",
+        "bothClose": "Both choices close: {date}",
+        "bothSaved": "Both choices are saved.",
+        "bothSavedOpen": "Both choices are saved. You can still change either choice below.",
+        "needsLanguage": "Choose a language above to unlock genres immediately.",
+        "opensAt": "Opens {date}",
+        "updatingFinal": "Updating the final results…",
+        "winner": "Winner: {winner}",
+        "tiedNoWinner": "Tied vote — no winner.",
+        "noVotesCast": "No votes were cast.",
+        "bookChosen": "The book has been chosen. <link>Open your dashboard</link> to start reading.",
+        "noClearWinner": "No clear winner yet. Waiting for the admin to open another vote.",
+        "bookVoteNext": "The admin will open the book vote using the winning language and genre."
+      },
+      "history": {
+        "title": "Previous votes",
+        "noWinner": "No winner"
+      }
+    },
+    "profile": {
+      "loadError": "Couldn't load your reading stats.",
+      "loading": "Loading profile…",
+      "eyebrow": "Reader profile",
+      "description": "@{handle}, reading since {date}",
+      "streak": "{count}-day streak",
+      "streakActive": "Keep it lit: open the app tomorrow",
+      "streakEmpty": "Check in daily to start one",
+      "noTeam": "No team yet",
+      "teamStanding": "Place {place} of {total}, {points, plural, one {# team point} other {# team points}}",
+      "teamStandingLoading": "Team standing loading",
+      "loadErrorRetry": "{error} Refresh the page to try again.",
+      "statsLabel": "Season stats",
+      "quizPoints": "Quiz points",
+      "quizPointsHint": "Counts toward your team",
+      "accuracy": "Quiz accuracy",
+      "accuracyHint": "{correct} of {total} right",
+      "quizNights": "Quiz nights played",
+      "pagesRead": "Pages read",
+      "booksFinished": "Books finished",
+      "votesCast": "Votes cast",
+      "shelfTitle": "Your shelf",
+      "shelfHint": "Every book you've logged pages on, newest first. The ember shows how far you are.",
+      "shelfLoading": "Loading your shelf…"
+    },
+    "leaderboard": {
+      "loadError": "Couldn't load the leaderboard.",
+      "hero": {
+        "eyebrow": "Season standings",
+        "title": "The race to the top",
+        "accent": "starts here.",
+        "description": "Every quiz point moves your team forward. If scores are tied, roster size decides who takes the lead.",
+        "yourTeam": "Your team",
+        "points": "{count} pts",
+        "teams": "Teams",
+        "readers": "Readers",
+        "topScore": "Top score",
+        "rankedBy": "Ranked by quiz points",
+        "tieBreak": "Roster size breaks a tie"
+      },
+      "podium": {
+        "eyebrow": "Front runners",
+        "title": "This season's podium",
+        "hint": "Live standings update as points land.",
+        "places": {
+          "champion": "Champion",
+          "runnerUp": "Runner-up",
+          "third": "Third place"
+        },
+        "you": "You",
+        "pointsLabel": "{count, plural, one {point} other {points}}",
+        "readers": "{count, plural, one {# reader} other {# readers}}"
+      },
+      "state": {
+        "loadingLabel": "Loading leaderboard",
+        "loading": "Loading the leaderboard…",
+        "retry": "Try again",
+        "error": {
+          "title": "The standings couldn't load",
+          "body": "Something interrupted the live ranking. Try loading it again."
+        },
+        "empty": {
+          "title": "The starting line is ready",
+          "body": "No teams have registered yet. The first contenders will appear here automatically."
+        },
+        "locked": {
+          "title": "The leaderboard is taking a break",
+          "body": "Standings are currently unavailable. Check back when the next stage opens."
+        }
+      },
+      "table": {
+        "eyebrow": "Full ranking",
+        "title": "All teams",
+        "searchLabel": "Search teams",
+        "searchPlaceholder": "Find a team…",
+        "clearSearchLabel": "Clear team search",
+        "noMatchTitle": "No matching teams",
+        "noMatchBody": "Try a different team name.",
+        "clearSearch": "Clear search",
+        "caption": "Season leaderboard with team position, roster size, and quiz points.",
+        "columns": {
+          "rank": "Rank",
+          "team": "Team",
+          "readers": "Readers",
+          "points": "Points"
+        },
+        "yourTeam": "Your team",
+        "readers": "{count, plural, one {# reader} other {# readers}}",
+        "ptsShort": "pts",
+        "filteredCount": "{shown} of {count, plural, one {# team} other {# teams}}",
+        "totalCount": "{count, plural, one {# team competing} other {# teams competing}}",
+        "liveData": "Updated from live season data"
+      }
+    },
+    "quiz": {
+      "join": {
+        "pinLength": "The PIN has 6 digits.",
+        "joinError": "Couldn't join. Check the PIN and try again.",
+        "eyebrow": "Quiz night",
+        "title": "Enter the game PIN",
+        "hint": "It's on the big screen.",
+        "pinLabel": "Game PIN",
+        "joining": "Joining…",
+        "submit": "Join"
+      },
+      "game": {
+        "answerError": "Couldn't send your answer.",
+        "notJoined": "That quiz has ended or you're not in it.",
+        "newPin": "Enter a new PIN",
+        "connecting": "Connecting…",
+        "scoreLine": "{score} pts · #{rank} of {total}",
+        "lobbyTitle": "You're in!",
+        "lobbyBody": "{count, plural, one {# player} other {# players}} joined. Waiting for the host to start…",
+        "finishedTitle": "That's a wrap!",
+        "finishedScore": "You scored <strong>{score}</strong> {score, plural, one {point} other {points}} — #{rank} of {total}",
+        "teamWins": "{team} wins with {score}",
+        "leave": "Leave"
+      },
+      "question": {
+        "progress": "Question {index} of {total}",
+        "locked": "Answer locked in — waiting for the timer…"
+      },
+      "reveal": {
+        "correct": "Correct!",
+        "wrong": "Not quite",
+        "timeUp": "Time's up",
+        "answerWas": "The answer was <strong>{answer}</strong>",
+        "standing": "You're #{rank} with {score, plural, one {# point} other {# points}}.",
+        "nextQuestion": "Next question coming up…",
+        "finalResults": "Final results coming up…"
+      }
+    },
+    "admin": {
+      "common": {
+        "eyebrow": "Admin",
+        "actions": "Actions",
+        "delete": "Delete",
+        "deleting": "Deleting…",
+        "saving": "Saving…",
+        "starting": "Starting…",
+        "retry": "Retry"
+      },
+      "stages": {
+        "language": "Language",
+        "genre": "Genre",
+        "book": "Book"
+      },
+      "sidebar": {
+        "logoAlt": "451° gradus",
+        "panel": "Admin panel",
+        "createQuiz": "Create Quiz",
+        "backToStudent": "Back to student view",
+        "nav": {
+          "quizzes": "Quizzes",
+          "books": "Books",
+          "votes": "Book vote",
+          "teams": "Teams",
+          "players": "Players",
+          "payments": "Payments",
+          "settings": "Settings"
+        }
+      },
+      "gate": {
+        "checking": "Checking access",
+        "title": "Admins only",
+        "body": "This part of NATS Spirea is for the organisers. Ask an admin if you think you should have access.",
+        "back": "Back to the app"
+      },
+      "quizzes": {
+        "title": "Quizzes",
+        "description": "Build the questions and answers for each quiz night.",
+        "create": "Create Quiz",
+        "empty": "No quizzes yet — create one to start building questions.",
+        "loadError": "Couldn't load quizzes.",
+        "startError": "Couldn't start the live quiz.",
+        "deleteError": "Couldn't delete that quiz.",
+        "deleteConfirm": "Delete \"{title}\"? This can't be undone.",
+        "thisQuiz": "this quiz",
+        "questionCount": "{count, plural, one {# question} other {# questions}}",
+        "notScheduled": "Not scheduled",
+        "startingSoon": "Starting soon",
+        "countdownDays": "{days}d {hours}h {minutes}min",
+        "countdownHours": "{hours}h {minutes}min",
+        "untilNext": "Until next game",
+        "draft": "Draft",
+        "addQuestionsFirst": "Add questions first",
+        "goLive": "Go live",
+        "edit": "Edit quiz",
+        "delete": "Delete quiz"
+      },
+      "quizEdit": {
+        "loadError": "Couldn't load that quiz.",
+        "back": "Back to quizzes",
+        "loading": "Loading quiz"
+      },
+      "quizBuilder": {
+        "errors": {
+          "titleRequired": "Give the quiz a title.",
+          "invalidQuestion": "Question {number} needs question text, at least 2 answers, and one marked correct.",
+          "save": "Couldn't save the quiz. Please try again."
+        },
+        "defaultMonth": "This month",
+        "untitled": "Untitled question",
+        "deleteQuestion": "Delete question {number}",
+        "addQuestion": "Add question",
+        "titlePlaceholder": "Quiz title, e.g. Quiz #4",
+        "save": "Save quiz",
+        "monthPlaceholder": "Month, e.g. November",
+        "questionLabel": "Question {number}",
+        "questionPlaceholder": "Type your question…",
+        "timeLimit": "Time limit",
+        "seconds": "{count}s",
+        "points": "Points",
+        "answersHint": "Answers — click a tile to mark it correct.",
+        "markCorrect": "Mark answer {number} correct",
+        "answerPlaceholder": "Answer {number}"
+      },
+      "live": {
+        "label": "Live quiz",
+        "loading": "Loading the live quiz…",
+        "loadError": "Couldn't load the live quiz.",
+        "advanceError": "Couldn't move to the next step.",
+        "playersJoined": "{count, plural, one {# player joined} other {# players joined}}",
+        "joinAt": "Join at {url}",
+        "waiting": "Waiting for players… share the PIN on screen.",
+        "questionMeta": "Question {number} of {total} · {points} pts",
+        "answered": "{answered}/{total} answered",
+        "finalResults": "Final results",
+        "teamStandings": "Team standings",
+        "next": {
+          "start": "Start quiz",
+          "reveal": "Reveal answer",
+          "nextQuestion": "Next question",
+          "showFinal": "Show final results"
+        }
+      },
+      "books": {
+        "title": "Books",
+        "description": "Add the book of the month, with a cover and description.",
+        "add": "Add a book",
+        "empty": "No books yet — add one to get started.",
+        "noDescription": "No description yet.",
+        "edit": "Edit book",
+        "delete": "Delete book",
+        "loadError": "Couldn't load books.",
+        "deleteError": "Couldn't delete that book.",
+        "deleteConfirm": "Delete \"{title}\"? This can't be undone."
+      },
+      "bookEdit": {
+        "loadError": "Couldn't load that book.",
+        "back": "Back to books",
+        "loading": "Loading book"
+      },
+      "bookForm": {
+        "addTitle": "Add a book",
+        "editTitle": "Edit book",
+        "save": "Save book",
+        "cover": "Cover",
+        "coverLoadError": "Couldn't load that image",
+        "removeCover": "Remove cover",
+        "upload": "Upload",
+        "uploadHint": "Any size — it's shrunk automatically before saving.",
+        "matchHint": "Language and genre should match the vote options exactly, so this book shows up in the right book round.",
+        "fields": {
+          "title": "Title",
+          "titlePlaceholder": "e.g. Шоко әлем 2",
+          "language": "Language",
+          "languagePlaceholder": "e.g. Kazakh",
+          "genre": "Genre",
+          "genrePlaceholder": "e.g. Classic",
+          "pages": "Pages",
+          "coverUrl": "Or paste a direct cover image URL",
+          "description": "Description",
+          "descriptionPlaceholder": "What's this book about?"
+        },
+        "errors": {
+          "notImage": "That file isn't an image.",
+          "readImage": "Couldn't read that image. Try a JPEG or PNG.",
+          "titleRequired": "Give the book a title.",
+          "pagesInvalid": "Pages must be a whole number above 0.",
+          "coverUrlInvalid": "That cover URL doesn't load an image. Paste a direct image link or upload a file.",
+          "save": "Couldn't save the book. Please try again."
+        }
+      },
+      "catalogPicker": {
+        "heading": "Books from the catalog · {count} selected",
+        "limit": "Up to {max} books",
+        "empty": "The catalog is empty. <link>Add books</link> first, with their language and genre.",
+        "noMatch": "No catalog books match the winning language and genre. <link>Add matching books</link> to continue.",
+        "pages": "{count, plural, one {# page} other {# pages}}",
+        "noDetails": "No details yet"
+      },
+      "votes": {
+        "title": "Book vote",
+        "description": "Language and genre together, with one 6-hour deadline, followed by a book vote. Manage options and results here."
+      },
+      "voteManager": {
+        "errors": {
+          "optionRequired": "Enter an option",
+          "optionsUnique": "Options must be unique",
+          "startSelection": "Couldn't start the selection. Check the options and try again.",
+          "maxHours": "At most 7 days",
+          "pickBooks": "Pick between {min} and {max} matching books",
+          "startBook": "Couldn't start the book vote.",
+          "refresh": "Couldn't refresh rounds."
+        },
+        "selection": {
+          "title": "Start language + genre voting",
+          "body": "One shared 6-hour window. Each student chooses a language, then immediately chooses a genre on the same page. Use the same language and genre names as in your book catalog.",
+          "languages": {
+            "title": "Languages",
+            "option": "Language option {number}",
+            "remove": "Remove language option {number}"
+          },
+          "genres": {
+            "title": "Genres",
+            "option": "Genre option {number}",
+            "remove": "Remove genre option {number}"
+          },
+          "addOption": "Add option ({count}/{max})",
+          "closeTogether": "Both choices close together, 6 hours after you start the selection.",
+          "submit": "Start new 6-hour selection",
+          "waitForCurrent": "A new selection can start after the current vote finishes."
+        },
+        "book": {
+          "title": "Next: choose the book",
+          "body": "Students chose {language} · {genre}. Offer matching catalog books for the final vote.",
+          "loadingCatalog": "Loading catalog…",
+          "loadError": "Couldn't load books.",
+          "durationLabel": "Book vote duration (hours, separate from the 6-hour selection)",
+          "submit": "Start book vote"
+        },
+        "loadingRounds": "Loading rounds…",
+        "open": {
+          "book": "Book voting is open",
+          "selection": "Language + genre voting is open",
+          "timeLeft": "{time} left"
+        },
+        "votes": "{count, plural, one {# vote} other {# votes}}",
+        "stageVotes": "{stage}: {count}",
+        "noWinner": "Language or genre has no clear winner (a tie or no votes). Start a new selection before the book vote.",
+        "status": {
+          "scheduled": "scheduled",
+          "open": "open",
+          "closed": "closed"
+        },
+        "results": {
+          "title": "Voting results",
+          "hint": "Results update automatically. Ties and rounds without votes have no winner and must be repeated.",
+          "empty": "No votes yet. Start the first selection above.",
+          "tied": "Tied vote — no winner."
+        }
+      },
+      "teams": {
+        "title": "Teams",
+        "description": "Every registered team, pulled live from the database.",
+        "loading": "Loading teams…",
+        "empty": "No teams have registered yet.",
+        "loadError": "Couldn't load teams.",
+        "deleteError": "Couldn't delete that team.",
+        "deleteConfirm": "Delete team \"{name}\"? Its payment record and invite link will be removed. {count, plural, one {The # player account will be kept and can join another team.} other {All # player accounts will be kept and can join another team.}} This can't be undone.",
+        "deleteAria": "Delete team {name}",
+        "columns": {
+          "place": "Place",
+          "team": "Team",
+          "players": "Players"
+        }
+      },
+      "players": {
+        "title": "Players",
+        "description": "Everyone who has created an account, newest first.",
+        "loading": "Loading players…",
+        "loadError": "Couldn't load players.",
+        "deleteError": "Couldn't delete that player.",
+        "deleteConfirm": "Delete \"{name}\" ({email})? Their account, votes, reading progress and quiz results will be permanently removed. If they are a captain, another team member will become captain. This can't be undone.",
+        "deleteAria": "Delete player {name} ({email})",
+        "summary": {
+          "accounts": "Accounts",
+          "inTeam": "In a team",
+          "withoutTeam": "Without a team"
+        },
+        "searchPlaceholder": "Search by name, email or team",
+        "searchAria": "Search players",
+        "emptyAll": "Nobody has signed up yet.",
+        "emptySearch": "No players match that search.",
+        "columns": {
+          "player": "Player",
+          "team": "Team",
+          "streak": "Streak",
+          "lastActive": "Last active",
+          "joined": "Joined"
+        },
+        "badges": {
+          "admin": "Admin",
+          "tester": "Tester"
+        },
+        "noTeam": "No team yet",
+        "streakDays": "{count, plural, one {# day} other {# days}}",
+        "yourAccount": "Your account"
+      },
+      "payments": {
+        "title": "Payments",
+        "description": "Review the receipt before approving a team.",
+        "pendingCount": "{count} pending",
+        "loadError": "Couldn't load payments.",
+        "updateError": "Couldn't update payment status.",
+        "receiptError": "Couldn't open the receipt.",
+        "empty": "No payment receipts have been submitted yet.",
+        "columns": {
+          "team": "Team",
+          "amount": "Amount",
+          "status": "Status",
+          "receipt": "Receipt"
+        },
+        "noEmail": "No email",
+        "amount": "{amount} ₸",
+        "status": {
+          "pending": "pending",
+          "approved": "approved",
+          "rejected": "rejected",
+          "none": "not submitted"
+        },
+        "viewFile": "View file",
+        "approve": "Approve payment",
+        "reject": "Reject payment",
+        "returnToPending": "Return to pending",
+        "returnToPendingAria": "Return payment to pending",
+        "reviewed": "Reviewed",
+        "receiptTitle": "Payment receipt",
+        "closeReceipt": "Close receipt",
+        "receiptPdf": "Payment receipt PDF",
+        "receiptImage": "Payment receipt image"
+      },
+      "settings": {
+        "title": "Settings",
+        "description": "Feature toggles that apply site-wide for every student.",
+        "loading": "Loading settings…",
+        "loadError": "Couldn't load settings.",
+        "saveError": "Couldn't save that change.",
+        "seasonStarted": {
+          "title": "Season started",
+          "description": "Off during registration: semester rounds haven't started, and Leaderboard, Profile and Quiz stay locked. Home and Book vote are available so students can choose the first book. Turn on at kickoff."
+        },
+        "leaderboard": {
+          "title": "Leaderboard",
+          "description": "When off, students can't see the Leaderboard page or its nav link."
+        }
+      }
     }
   }
 }

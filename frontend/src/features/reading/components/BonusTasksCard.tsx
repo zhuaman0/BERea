@@ -1,4 +1,5 @@
 import { Check, Gift } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { BonusTask } from "@/features/reading/types";
 
 interface BonusTasksCardProps {
@@ -6,13 +7,14 @@ interface BonusTasksCardProps {
 }
 
 export function BonusTasksCard({ tasks }: BonusTasksCardProps) {
+  const t = useTranslations("reading.bonus");
   const openCount = tasks.filter((task) => task.status === "open").length;
 
   return (
     <div className="rounded-2xl border border-[var(--rd-border)] bg-[var(--rd-panel)] p-7">
       <div className="mb-4 flex items-center justify-between">
-        <p className="text-base font-medium text-[var(--rd-text)]">Bonus tasks open</p>
-        <span className="text-sm text-[var(--rd-text-muted)]">{openCount} of {tasks.length} left</span>
+        <p className="text-base font-medium text-[var(--rd-text)]">{t("title")}</p>
+        <span className="text-sm text-[var(--rd-text-muted)]">{t("left", { open: openCount, total: tasks.length })}</span>
       </div>
 
       <div className="flex flex-col gap-4">
@@ -36,7 +38,7 @@ export function BonusTasksCard({ tasks }: BonusTasksCardProps) {
               <p className="truncate text-xs text-[var(--rd-text-muted)]">{task.note}</p>
             </div>
             <span className="shrink-0 text-sm font-medium text-[var(--rd-text)]">
-              {task.status === "done" ? "done" : `${task.points} pts`}
+              {task.status === "done" ? t("done") : t("points", { count: task.points })}
             </span>
           </div>
         ))}

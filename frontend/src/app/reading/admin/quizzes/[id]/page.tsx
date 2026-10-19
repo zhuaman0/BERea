@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { isApiError } from "@/features/auth/utils";
 import { readingQuizApi } from "@berea/api";
 import { QuizBuilder } from "@/features/reading/components/admin/QuizBuilder";
@@ -15,13 +16,14 @@ export default function ReadingAdminEditQuizPage({ params }: PageProps) {
   const { id } = use(params);
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const t = useTranslations("reading.admin.quizEdit");
 
   useEffect(() => {
     readingQuizApi
       .get(id)
       .then(setQuiz)
-      .catch((err) => setError(isApiError(err) ? err.detail : "Couldn't load that quiz."));
-  }, [id]);
+      .catch((err) => setError(isApiError(err) ? err.detail : t("loadError")));
+  }, [id, t]);
 
   if (error) {
     return (
@@ -29,7 +31,7 @@ export default function ReadingAdminEditQuizPage({ params }: PageProps) {
         <p className="text-sm text-[var(--rd-text-muted)]">
           {error}{" "}
           <Link href="/reading/admin" className="font-medium text-[var(--rd-text)] hover:underline">
-            Back to quizzes
+            {t("back")}
           </Link>
         </p>
       </div>
@@ -37,7 +39,7 @@ export default function ReadingAdminEditQuizPage({ params }: PageProps) {
   }
 
   if (!quiz) {
-    return <div className="m-8 h-64 max-w-3xl animate-pulse rounded-2xl bg-[var(--rd-panel)]" aria-label="Loading quiz" />;
+    return <div className="m-8 h-64 max-w-3xl animate-pulse rounded-2xl bg-[var(--rd-panel)]" aria-label={t("loading")} />;
   }
 
   return <QuizBuilder key={quiz.id} initialQuiz={quiz} />;

@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { ImageIcon, Loader2, Upload, X } from "lucide-react";
 import { Button, Input } from "@berea/ui-kit";
 import { isApiError } from "@/features/auth/utils";
@@ -22,6 +23,8 @@ interface BookFormProps {
 
 export function BookForm({ initialBook }: BookFormProps) {
   const router = useRouter();
+  const t = useTranslations("reading.admin.bookForm");
+  const tCommon = useTranslations("reading.admin.common");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previewObjectUrl = useRef<string | null>(null);
 
@@ -52,7 +55,7 @@ export function BookForm({ initialBook }: BookFormProps) {
     e.target.value = "";
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      setError("That file isn't an image.");
+      setError(t("errors.notImage"));
       return;
     }
     setError(null);
@@ -64,7 +67,7 @@ export function BookForm({ initialBook }: BookFormProps) {
       setCoverCleared(false);
       showPreview(URL.createObjectURL(resized));
     } catch {
-      setError("Couldn't read that image. Try a JPEG or PNG.");
+      setError(t("errors.readImage"));
     } finally {
       setIsProcessing(false);
     }
@@ -86,15 +89,15 @@ export function BookForm({ initialBook }: BookFormProps) {
 
   async function handleSave() {
     if (!title.trim()) {
-      setError("Give the book a title.");
+      setError(t("errors.titleRequired"));
       return;
     }
     if (pageCount.trim() && !(Number.isInteger(Number(pageCount)) && Number(pageCount) > 0)) {
-      setError("Pages must be a whole number above 0.");
+      setError(t("errors.pagesInvalid"));
       return;
     }
     if (externalUrl.trim() && previewFailed) {
-      setError("That cover URL doesn't load an image. Paste a direct image link or upload a file.");
+      setError(t("errors.coverUrlInvalid"));
       return;
     }
     setError(null);
@@ -118,7 +121,7 @@ export function BookForm({ initialBook }: BookFormProps) {
       }
       router.push("/reading/admin/books");
     } catch (err) {
-      setError(isApiError(err) ? err.detail : "Couldn't save the book. Please try again.");
+      setError(isApiError(err) ? err.detail : t("errors.save"));
       setIsSaving(false);
     }
   }
@@ -129,10 +132,10 @@ export function BookForm({ initialBook }: BookFormProps) {
     <div className="w-full max-w-3xl px-4 py-6 sm:px-8 sm:py-10 lg:px-12">
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-semibold text-[var(--rd-text)]">
-          {initialBook ? "Edit book" : "Add a book"}
+          {initialBook ? t("editTitle") : t("addTitle")}
         </h1>
         <Button onClick={handleSave} disabled={isBusy} loading={isSaving}>
-          {isSaving ? "Saving…" : "Save book"}
+          {isSaving ? tCommon("saving") : t("save")}
         </Button>
       </div>
 
@@ -144,7 +147,7 @@ export function BookForm({ initialBook }: BookFormProps) {
 
       <div className="mt-6 flex flex-col gap-6 sm:flex-row">
         <div className="shrink-0">
-          <p className="mb-2 text-xs text-[var(--rd-text-muted)]">Cover</p>
+          <p className="mb-2 text-xs text-[var(--rd-text-muted)]">{t("cover")}</p>
           <div className="relative flex h-48 w-36 items-center justify-center overflow-hidden rounded-xl border border-[var(--rd-border)] bg-[var(--rd-ink)]">
             {isProcessing ? (
               <Loader2 size={24} className="animate-spin text-[var(--rd-text-muted)]" />
@@ -152,7 +155,7 @@ export function BookForm({ initialBook }: BookFormProps) {
               // eslint-disable-next-line @next/next/no-img-element -- admin-supplied cover from our API, a blob preview, or an external URL
               <img src={previewSrc} alt="" onError={() => setPreviewFailed(true)} className="h-full w-full object-cover" />
             ) : previewFailed ? (
-              <p className="px-3 text-center text-[11px] leading-snug text-red-400">Couldn&apos;t load that image</p>
+              <p className="px-3 text-center text-[11px] leading-snug text-red-400">{t("coverLoadError")}</p>
             ) : (
               <ImageIcon size={28} className="text-[var(--rd-text-muted)]" />
             )}
@@ -160,7 +163,7 @@ export function BookForm({ initialBook }: BookFormProps) {
               <button
                 type="button"
                 onClick={handleRemoveCover}
-                aria-label="Remove cover"
+                aria-label={t("removeCover")}
                 className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80"
               >
                 <X size={13} />
@@ -184,36 +187,36 @@ export function BookForm({ initialBook }: BookFormProps) {
             className="mt-2 w-36 text-xs"
           >
             <Upload size={12} />
-            Upload
+            {t("upload")}
           </Button>
           <p className="mt-1.5 w-36 text-[10px] leading-snug text-[var(--rd-text-muted)]">
-            Any size — it&apos;s shrunk automatically before saving.
+            {t("uploadHint")}
           </p>
         </div>
 
         <div className="flex flex-1 flex-col gap-4">
           <Input
-            label="Title"
+            label={t("fields.title")}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. Шоко әлем 2"
+            placeholder={t("fields.titlePlaceholder")}
           />
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_120px]">
             <Input
-              label="Language"
+              label={t("fields.language")}
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
-              placeholder="e.g. Kazakh"
+              placeholder={t("fields.languagePlaceholder")}
             />
             <Input
-              label="Genre"
+              label={t("fields.genre")}
               value={genre}
               onChange={(e) => setGenre(e.target.value)}
-              placeholder="e.g. Classic"
+              placeholder={t("fields.genrePlaceholder")}
             />
             <Input
-              label="Pages"
+              label={t("fields.pages")}
               type="number"
               min={1}
               inputMode="numeric"
@@ -223,11 +226,11 @@ export function BookForm({ initialBook }: BookFormProps) {
             />
           </div>
           <p className="-mt-2 text-[11px] text-[var(--rd-text-muted)]">
-            Language and genre should match the vote options exactly, so this book shows up in the right book round.
+            {t("matchHint")}
           </p>
 
           <Input
-            label="Or paste a direct cover image URL"
+            label={t("fields.coverUrl")}
             value={externalUrl}
             onChange={(e) => handleUrlChange(e.target.value)}
             placeholder="https://example.com/cover.jpg"
@@ -235,13 +238,13 @@ export function BookForm({ initialBook }: BookFormProps) {
 
           <div className="flex flex-col gap-1.5">
             <label htmlFor="book-description" className="text-sm font-medium text-[var(--rd-text)]">
-              Description
+              {t("fields.description")}
             </label>
             <textarea
               id="book-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="What's this book about?"
+              placeholder={t("fields.descriptionPlaceholder")}
               rows={6}
               className={textareaBase}
             />

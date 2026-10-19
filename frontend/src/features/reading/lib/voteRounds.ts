@@ -1,7 +1,6 @@
 import type { VoteRound, VoteStage } from "@berea/api";
 
 export const VOTE_STAGES: VoteStage[] = ["language", "genre", "book"];
-export const VOTE_LABELS: Record<VoteStage, string> = { language: "Language", genre: "Genre", book: "Book" };
 
 export function voteStatus(round: VoteRound, now: number): VoteRound["status"] {
   if (now < Date.parse(round.opens_at)) return "scheduled";
@@ -34,3 +33,4 @@ export function formatVoteCountdown(deadline: string, now: number): string {
   const seconds = total % 60;
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
+

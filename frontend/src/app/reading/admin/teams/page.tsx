@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Shield, Trash2 } from "lucide-react";
 import { readingAdminApi, readingAuthApi } from "@berea/api";
 import { isApiError } from "@/features/auth/utils";
@@ -15,20 +16,20 @@ export default function ReadingAdminTeamsPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const t = useTranslations("reading.admin.teams");
+  const tCommon = useTranslations("reading.admin.common");
 
   useEffect(() => {
     readingAuthApi
       .listTeams()
       .then(setTeams)
-      .catch((err) => setLoadError(isApiError(err) ? err.detail : "Couldn't load teams."))
+      .catch((err) => setLoadError(isApiError(err) ? err.detail : t("loadError")))
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [t]);
 
   async function handleDelete(team: ReadingTeamSummary) {
     if (deletingId) return;
-    if (!window.confirm(
-      `Delete team "${team.name}"? Its payment record and invite link will be removed. All ${team.member_count} player accounts will be kept and can join another team. This can't be undone.`,
-    )) return;
+    if (!window.confirm(t("deleteConfirm", { name: team.name, count: team.member_count }))) return;
     setDeleteError(null);
     setDeletingId(team.id);
     try {
@@ -39,7 +40,7 @@ export default function ReadingAdminTeamsPage() {
         updateUser({ team_name: null, payment_status: null, is_captain: false });
       }
     } catch (err) {
-      setDeleteError(isApiError(err) ? err.detail : "Couldn't delete that team.");
+      setDeleteError(isApiError(err) ? err.detail : t("deleteError"));
     } finally {
       setDeletingId(null);
     }
@@ -47,7 +48,7 @@ export default function ReadingAdminTeamsPage() {
 
   return (
     <div className={READING_PAGE_CONTAINER}>
-      <ReadingPageHero eyebrow="Admin" eyebrowIcon={Shield} title="Teams" description="Every registered team, pulled live from the database." />
+      <ReadingPageHero eyebrow={tCommon("eyebrow")} eyebrowIcon={Shield} title={t("title")} description={t("description")} />
 
       {deleteError && (
         <p role="alert" className="mt-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm text-red-400">
@@ -56,20 +57,20 @@ export default function ReadingAdminTeamsPage() {
       )}
 
       {isLoading ? (
-        <p className="mt-6 text-sm text-[var(--rd-text-muted)]">Loading teams…</p>
+        <p className="mt-6 text-sm text-[var(--rd-text-muted)]">{t("loading")}</p>
       ) : loadError ? (
         <p className="mt-6 text-sm text-[var(--rd-text-muted)]">{loadError}</p>
       ) : teams.length === 0 ? (
-        <p className="mt-6 text-sm text-[var(--rd-text-muted)]">No teams have registered yet.</p>
+        <p className="mt-6 text-sm text-[var(--rd-text-muted)]">{t("empty")}</p>
       ) : (
         <div className="mt-6 overflow-x-auto rounded-2xl border border-[var(--rd-border)] bg-[var(--rd-panel)]">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--rd-border)] text-left text-xs uppercase tracking-[0.1em] text-[var(--rd-text-muted)]">
-                <th className="px-6 py-4 font-medium">Place</th>
-                <th className="px-6 py-4 font-medium">Team</th>
-                <th className="px-6 py-4 font-medium">Players</th>
-                <th className="px-6 py-4 text-right font-medium">Actions</th>
+                <th className="px-6 py-4 font-medium">{t("columns.place")}</th>
+                <th className="px-6 py-4 font-medium">{t("columns.team")}</th>
+                <th className="px-6 py-4 font-medium">{t("columns.players")}</th>
+                <th className="px-6 py-4 text-right font-medium">{tCommon("actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--rd-border)]">
@@ -83,11 +84,11 @@ export default function ReadingAdminTeamsPage() {
                       type="button"
                       onClick={() => handleDelete(team)}
                       disabled={deletingId !== null}
-                      aria-label={`Delete team ${team.name}`}
+                      aria-label={t("deleteAria", { name: team.name })}
                       className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg border border-red-500/30 px-3 py-2 text-xs font-medium text-red-400 transition-colors hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <Trash2 size={14} aria-hidden="true" />
-                      {deletingId === team.id ? "Deleting…" : "Delete"}
+                      {deletingId === team.id ? tCommon("deleting") : tCommon("delete")}
                     </button>
                   </td>
                 </tr>

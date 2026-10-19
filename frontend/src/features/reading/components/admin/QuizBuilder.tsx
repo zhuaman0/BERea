@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Check, Circle, Clock, Diamond, Loader2, Plus, Square, Star, Trash2, Triangle } from "lucide-react";
 import { isApiError } from "@/features/auth/utils";
 import { readingQuizApi } from "@berea/api";
@@ -48,6 +49,8 @@ interface QuizBuilderProps {
 
 export function QuizBuilder({ initialQuiz }: QuizBuilderProps) {
   const router = useRouter();
+  const t = useTranslations("reading.admin.quizBuilder");
+  const tCommon = useTranslations("reading.admin.common");
 
   const [title, setTitle] = useState(initialQuiz?.title ?? "");
   const [monthLabel, setMonthLabel] = useState(initialQuiz?.monthLabel ?? "");
@@ -89,20 +92,20 @@ export function QuizBuilder({ initialQuiz }: QuizBuilderProps) {
 
   async function handleSave() {
     if (!title.trim()) {
-      setError("Give the quiz a title.");
+      setError(t("errors.titleRequired"));
       return;
     }
     const invalidIndex = questions.findIndex((q) => !isQuestionValid(q));
     if (invalidIndex !== -1) {
       setActiveIndex(invalidIndex);
-      setError(`Question ${invalidIndex + 1} needs question text, at least 2 answers, and one marked correct.`);
+      setError(t("errors.invalidQuestion", { number: invalidIndex + 1 }));
       return;
     }
     setError(null);
 
     const quiz: Omit<Quiz, "id"> = {
       title:        title.trim(),
-      monthLabel:   monthLabel.trim() || "This month",
+      monthLabel:   monthLabel.trim() || t("defaultMonth"),
       scheduledFor: initialQuiz?.scheduledFor ?? null,
       status:       initialQuiz?.status ?? "draft",
       questions: questions.map((q) => ({
@@ -122,7 +125,7 @@ export function QuizBuilder({ initialQuiz }: QuizBuilderProps) {
       }
       router.push("/reading/admin");
     } catch (err) {
-      setError(isApiError(err) ? err.detail : "Couldn't save the quiz. Please try again.");
+      setError(isApiError(err) ? err.detail : t("errors.save"));
       setIsSaving(false);
     }
   }
@@ -143,11 +146,11 @@ export function QuizBuilder({ initialQuiz }: QuizBuilderProps) {
             <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-current text-[10px]">
               {i + 1}
             </span>
-            <span className="flex-1 truncate">{q.text.trim() || "Untitled question"}</span>
+            <span className="flex-1 truncate">{q.text.trim() || t("untitled")}</span>
             {questions.length > 1 && (
               <span
                 role="button"
-                aria-label={`Delete question ${i + 1}`}
+                aria-label={t("deleteQuestion", { number: i + 1 })}
                 onClick={(e) => { e.stopPropagation(); removeQuestion(i); }}
                 className="opacity-0 transition-opacity hover:text-red-400 group-hover:opacity-100"
               >
@@ -160,7 +163,7 @@ export function QuizBuilder({ initialQuiz }: QuizBuilderProps) {
           onClick={addQuestion}
           className="mt-2 flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-[var(--rd-border)] px-3 py-2 text-xs text-[var(--rd-text-muted)] transition-colors hover:border-[var(--rd-accent-from)] hover:text-[var(--rd-accent-from)]"
         >
-          <Plus size={13} /> Add question
+          <Plus size={13} /> {t("addQuestion")}
         </button>
       </div>
 
@@ -170,7 +173,7 @@ export function QuizBuilder({ initialQuiz }: QuizBuilderProps) {
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Quiz title, e.g. Quiz #4"
+              placeholder={t("titlePlaceholder")}
               className="font-display flex-1 border-none bg-transparent text-2xl font-semibold text-[var(--rd-text)] placeholder:text-[var(--rd-text-muted)] focus:outline-none"
             />
             <button
@@ -179,13 +182,13 @@ export function QuizBuilder({ initialQuiz }: QuizBuilderProps) {
               className="rd-accent-gradient inline-flex shrink-0 items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-black/85 transition-opacity hover:opacity-90 disabled:opacity-60"
             >
               {isSaving && <Loader2 size={15} className="animate-spin" />}
-              {isSaving ? "Saving…" : "Save quiz"}
+              {isSaving ? tCommon("saving") : t("save")}
             </button>
           </div>
           <input
             value={monthLabel}
             onChange={(e) => setMonthLabel(e.target.value)}
-            placeholder="Month, e.g. November"
+            placeholder={t("monthPlaceholder")}
             className="mt-1 w-full border-none bg-transparent text-sm text-[var(--rd-text-muted)] placeholder:text-[var(--rd-text-muted)] focus:outline-none"
           />
 
@@ -211,7 +214,7 @@ export function QuizBuilder({ initialQuiz }: QuizBuilderProps) {
             ))}
             <button
               onClick={addQuestion}
-              aria-label="Add question"
+              aria-label={t("addQuestion")}
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-dashed border-[var(--rd-border)] text-[var(--rd-text-muted)]"
             >
               <Plus size={13} />
@@ -220,12 +223,12 @@ export function QuizBuilder({ initialQuiz }: QuizBuilderProps) {
 
           <div className="mt-6 rounded-2xl border border-[var(--rd-border)] bg-[var(--rd-panel)] p-6">
             <p className="text-xs uppercase tracking-[0.1em] text-[var(--rd-text-muted)]">
-              Question {activeIndex + 1}
+              {t("questionLabel", { number: activeIndex + 1 })}
             </p>
             <textarea
               value={active.text}
               onChange={(e) => updateActive({ text: e.target.value })}
-              placeholder="Type your question…"
+              placeholder={t("questionPlaceholder")}
               rows={2}
               className="mt-2 w-full resize-none rounded-lg border border-[var(--rd-border)] bg-[var(--rd-ink)] px-3 py-2.5 text-sm text-[var(--rd-text)] placeholder:text-[var(--rd-text-muted)] focus:outline-none focus:border-[var(--rd-accent-from)]"
             />
@@ -233,7 +236,7 @@ export function QuizBuilder({ initialQuiz }: QuizBuilderProps) {
             <div className="mt-4 flex flex-wrap gap-6">
               <div>
                 <p className="mb-1.5 flex items-center gap-1.5 text-xs text-[var(--rd-text-muted)]">
-                  <Clock size={12} /> Time limit
+                  <Clock size={12} /> {t("timeLimit")}
                 </p>
                 <div className="flex gap-1.5">
                   {TIME_LIMIT_OPTIONS.map((secs) => (
@@ -246,7 +249,7 @@ export function QuizBuilder({ initialQuiz }: QuizBuilderProps) {
                           : "border-[var(--rd-border)] text-[var(--rd-text-muted)] hover:text-[var(--rd-text)]"
                       }`}
                     >
-                      {secs}s
+                      {t("seconds", { count: secs })}
                     </button>
                   ))}
                 </div>
@@ -254,7 +257,7 @@ export function QuizBuilder({ initialQuiz }: QuizBuilderProps) {
 
               <div>
                 <p className="mb-1.5 flex items-center gap-1.5 text-xs text-[var(--rd-text-muted)]">
-                  <Star size={12} /> Points
+                  <Star size={12} /> {t("points")}
                 </p>
                 <div className="flex gap-1.5">
                   {POINTS_OPTIONS.map((pts) => (
@@ -275,7 +278,7 @@ export function QuizBuilder({ initialQuiz }: QuizBuilderProps) {
             </div>
 
             <p className="mb-2 mt-6 text-xs text-[var(--rd-text-muted)]">
-              Answers — click a tile to mark it correct.
+              {t("answersHint")}
             </p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {active.answers.map((answer, i) => {
@@ -290,7 +293,7 @@ export function QuizBuilder({ initialQuiz }: QuizBuilderProps) {
                     <button
                       type="button"
                       onClick={() => setCorrectAnswer(i)}
-                      aria-label={`Mark answer ${i + 1} correct`}
+                      aria-label={t("markCorrect", { number: i + 1 })}
                       className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white"
                       style={{ backgroundColor: style.color }}
                     >
@@ -299,7 +302,7 @@ export function QuizBuilder({ initialQuiz }: QuizBuilderProps) {
                     <input
                       value={answer.text}
                       onChange={(e) => updateAnswer(i, { text: e.target.value })}
-                      placeholder={`Answer ${i + 1}`}
+                      placeholder={t("answerPlaceholder", { number: i + 1 })}
                       className="min-w-0 flex-1 bg-transparent text-sm text-[var(--rd-text)] placeholder:text-[var(--rd-text-muted)] focus:outline-none"
                     />
                   </div>

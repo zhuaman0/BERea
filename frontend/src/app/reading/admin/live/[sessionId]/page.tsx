@@ -2,6 +2,7 @@
 
 import { use, useCallback, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { Check, Crown, Loader2, Users } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { isApiError } from "@/features/auth/utils";
@@ -15,12 +16,14 @@ interface PageProps {
   params: Promise<{ sessionId: string }>;
 }
 
-function nextLabel(state: LiveHostState): string {
-  if (state.phase === "lobby") return "Start quiz";
-  if (state.phase === "question") return "Reveal answer";
-  if (state.phase === "reveal" && state.question && state.question.index + 1 < state.question.total) return "Next question";
-  if (state.phase === "reveal") return "Show final results";
-  return "";
+type NextStep = "start" | "reveal" | "nextQuestion" | "showFinal";
+
+function nextStep(state: LiveHostState): NextStep | null {
+  if (state.phase === "lobby") return "start";
+  if (state.phase === "question") return "reveal";
+  if (state.phase === "reveal" && state.question && state.question.index + 1 < state.question.total) return "nextQuestion";
+  if (state.phase === "reveal") return "showFinal";
+  return null;
 }
 
 export default function LiveQuizHostPage({ params }: PageProps) {
@@ -29,6 +32,7 @@ export default function LiveQuizHostPage({ params }: PageProps) {
   const { data: state, error, setData } = usePolling(load, 1000);
   const [isAdvancing, setIsAdvancing] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const t = useTranslations("reading.admin.live");
   const secondsLeft = useCountdownSeconds(state?.question?.time_left_ms, `${state?.phase}-${state?.question?.index}`);
 
   async function handleNext() {
@@ -37,7 +41,7 @@ export default function LiveQuizHostPage({ params }: PageProps) {
     try {
       setData(await readingLiveQuizApi.next(sessionId));
     } catch (err) {
-      setActionError(isApiError(err) ? err.detail : "Couldn't move to the next step.");
+      setActionError(isApiError(err) ? err.detail : t("advanceError"));
     } finally {
       setIsAdvancing(false);
     }
@@ -46,27 +50,28 @@ export default function LiveQuizHostPage({ params }: PageProps) {
   if (!state) {
     return (
       <div className="p-8 text-sm text-[var(--rd-text-muted)]">
-        {error ? (isApiError(error) ? error.detail : "Couldn't load the live quiz.") : "Loading the live quiz…"}
+        {error ? (isApiError(error) ? error.detail : t("loadError")) : t("loading")}
       </div>
     );
   }
 
   const joinUrl = typeof window !== "undefined" ? `${window.location.origin}/reading/quiz` : "/reading/quiz";
   const isRevealed = state.phase === "reveal";
+  const step = nextStep(state);
 
   return (
     <div className="flex min-h-full flex-col px-4 py-6 sm:px-8 lg:px-12">
       <div className="flex flex-wrap items-start justify-between gap-6">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--rd-accent-from)]">Live quiz</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--rd-accent-from)]">{t("label")}</p>
           <h1 className="font-display mt-1 text-3xl font-semibold text-[var(--rd-text)]">{state.quiz_title}</h1>
           <p className="mt-1 flex items-center gap-1.5 text-sm text-[var(--rd-text-muted)]">
-            <Users size={14} /> {state.players.length} {state.players.length === 1 ? "player" : "players"} joined
+            <Users size={14} /> {t("playersJoined", { count: state.players.length })}
           </p>
         </div>
         {state.phase !== "finished" && (
           <div className="rounded-2xl border border-[var(--rd-accent-from)]/30 bg-[var(--rd-panel)] px-6 py-4 text-right">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-[var(--rd-text-muted)]">Join at {joinUrl.replace(/^https?:\/\//, "")}</p>
+            <p className="text-[11px] uppercase tracking-[0.2em] text-[var(--rd-text-muted)]">{t("joinAt", { url: joinUrl.replace(/^https?:\/\//, "") })}</p>
             <p className="font-display text-5xl font-bold tracking-[0.15em] text-[var(--rd-text)]">{state.pin}</p>
           </div>
         )}
@@ -78,7 +83,7 @@ export default function LiveQuizHostPage({ params }: PageProps) {
         <AnimatePresence mode="wait">
           {state.phase === "lobby" && (
             <motion.div key="lobby" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <p className="text-lg text-[var(--rd-text-muted)]">Waiting for players… share the PIN on screen.</p>
+              <p className="text-lg text-[var(--rd-text-muted)]">{t("waiting")}</p>
               <div className="mt-6 flex flex-wrap gap-3">
                 <AnimatePresence>
                   {state.players.map((p) => (
@@ -109,10 +114,10 @@ export default function LiveQuizHostPage({ params }: PageProps) {
             >
               <div className="flex items-center justify-between gap-4 text-sm text-[var(--rd-text-muted)]">
                 <span>
-                  Question {state.question.index + 1} of {state.question.total} · {state.question.points} pts
+                  {t("questionMeta", { number: state.question.index + 1, total: state.question.total, points: state.question.points })}
                 </span>
                 <span>
-                  {state.answered_count}/{state.players.length} answered
+                  {t("answered", { answered: state.answered_count, total: state.players.length })}
                 </span>
               </div>
               <div className="mt-3 flex items-center gap-6">
@@ -164,7 +169,7 @@ export default function LiveQuizHostPage({ params }: PageProps) {
 
           {state.phase === "finished" && (
             <motion.div key="finished" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-              <h2 className="font-display text-4xl font-semibold text-[var(--rd-text)]">Final results</h2>
+              <h2 className="font-display text-4xl font-semibold text-[var(--rd-text)]">{t("finalResults")}</h2>
               <TeamBoard teams={state.team_scores} highlightWinner />
             </motion.div>
           )}
@@ -180,7 +185,7 @@ export default function LiveQuizHostPage({ params }: PageProps) {
             className="rd-accent-gradient inline-flex items-center gap-2 rounded-xl px-8 py-4 text-lg font-semibold text-black/85 shadow-[0_10px_40px_-10px_var(--rd-accent-from)] transition-transform hover:-translate-y-0.5 disabled:opacity-60"
           >
             {isAdvancing && <Loader2 size={18} className="animate-spin" />}
-            {nextLabel(state)}
+            {step && t(`next.${step}`)}
           </button>
         </div>
       )}
@@ -194,10 +199,11 @@ interface TeamBoardProps {
 }
 
 function TeamBoard({ teams, highlightWinner = false }: TeamBoardProps) {
+  const t = useTranslations("reading.admin.live");
   if (teams.length === 0) return null;
   return (
     <div className="mt-8 rounded-2xl border border-[var(--rd-border)] bg-[var(--rd-panel)] p-6">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--rd-text-muted)]">Team standings</p>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--rd-text-muted)]">{t("teamStandings")}</p>
       <ol className="mt-4 flex flex-col gap-2">
         {teams.map((team, i) => (
           <motion.li

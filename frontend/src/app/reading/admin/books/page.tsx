@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
+import { useTranslations } from "next-intl";
 import { ImageIcon, Library, Pencil, Plus, Trash2 } from "lucide-react";
 import { isApiError } from "@/features/auth/utils";
 import { bookCoverSrc, readingBookApi } from "@berea/api";
@@ -17,6 +18,7 @@ interface BookCardProps {
 
 function BookCard({ book, onDelete }: BookCardProps) {
   const coverSrc = bookCoverSrc(book.cover_url);
+  const t = useTranslations("reading.admin.books");
   return (
     <div className="group relative flex w-56 shrink-0 flex-col gap-3 rounded-2xl border border-[var(--rd-border)] bg-[var(--rd-panel)] p-4">
       <div className="flex h-40 items-center justify-center overflow-hidden rounded-xl bg-[var(--rd-ink)]">
@@ -30,21 +32,21 @@ function BookCard({ book, onDelete }: BookCardProps) {
       <div>
         <p className="font-display truncate text-sm font-semibold text-[var(--rd-text)]">{book.title}</p>
         <p className="mt-1 line-clamp-2 text-xs text-[var(--rd-text-muted)]">
-          {book.description || "No description yet."}
+          {book.description || t("noDescription")}
         </p>
       </div>
 
       <div className="absolute right-3 top-3 hidden items-center gap-1 group-hover:flex">
         <Link
           href={`/reading/admin/books/${book.id}` as Route}
-          aria-label="Edit book"
+          aria-label={t("edit")}
           className="flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--rd-border)] bg-[var(--rd-ink)] text-[var(--rd-text-muted)] transition-colors hover:text-[var(--rd-text)]"
         >
           <Pencil size={13} />
         </Link>
         <button
           onClick={() => onDelete(book)}
-          aria-label="Delete book"
+          aria-label={t("delete")}
           className="flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--rd-border)] bg-[var(--rd-ink)] text-[var(--rd-text-muted)] transition-colors hover:text-red-400"
         >
           <Trash2 size={13} />
@@ -58,39 +60,41 @@ export default function ReadingAdminBooksPage() {
   const [books, setBooks] = useState<ReadingBook[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const t = useTranslations("reading.admin.books");
+  const tCommon = useTranslations("reading.admin.common");
 
   useEffect(() => {
     readingBookApi
       .list()
       .then(setBooks)
-      .catch((err) => setError(isApiError(err) ? err.detail : "Couldn't load books."))
+      .catch((err) => setError(isApiError(err) ? err.detail : t("loadError")))
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [t]);
 
   async function handleDelete(book: ReadingBook) {
-    if (!window.confirm(`Delete "${book.title}"? This can't be undone.`)) return;
+    if (!window.confirm(t("deleteConfirm", { title: book.title }))) return;
     try {
       await readingBookApi.remove(book.id);
       setBooks((prev) => prev.filter((b) => b.id !== book.id));
     } catch (err) {
-      setError(isApiError(err) ? err.detail : "Couldn't delete that book.");
+      setError(isApiError(err) ? err.detail : t("deleteError"));
     }
   }
 
   return (
     <div className={READING_PAGE_CONTAINER}>
       <ReadingPageHero
-        eyebrow="Admin"
+        eyebrow={tCommon("eyebrow")}
         eyebrowIcon={Library}
-        title="Books"
-        description="Add the book of the month, with a cover and description."
+        title={t("title")}
+        description={t("description")}
         aside={
             <Link
               href={"/reading/admin/books/new" as Route}
               className="rd-accent-gradient inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-black/85 transition-opacity hover:opacity-90"
             >
               <Plus size={15} />
-              Add a book
+              {t("add")}
             </Link>
         }
       />
@@ -109,7 +113,7 @@ export default function ReadingAdminBooksPage() {
         </div>
       ) : books.length === 0 ? (
         <div className="mt-8 rounded-2xl border border-dashed border-[var(--rd-border)] p-10 text-center">
-          <p className="text-sm text-[var(--rd-text-muted)]">No books yet — add one to get started.</p>
+          <p className="text-sm text-[var(--rd-text-muted)]">{t("empty")}</p>
         </div>
       ) : (
         <div className="mt-8 flex flex-wrap gap-5">

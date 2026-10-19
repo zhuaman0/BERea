@@ -1,4 +1,5 @@
 import { AlertCircle, LockKeyhole, RefreshCw, Trophy } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 type StateVariant = "loading" | "error" | "empty" | "locked";
 
@@ -8,16 +9,12 @@ interface LeaderboardStateProps {
   onRetry?: () => void;
 }
 
-const COPY: Record<Exclude<StateVariant, "loading">, { title: string; body: string }> = {
-  error: { title: "The standings couldn't load", body: "Something interrupted the live ranking. Try loading it again." },
-  empty: { title: "The starting line is ready", body: "No teams have registered yet. The first contenders will appear here automatically." },
-  locked: { title: "The leaderboard is taking a break", body: "Standings are currently unavailable. Check back when the next stage opens." },
-};
-
 export function LeaderboardState({ variant, message, onRetry }: LeaderboardStateProps) {
+  const t = useTranslations("reading.leaderboard.state");
+
   if (variant === "loading") {
     return (
-      <div role="status" aria-label="Loading leaderboard" className="mt-10 space-y-4">
+      <div role="status" aria-label={t("loadingLabel")} className="mt-10 space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {[0, 1, 2].map((item) => (
             <div key={item} className="h-80 animate-pulse rounded-[24px] border border-white/[0.06] bg-[var(--rd-panel)]">
@@ -28,12 +25,11 @@ export function LeaderboardState({ variant, message, onRetry }: LeaderboardState
           ))}
         </div>
         <div className="h-56 animate-pulse rounded-[24px] border border-white/[0.06] bg-[var(--rd-panel)]" />
-        <span className="sr-only">Loading the leaderboard…</span>
+        <span className="sr-only">{t("loading")}</span>
       </div>
     );
   }
 
-  const copy = COPY[variant];
   const Icon = variant === "error" ? AlertCircle : variant === "locked" ? LockKeyhole : Trophy;
   const Heading = variant === "locked" ? "h1" : "h2";
 
@@ -43,11 +39,11 @@ export function LeaderboardState({ variant, message, onRetry }: LeaderboardState
       <span className="relative mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--rd-accent-from)]/25 bg-[var(--rd-accent-from)]/10 text-[var(--rd-accent-to)]">
         <Icon size={22} aria-hidden="true" />
       </span>
-      <Heading className="font-display relative mt-5 text-2xl font-semibold text-[var(--rd-text)]">{copy.title}</Heading>
-      <p className="relative mx-auto mt-2 max-w-md text-sm leading-6 text-[var(--rd-text-muted)]">{message ?? copy.body}</p>
+      <Heading className="font-display relative mt-5 text-2xl font-semibold text-[var(--rd-text)]">{t(`${variant}.title`)}</Heading>
+      <p className="relative mx-auto mt-2 max-w-md text-sm leading-6 text-[var(--rd-text-muted)]">{message ?? t(`${variant}.body`)}</p>
       {variant === "error" && onRetry && (
         <button type="button" onClick={onRetry} className="rd-accent-gradient relative mt-6 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold text-black/85 transition hover:brightness-110">
-          <RefreshCw size={14} aria-hidden="true" />Try again
+          <RefreshCw size={14} aria-hidden="true" />{t("retry")}
         </button>
       )}
     </section>

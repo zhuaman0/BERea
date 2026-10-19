@@ -2,10 +2,9 @@ export interface QuizNight {
   daysLeft:    number;
   hoursLeft:   number;
   minutesLeft: number;
-  dateLabel:   string;
+  startsAt:    string;
   location:    string;
   teamsCount:  number;
-  entryNote:   string;
 }
 
 export type BonusTaskStatus = "open" | "done";
@@ -19,8 +18,6 @@ export interface BonusTask {
 }
 
 export interface ReadingDashboard {
-  greetingName: string;
-  greetingNote: string;
   quizNight:    QuizNight;
   bonusTasks:   BonusTask[];
 }

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { motion, useReducedMotion } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { cn } from "@/shared/lib/utils";
 import type { ReadingShelfEntry } from "@berea/api";
 
@@ -25,21 +26,22 @@ interface ReaderShelfProps {
 }
 
 export function ReaderShelf({ shelf }: ReaderShelfProps) {
+  const t = useTranslations("reading.shelf");
   const reduceMotion = useReducedMotion();
   const reading = shelf.find((entry) => percentRead(entry) < 100) ?? null;
 
   if (shelf.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-[var(--rd-border)] px-6 py-10 text-center">
-        <p className="text-sm text-[var(--rd-text)]">Your shelf is empty.</p>
+        <p className="text-sm text-[var(--rd-text)]">{t("emptyTitle")}</p>
         <p className="mt-1 text-[13px] text-[var(--rd-text-muted)]">
-          Log the pages you read on the book of the month and it lands here.
+          {t("emptyBody")}
         </p>
         <Link
           href={"/reading" as Route}
           className="mt-5 inline-flex h-10 items-center rounded-lg border border-[var(--rd-border)] px-4 text-[13px] font-medium text-[var(--rd-text)] transition-colors hover:border-[var(--rd-accent-from)] hover:text-[var(--rd-accent-from)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-accent-from)]"
         >
-          Log pages
+          {t("logPages")}
         </Link>
       </div>
     );
@@ -52,7 +54,9 @@ export function ReaderShelf({ shelf }: ReaderShelfProps) {
           const percent = percentRead(entry);
           const finished = percent === 100;
           const pages = entry.book.page_count;
-          const label = `${entry.book.title}: page ${entry.current_page}${pages ? ` of ${pages}` : ""}${finished ? ", finished" : ""}`;
+          const label = pages
+            ? t(finished ? "spineFinished" : "spineOf", { title: entry.book.title, page: entry.current_page, total: pages })
+            : t("spine", { title: entry.book.title, page: entry.current_page });
 
           return (
             <li
@@ -87,13 +91,21 @@ export function ReaderShelf({ shelf }: ReaderShelfProps) {
 
       <p className="mt-5 text-[13px] text-[var(--rd-text-muted)]">
         {reading ? (
-          <>
-            Reading now: <span className="text-[var(--rd-text)]">{reading.book.title}</span>, page{" "}
-            {reading.current_page}
-            {reading.book.page_count ? ` of ${reading.book.page_count} (${percentRead(reading)}%)` : ""}
-          </>
+          reading.book.page_count
+            ? t.rich("readingNowOf", {
+                title: reading.book.title,
+                page: reading.current_page,
+                total: reading.book.page_count,
+                percent: percentRead(reading),
+                book: (chunks) => <span className="text-[var(--rd-text)]">{chunks}</span>,
+              })
+            : t.rich("readingNow", {
+                title: reading.book.title,
+                page: reading.current_page,
+                book: (chunks) => <span className="text-[var(--rd-text)]">{chunks}</span>,
+              })
         ) : (
-          "Every book on your shelf is finished."
+          t("allFinished")
         )}
       </p>
     </div>
