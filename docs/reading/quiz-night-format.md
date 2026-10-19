@@ -1,229 +1,269 @@
-# Quiz Night: new game format (spec, not built yet)
+# Quiz Night: new game format (spec)
 
-Status: **draft for review**. Nothing here is implemented. When the open questions at the end
-are answered, this becomes the plan for the build.
+Status: **approved to build**. Section 6 lists the defaults used where a rule wasn't decided
+yet; change any of them and the build follows.
 
-## 1. What the real quiz night looks like today (the Keynote deck)
+This copies the Keynote deck the organisers use today and turns it into a live, multi-screen
+game in the app. One device acts as the **host / projector**; every team plays on its phones.
 
-The organisers already run quiz nights from a Keynote deck. The book in the example is *Around
-the World in Eighty Days*. One round has 5 questions and runs in two halves: first all the
-questions, then all the answers.
+---
 
-### Slide sequence (slides 50–68 of the deck)
+## 1. The real quiz night (Keynote deck), slide by slide
 
-| # | Slide | What's on it |
+The example deck is for *Around the World in Eighty Days*.
+
+### 1.1 Structure of the night
+
+```
+Round board ──► Round card ──► Join QR ──► Round board
+     │
+     └─► 5 × [ number ─► question (30 s) ─► number ]
+             └─► "ANSWERS"
+                   └─► 5 × [ number ─► question ─► answer ─► number ]
+                         └─► Round board (this round now "done") ──► next round …
+```
+
+A night has **4 rounds** (I–IV) of **5 questions**. Each round runs questions first, then all of
+its answers, then goes back to the board.
+
+### 1.2 Slides seen in the deck
+
+| Slides | Slide | What's on it |
 |---|---|---|
-| 50 | **Number card "1"** | An orange rounded square with a big white "1", centred on black |
-| 51 | **Question 1** | The question in big white text, in an orange rounded frame, with a **30-second countdown dial** in the top-right corner |
-| 52 | Number card "1" | Same card again: question 1 is closed |
-| 53 | Number card "2" | Next question starts |
-| 54 | Question 2 | Same layout and 30 s timer |
-| 55–64 | … | The pattern repeats: number → question (30 s) → number, for questions 3, 4 and 5 |
-| 65 | **"ANSWERS"** | A wide orange banner saying ANSWERS, with a small timer graphic top-right: the break between the halves |
-| 66 | Number card "1" | The answer review starts again from question 1 |
-| 67 | Question 1 (again) | The same question, now **without the timer** |
-| 68 | **Answer 1** | Inside the same orange frame: the correct answer as a big white title (e.g. "Seventy-nine days"), and under it **the passage from the book that proves it** |
-| 69 | Number card "1" | Closes answer 1, mirroring how question 1 closed |
-| 70 | Number card "2" | Answer review for question 2 starts |
-| 71 | Question 2 (again) | No timer |
-| … | … | Number → question → answer → number, for every question |
+| 86 | **Round board** | A 4 × 6 grid: a wide "Round I…IV" pill and five numbered tiles per row. Rounds not yet played are **filled** with their colour; finished rounds are **outlined** (black inside, coloured border). Here Round I is outlined. |
+| 87–88 | Round board | Round II has turned outlined too. The board is repeated, so Keynote can animate from it. |
+| 89 | **Round card** | The "Round III" pill alone, grown into a big centred rounded square in the round's colour |
+| 90 | **QR code** | A QR code inside a white card with a coral border, used to join and answer |
+| 91 | Round board | Shown again just before the round starts |
+| 92 | **Number card "1"** | Round III's number cards are **coral**, the round's colour, not orange |
+| 93 | **Question** | The question in a frame with a 30 s countdown dial |
+| 94 | Number card "1" | Closes question 1 |
+| … | … | Same as Round II below |
+| 50–64 | Round II questions | Number → question (30 s) → number, × 5. Round II's colour is **orange**. |
+| 65 | **"ANSWERS"** | A wide orange banner, with a small countdown graphic top-right |
+| 66–85 | Round II answers | Number → question again (no timer) → **answer card** → number, × 5. Answers seen: "Seventy-nine days", "Allahabad", "By the Treaty of Nankin" |
 
-### What the design does
+### 1.3 Visual language
 
-- **The orange square turns into the question frame.** The number card's orange square and the
-  question's orange border are the same shape at two sizes (a Keynote Magic Move). The number
-  grows into the frame, the question appears inside it, and it shrinks back into a number when
-  time is up. This is the signature animation and the app should copy it.
-- **Black background, one orange accent, white bold text.** These are our `reading-design`
-  tokens already: `--rd-ink`, `--rd-accent-from`, `--rd-text`.
-- **The timer is a ring of tick marks that counts down from 30**, not a progress bar.
-- **There are no answer options.** Every question is open-ended ("In how many days…", "What was
-  the name of the steamer…", "By what treaty…"), so teams write the answer themselves.
-- **The answer looks like a page cut from the book**: a white box with black **serif** text
-  (book typography, with the original italics kept, e.g. *eighty*) on the black slide. The
-  words that answer the question get a **yellow highlighter** mark (e.g. *seventy-nine*). The
-  answer title above it stays white bold sans-serif.
-- **The answers half mirrors the questions half**: every answer opens and closes with its number
-  card, just as every question did.
-- **The answer slide teaches**: it gives the answer plus the line from the book, so the review
-  half doubles as discussion of the book.
-- The three dots and blue corner triangles on the thumbnails are Keynote's own indicators
-  (builds and transitions), not part of the design.
+- **Round colours**, sampled from the deck:
 
-## 2. How our app's live quiz works today
+  | Round | Colour | Token to add |
+  |---|---|---|
+  | I | Amber `#E8A23B` | `--rd-round-1` |
+  | II | Orange `#E07F42` | `--rd-round-2` |
+  | III | Coral `#DC6150` | `--rd-round-3` |
+  | IV | Indigo `#4A4A82` | `--rd-round-4` |
 
-This is the Kahoot-style mode from PR #17/#18:
+  Every number card, frame border and banner in a round uses that round's colour.
+- **Black background, white bold sans-serif text, rounded corners** (~16 px on tiles, ~28 px
+  on frames). It matches `reading-design`, plus the four round colours.
+- **Filled means "to play", outlined means "done"** on the round board.
+- **Answer = a clipping from the book**: a white box with black **serif** text, the book's
+  italics kept, and the answering words marked with a **yellow highlighter** (`#FFE15A`).
+- **No answer options**: every question is open-ended; teams write their own answer.
+- The three dots and blue corner triangles on thumbnails are Keynote's own indicators, not
+  design.
 
-| | Current app | Keynote format |
+---
+
+## 2. How the app works today (and what changes)
+
+| | Current live quiz (Kahoot-style) | New quiz night |
 |---|---|---|
-| Answers | 4 multiple-choice tiles | **Typed open answer** |
-| When answers are shown | After **each** question | **All at the end**, after an "ANSWERS" break |
-| Scoring | Automatic: correct + speed bonus (50 % + 50 %) | Correct or not, then points; speed doesn't matter |
-| Who answers | Each player separately; team score = sum | **One answer per team** |
-| Phases | `lobby → question → reveal → … → finished` | `lobby → (number → question)×N → answers break → (number → question → answer)×N → finished` |
-| Explanation | None | Book quote with a highlighted phrase |
+| Structure | One flat list of questions | **4 rounds × 5 questions**, with a round board |
+| Answers | 4 multiple-choice tiles | **Typed open answer, one per team** |
+| Reveal | After each question | **After each round**, in an "ANSWERS" section |
+| Scoring | Automatic, with a speed bonus | ✓/✗ per answer: auto-suggested, host confirms; no speed bonus |
+| Explanation | None | Book quote with a highlight |
 
-Relevant code: `ReadingQuizQuestion` / `ReadingQuizAnswer` / `ReadingQuizSession` /
-`ReadingQuizSubmission` in `backend/app/domains/reading/model_reading.py`, and `_live_phase` /
-`_visible_scores` in `service_reading.py`. On the frontend, the host screen is
-`app/reading/admin/live/[sessionId]/page.tsx` and the player screen is
-`app/reading/(dashboard)/quiz/page.tsx`.
+The Kahoot mode stays: a quiz picks its **format**.
 
-## 3. The new format in the app
+Code today:
+- Models: `ReadingQuiz`, `ReadingQuizQuestion`, `ReadingQuizAnswer`, `ReadingQuizSession` and
+  `ReadingQuizSubmission` in `backend/app/domains/reading/model_reading.py`.
+- Phase logic: `_live_phase` and `_visible_scores` in `service_reading.py`.
+- Screens: the host is `app/reading/admin/live/[sessionId]/page.tsx`; the player is
+  `app/reading/(dashboard)/quiz/page.tsx`.
 
-Requested change: **under each question, teams get a box to type their answer.** That goes on
-for every question until the ANSWERS part, where the correct answers are revealed one by one.
+---
 
-### 3.1 Flow
+## 3. The game in the app
 
-**Part 1: Questions**
+### 3.1 Phases (server-computed; every screen shows the same one)
 
-For each question *i*:
-1. **Number card** (≈3 s, automatic): a big orange "*i*" on everyone's screen.
-2. **Question** (30 s): the question shows with the countdown ring. Underneath it, each team
-   has **one answer box**.
-   - Any team member can type; the team's latest text counts (they're sitting together).
-   - The box saves as you type, and the team sees "Saved ✓".
-   - Teammates see each other's edits live.
-   - When the timer hits 0 the box locks. Nobody sees whether the answer is right.
-3. **Number card again** (≈2 s): "time's up" before the next number.
+| Phase | Host / projector | Player phone | Advances |
+|---|---|---|---|
+| `lobby` | Title, **join QR + PIN**, teams joined | "You're in · {team}" | Host: Start |
+| `board` | **Round board** (done rounds outlined, the next one pulsing) | Mini board + "Round {n} is next" | Host: Next |
+| `round_intro` | **Round card** ("Round III", big square in its colour) | Same card | Auto after 3 s |
+| `number` | **Number card** *i* | Same | Auto after 3 s |
+| `question` | Question + **countdown ring** + "7/12 teams answered" | Question + ring + **team answer box** | Auto at 0 s |
+| `locked` | Number card *i* again | "Answer locked ✓" | Auto after 2 s → next `number`, or `answers_intro` after question 5 |
+| `answers_intro` | **"ANSWERS" banner** + a hidden **marking panel** on the host device | "Answers coming up…" | Host: Start answers |
+| `review_number` | Number card *i* | Same | Auto after 2 s |
+| `review_question` | Question (no timer) | Same | Host: Next |
+| `review_answer` | **Answer card**: answer title + book clipping + "8 teams got it" | Answer card + **your team's answer ✓/✗ and points** | Host: Next |
+| `review_close` | Number card *i* | Same | Auto after 1.5 s → next `review_number`, or `board` |
+| `finished` | **Final podium** | Team place and points | n/a |
 
-**Break: "ANSWERS"**
+The host can always press **Next** to skip an auto-advance, and can **pause** the timer.
 
-4. The ANSWERS banner. The host uses this pause to **mark the answers**; the host has a
-   "Start answers" button.
+### 3.2 Team answers
 
-**Part 2: Answers**
+- **One answer per team per question.** Any member can type, and the latest text counts.
+  - It saves 400 ms after the last keystroke.
+  - The box shows "Saved ✓", and teammates see the latest text within about a second.
+- The box locks when the timer reaches 0. The server ignores later writes.
+- Players see nothing about correctness until that question's `review_answer`.
 
-For each question *i*:
-5. **Number card "*i*"**, then the **question again** (no timer).
-6. **Answer card** (same orange frame): the correct answer as a big title, then the book quote
-   shown as a **white "book page" clipping** (serif, black text, original italics, the key words
-   with a yellow highlighter), and
-   optionally the chapter or page.
-   - Each team also sees **its own answer** with ✓ or ✗ and the points it got.
-   - The host screen can show a list of how many teams got it right.
-7. **Number card "*i*" again** closes the answer, then on to number *i+1*.
-8. After the last answer: **final scores**, which are added to the leaderboard.
+### 3.3 Marking
 
-The host moves through everything with **Next**. The questions half can also auto-advance on
-the timer, as it does now.
+- Each question has a list of **accepted answers**.
+- When the box locks, the server normalises the team's text and compares it with that list:
+  lowercase, strip punctuation, articles ("the", "a", "an") and extra spaces, and turn number
+  words into digits ("seventy-nine" → "79").
+  - A match means `correct`; anything else means `needs_review`.
+- During `answers_intro`, the host's **marking panel** lists every team answer for each of the 5
+  questions, with ✓ / ✗ buttons (auto-matches are pre-ticked). The host fixes what's wrong, then
+  presses Start answers.
+- A correct answer earns the question's **points** (default 1). Round and night totals go to the
+  team; at `finished`, the night total is added to `ReadingTeam.points` (the leaderboard).
 
-### 3.2 Marking open answers
+### 3.4 Admin builder
 
-Typed answers can't be marked only by exact match ("79", "79 days", "seventy-nine days"):
-1. **Auto-suggest**: each question stores a list of **accepted answers**. The server lowercases
-   the team's answer and strips punctuation, articles and extra spaces, then compares it with
-   that list. Numbers written as words count too.
-   - A match is pre-marked ✓.
-   - Anything else is marked **"needs review"**.
-2. **Host review** during the ANSWERS break: the host sees every team's answer per question and
-   taps ✓ / ✗. A "half point" option is still an open question (Q4 below).
-3. Points: a fixed **N points per correct answer** (default 1, set per question). There is no
-   speed bonus in this format.
+The quiz gets a **format** setting: `Kahoot` or `Quiz night (4 rounds)`. In quiz-night format
+the builder shows **4 round sections × 5 question slots**, and each question has:
+- Question text
+- **Correct answer** (the answer card's title)
+- **Accepted answers** (chips)
+- **Book quote**, with `*italic*` and `==highlight==` markup. A live preview shows the
+  clipping exactly as the projector will.
+- **Chapter or page** (optional)
+- Time limit (30 s) and points (1)
 
-### 3.3 What each screen shows
+---
 
-| Phase | Player (phone) | Host (projector) |
-|---|---|---|
-| Lobby | "You're in", team name, waiting | PIN, teams that joined, Start |
-| Number card | Big number | Big number |
-| Question | Question + timer ring + **team answer box** + "Saved ✓" | Question + timer ring + "7 / 12 teams answered" (no answer text) |
-| Number (time's up) | "Answer locked" | Big number |
-| ANSWERS break | "Waiting for the answers…" | Banner + the **marking panel** (all answers, ✓/✗, auto-suggestions) + "Start answers" |
-| Answer | Correct answer + book quote + **your team's answer ✓/✗ and points** | Correct answer + book quote + "8 teams got it" |
-| Finished | Team place and points | Final ranking (podium) |
+## 4. Animations: every one, and how to build it
 
-### 3.4 Admin quiz builder
+All of them use **framer-motion** (already in the app).
+- Shared easing is `EASE = [0.16, 1, 0.3, 1]`, the same as the rest of the app.
+- Springs use `{ type: "spring", stiffness: 260, damping: 28 }`.
+- Wrap the game screens in `<MotionConfig reducedMotion="user">`. With reduced motion, every
+  movement below becomes a 200 ms crossfade.
 
-Each question gets a **type** setting:
-- **Multiple choice**: today's builder, unchanged.
-- **Open answer** (new). For these questions the admin fills in:
-  - Question text
-  - **Correct answer** (shown on the answer card, e.g. "Seventy-nine days")
-  - **Accepted answers** (chips, e.g. `79`, `79 days`, `seventy nine`)
-  - **Book quote** (the passage, with *italics* allowed) and the **phrase to highlight** in it.
-    Alternatively, a **photo or screenshot of the book page** (stored like book covers are) for
-    when retyping isn't worth it.
-  - Chapter or page (optional)
-  - Time limit (default 30 s) and points (default 1)
+The Keynote deck uses **Magic Move** (one shape morphing into the next slide's shape). In React
+the same effect is a **shared `layoutId`**: two components in different phases carry the same
+`layoutId`, and framer-motion animates position, size and corner radius between them. That's
+why these pieces must render inside **one `<LayoutGroup>`** on a stage that stays mounted, with
+`<AnimatePresence mode="popLayout">` swapping the phase contents.
 
-The whole quiz also gets a **format** setting: "Kahoot (instant reveal)" or **"Quiz night (answers
-at the end)"**.
+| # | Animation | Where | How |
+|---|---|---|---|
+| A1 | **Board tiles appear** | `board` | The grid fades in, rows stagger by 0.08 s and tiles within a row by 0.04 s. Each tile goes `initial={{opacity:0, scale:0.85}}` → `animate={{opacity:1, scale:1}}`, 0.35 s. |
+| A2 | **Round turns done** (filled → outlined) | `board`, after a round's answers | The just-finished row animates `backgroundColor` from the round colour to `transparent`; its border stays. Tiles stagger left to right by 0.06 s, 0.4 s each. Text stays white. |
+| A3 | **Next round pulses** | `board` | The next round's pill gets a soft glow pulse: a `box-shadow` keyframe in `reading.css` (`rd-round-pulse`, 1.8 s, infinite). Off with reduced motion. |
+| A4 | **Pill → round card** (Magic Move) | `board` → `round_intro` | The board's round pill and the big round card share `layoutId={"round-" + n}`. The pill grows into the centred square (spring) while the other board tiles fade out (`exit={{opacity:0}}`, 0.25 s). The label text scales with it: render the text inside the morphing element and use `layout="position"` on the text so it doesn't stretch. |
+| A5 | **Round card → number 1** | `round_intro` → `number` | The card shrinks (scale 1 → 0.6, fade out, 0.3 s), then number card 1 springs in from scale 0.6. |
+| A6 | **Number card enters** | `number` | `initial={{scale:0.6, opacity:0}}` → `animate={{scale:1, opacity:1}}` with the spring. The digit counts in with a small y-slide (12 px → 0, 0.3 s, 0.1 s delay). |
+| A7 | **Number → question frame** (the signature Magic Move) | `number` → `question` | The number card's square and the question's frame share `layoutId={"q-" + round + "-" + i}`. The square (filled, ~380 px) **grows to the full frame** (~90 % width, 16:9) while its fill fades out and a 14 px border in the round colour fades in. Do it with two layered elements inside the shared box: a fill layer animating `opacity: 1 → 0` and a border layer animating `0 → 1`, both 0.45 s. The digit fades out in the first 0.15 s. The question text fades up afterwards (`delay: 0.35`, y 16 → 0). |
+| A8 | **Countdown ring** | `question` | An SVG ring of **60 ticks** around the seconds number. Each tick is a `<line>` rotated `i × 6°`. Ticks are lit (white) for the remaining fraction, so one tick goes dim every half-second. Time comes from the server's `time_left_ms` and is re-synced on every poll; between polls, `requestAnimationFrame` interpolates so it never jumps. In the **last 5 s** the number and the lit ticks turn the round colour and the number pulses (scale 1 → 1.12 → 1, 0.5 s per second). |
+| A9 | **Answer box** | `question` (player) | It slides up under the question (y 24 → 0, 0.35 s, delay 0.45 s). "Saved ✓" fades in for 1.2 s after each save. When it locks: the border animates to `--rd-border`, the text dims to 60 %, a lock icon pops in (scale 0 → 1 spring) and the box does one small shake (x `[0,-4,4,-2,2,0]`, 0.35 s). |
+| A10 | **Question → number** (reverse Magic Move) | `question` → `locked` / `review_close` | The same `layoutId` played backwards: the frame shrinks into the filled square and the fill fades back in. |
+| A11 | **"ANSWERS" banner** | `locked` (Q5) → `answers_intro` | Number card 5 and the banner share `layoutId={"q-" + round + "-5"}`, so the square **stretches sideways** into the wide banner. The word "ANSWERS" types in letter by letter (stagger 0.04 s, each letter y 20 → 0 plus opacity). |
+| A12 | **Answer card reveal** | `review_question` → `review_answer` | The frame stays (same `layoutId`) and the question text crossfades out (0.2 s). The **answer title** springs in (scale 0.9 → 1, opacity). The **book clipping** slides up (y 30 → 0, 0.45 s, delay 0.25 s) with a slight paper tilt settling (rotate −1° → 0°). |
+| A13 | **Highlighter sweep** | `review_answer` | The highlighted phrase is a `<mark>` with `background-image: linear-gradient(#FFE15A, #FFE15A)`, `background-repeat: no-repeat` and `background-size` animated from `0% 100%` to `100% 100%` (0.6 s, delay 0.7 s), so it looks hand-highlighted left to right. Pure CSS (`rd-highlight-sweep` in `reading.css`), triggered by a `data-revealed` attribute. |
+| A14 | **Your team's result** | `review_answer` (player) | A ✓ (emerald) or ✗ (red) badge pops (scale 0 → 1.15 → 1, 0.4 s) after the highlight finishes (delay 1.2 s). "+1" floats up and fades (y 0 → −24, 0.8 s) on correct answers. The host shows "8 teams got it" counting up from 0 (the existing `AnimatedNumber`). |
+| A15 | **Final podium** | `finished` | Reuse `LeaderboardPodium` motion: podium blocks rise from below (y 60 → 0, staggered 3rd → 2nd → 1st, 0.15 s apart), then a burst of ember particles behind 1st place (reuse `.rd-ember` from `reading.css`). |
+| A16 | **Phase change safety** | everywhere | Polling can skip a phase (e.g. a slow phone misses `locked`). Every component must animate from **whatever is on screen** to the new phase. Shared `layoutId`s and `AnimatePresence` handle this, so don't chain animations with timeouts. |
 
-## 4. Technical design (when we build it)
+### 4.1 Component map
 
-### 4.1 Database (one migration)
+```
+features/reading/components/quizNight/
+  QuizNightStage.tsx       LayoutGroup + AnimatePresence; picks the phase view
+  RoundBoard.tsx           A1–A3; pills and tiles carry layoutIds
+  RoundCard.tsx            A4–A5
+  NumberCard.tsx           A6, A7/A10 (shared layoutId), A11
+  QuestionFrame.tsx        A7, A10, A12 (fill + border layers)
+  CountdownRing.tsx        A8
+  TeamAnswerBox.tsx        A9
+  AnswersBanner.tsx        A11
+  AnswerCard.tsx           A12
+  BookExcerpt.tsx          A13 (parses *italic* and ==highlight== safely, no HTML injection)
+  TeamResultBadge.tsx      A14
+  MarkingPanel.tsx         host-only grading list
+  roundTheme.ts            round → colour class strings (full literals for Tailwind)
+```
 
-- `reading_quizzes.format`: `instant` | `answers_at_end`. Default `instant`, so existing quizzes
-  keep working.
-- `reading_quiz_questions` gets:
+The host page and the player page both render `QuizNightStage`; a `role` prop adds the
+host-only and player-only parts.
+
+---
+
+## 5. Technical design
+
+### 5.1 Database (one migration)
+
+- `reading_quizzes.format`: `instant` | `rounds`. Default `instant`, so existing quizzes are
+  unchanged.
+- `reading_quiz_questions` gains:
+  - `round_number`: 1–4, nullable for `instant` quizzes
   - `kind`: `choice` | `open`, default `choice`
-  - `correct_text`, `accepted_answers` (JSON list), `explanation`, `explanation_highlight` and
-    `source_ref`, all nullable
+  - `correct_text`, `accepted_answers` (JSON), `quote`, `source_ref`: nullable
+- `reading_quiz_sessions` gains `phase_started_at`, plus `round_number` and `question_number`
+  (the existing `current_index` is kept for `instant`).
 - New table `reading_quiz_team_answers`:
-  - Columns: `session_id`, `question_id`, `team_id`, `text`, `last_edited_by`, `updated_at`,
-    `grade` (`pending` | `correct` | `wrong`), `points` and `graded_by`.
-  - It's unique on `(session_id, question_id, team_id)`, so each team has exactly one answer per
-    question.
-- The session's `status` gets new values: `number`, `question`, `locked`, `answers_break`,
-  `review_number`, `review_question`, `review_answer` and `finished`, plus `current_index` as
-  today.
+  - Columns: `id`, `session_id`, `question_id`, `team_id`, `text`, `last_edited_by`,
+    `updated_at`, `grade` (`pending` | `correct` | `wrong`) and `points`.
+  - Unique on `(session_id, question_id, team_id)`.
 
-### 4.2 Backend
+### 5.2 Backend
 
-- **Phases stay server-computed** (as in `_live_phase`), so every screen agrees: a question
-  turns into `locked` on its own once its 30 s pass.
-- `PUT /quiz-sessions/{id}/team-answer`: save or replace the team's text, only while that
-  question is running. The team comes from the user, never from the request body.
-- `GET /quiz-sessions/{id}/grading` and `PATCH …/team-answers/{id}`: the host's marking panel.
-  Admin only, via `_require_admin`.
-- `POST /quiz-sessions/{id}/advance` already exists and gets the new phase order.
-- **Nothing leaks early**: until `review_answer` for that question, players never receive
-  `correct_text`, the quote, grades or other teams' answers. This follows the `_visible_scores`
-  rule we have now.
-- Team points go into `ReadingTeam.points` once, when the session finishes, so the leaderboard
-  updates.
+- **A phase machine** in `service_reading.py`. Timed phases (`round_intro`, `number`,
+  `question`, `locked`, `review_number`, `review_close`) turn over on their own from
+  `phase_started_at` and their duration, computed on read just as `_live_phase` does today.
+  Host-gated phases wait for `POST …/advance`.
+- New endpoints:
+  - `PUT /quiz-sessions/{id}/team-answer` saves the team's text. It's only accepted during
+    `question` for the current question, and the team comes from the user.
+  - `GET /quiz-sessions/{id}/marking` (admin) lists the round's answers with auto grades.
+  - `PATCH /quiz-sessions/{id}/team-answers/{answer_id}` (admin) sets the ✓ / ✗ grade.
+- **Nothing leaks early**: until a question reaches `review_answer`, players get no
+  `correct_text`, `quote`, grades or other teams' answers.
+- When the session reaches `finished`, team totals are added to `ReadingTeam.points` exactly
+  once.
+- pytest covers the phase timing, the answer lock, normalised matching, the no-leak rule and
+  one-time scoring.
 
-### 4.3 Frontend
+### 5.3 Frontend
 
-- **Shared pieces:**
-  - `QuizNumberCard`: the orange square, with a framer-motion `layoutId` shared with
-    `QuizQuestionFrame` to recreate the Magic Move
-  - `CountdownRing`: the 30 tick marks
-  - `AnswerCard`: the answer title plus `BookExcerpt`, a white panel with serif text, `<em>`
-    for italics and a yellow `<mark>` for the highlighted phrase (or the uploaded page image)
-- **Player:** `TeamAnswerBox`, a textarea that auto-saves with a short debounce, shows "Saved ✓"
-  and locks at 0 s.
-- **Host:**
-  - The fullscreen projector view with the phases above
-  - `GradingPanel` for the ANSWERS break
-- Polling stays at 1 s, which is fast enough for typing sync. WebSockets can come later.
-- All text goes through next-intl (EN/RU/KZ); add it to `messages/en.json` and run
-  `npm run translate`.
-- Design follows `.claude/skills/reading-design`.
+- Player and host keep 1 s polling (`usePolling`).
+- All text is in `messages/en.json` under `reading.quizNight`, with RU/KZ filled in
+  (`npm run translate` for later edits).
+- The round colours become tokens in `reading.css`, documented in the `reading-design` skill.
 
-### 4.4 Build order (one PR per step)
+### 5.4 Build order
 
-1. Migration, models and schemas, keeping `instant` quizzes unchanged.
-2. Backend phase machine for `answers_at_end`, the team-answer endpoint and marking endpoints,
-   with tests.
-3. Admin builder: the quiz format setting and the open-answer question fields.
-4. Player screen: number card, question, answer box, waiting, answer card.
-5. Host screen: projector view and marking panel.
-6. Full rehearsal with short timers (5 s) and throwaway QA teams, then clean up.
+1. Migration, models, schemas and the phase machine, with tests.
+2. Team answers, marking and scoring endpoints, with tests.
+3. Admin builder: format, rounds and open-answer fields, with the book-clipping preview.
+4. `QuizNightStage` and all animations A1–A16.
+5. Host and player pages wired up.
+6. Full rehearsal with 5 s timers, two QA teams and the browser, then clean up.
 
-## 5. Open questions (to decide before building)
+---
 
-1. **One answer per team, or per player?** The proposal is per team, matching the paper format.
-2. **Who marks:** the host by hand with auto-suggestions (proposed), or fully automatic?
-3. **Points per correct answer:** 1 for every question, or set per question?
-4. **Half points** for partly right answers (e.g. "80 days" for 79)?
-5. **Show team answers on the projector** during the answers half (fun, but some teams may not
-   want that)?
-6. **How many questions per round, and how many rounds per night?** The deck shows rounds of 5.
-7. **Keep the Kahoot mode** for some nights, or replace it completely?
-8. **Timer**: always 30 s, or set per question?
-9. **Language**: are the questions and quotes entered in one language, or in EN/RU/KZ separately?
-10. Can a team **change its answer** until the timer ends (proposed: yes), or is the first
-    answer final?
+## 6. Defaults used (change any of them and the build follows)
+
+| Question | Default |
+|---|---|
+| Answer per team or per player? | **Per team** |
+| Who marks? | **Auto-suggest, host confirms** |
+| Points per correct answer | **1**, editable per question |
+| Half points? | **No** (✓ or ✗) |
+| Show team answers on the projector? | **No**, only "N teams got it" |
+| Rounds × questions | **4 × 5**, but the builder allows any count from 1 to 6 for both |
+| Keep the Kahoot mode? | **Yes**, chosen per quiz |
+| Timer | **30 s**, editable per question |
+| Question language | **One language per quiz**, entered by the admin |
+| Change an answer before time's up? | **Yes**, the last save counts |
