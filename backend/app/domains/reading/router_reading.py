@@ -20,6 +20,9 @@ from app.domains.reading.schema_reading import (
     ReadingLiveSessionCreate,
     ReadingLiveSummary,
     ReadingLoginRequest,
+    ReadingNightGradeWrite,
+    ReadingNightState,
+    ReadingNightTeamAnswerWrite,
     ReadingProfileStatsResponse,
     ReadingProgressUpdate,
     ReadingQuizResponse,
@@ -463,3 +466,42 @@ async def answer_live_question(
     from app.domains.reading.service_reading import answer_live_question as answer_live_question_service
 
     return await answer_live_question_service(user_id, session_id, payload, db)
+
+
+@router.get("/quiz-sessions/{session_id}/night/host", response_model=ReadingNightState)
+async def get_night_host_state(session_id: str, user_id: CurrentUserId, db: DbSession) -> ReadingNightState:
+    from app.domains.reading.service_quiz_night import get_night_host_state as get_night_host_state_service
+
+    return await get_night_host_state_service(user_id, session_id, db)
+
+
+@router.post("/quiz-sessions/{session_id}/night/advance", response_model=ReadingNightState)
+async def advance_night(session_id: str, user_id: CurrentUserId, db: DbSession) -> ReadingNightState:
+    from app.domains.reading.service_quiz_night import advance_night as advance_night_service
+
+    return await advance_night_service(user_id, session_id, db)
+
+
+@router.get("/quiz-sessions/{session_id}/night/state", response_model=ReadingNightState)
+async def get_night_player_state(session_id: str, user_id: CurrentUserId, db: DbSession) -> ReadingNightState:
+    from app.domains.reading.service_quiz_night import get_night_player_state as get_night_player_state_service
+
+    return await get_night_player_state_service(user_id, session_id, db)
+
+
+@router.put("/quiz-sessions/{session_id}/night/answer", response_model=ReadingNightState)
+async def save_night_answer(
+    session_id: str, payload: ReadingNightTeamAnswerWrite, user_id: CurrentUserId, db: DbSession
+) -> ReadingNightState:
+    from app.domains.reading.service_quiz_night import save_team_answer
+
+    return await save_team_answer(user_id, session_id, payload, db)
+
+
+@router.patch("/quiz-sessions/{session_id}/night/answers/{answer_id}", response_model=ReadingNightState)
+async def grade_night_answer(
+    session_id: str, answer_id: str, payload: ReadingNightGradeWrite, user_id: CurrentUserId, db: DbSession
+) -> ReadingNightState:
+    from app.domains.reading.service_quiz_night import grade_team_answer
+
+    return await grade_team_answer(user_id, session_id, answer_id, payload, db)
