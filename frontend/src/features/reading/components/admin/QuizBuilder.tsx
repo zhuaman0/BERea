@@ -34,7 +34,13 @@ function emptyQuestion(): QuizQuestion {
     text: "",
     timeLimitSeconds: 20,
     points: 1000,
+    kind: "choice",
     answers: [emptyAnswer(), emptyAnswer(), emptyAnswer(), emptyAnswer()],
+    roundNumber: null,
+    correctText: null,
+    acceptedAnswers: [],
+    quote: null,
+    sourceRef: null,
   };
 }
 
@@ -108,6 +114,7 @@ export function QuizBuilder({ initialQuiz }: QuizBuilderProps) {
       monthLabel:   monthLabel.trim() || t("defaultMonth"),
       scheduledFor: initialQuiz?.scheduledFor ?? null,
       status:       initialQuiz?.status ?? "draft",
+      format:       "instant",
       questions: questions.map((q) => ({
         ...q,
         text: q.text.trim(),

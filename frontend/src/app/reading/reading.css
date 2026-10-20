@@ -165,3 +165,49 @@ body:has(.reading-theme) {
     linear-gradient(90deg, rgba(255, 255, 255, 0.8) 1px, transparent 1px);
   background-size: 44px 44px;
 }
+
+/* ── Quiz night (docs/reading/quiz-night-format.md) ─────────────────────── */
+
+.reading-theme {
+  /* One colour per round, sampled from the organisers' Keynote deck. */
+  --rd-round-1: #e8a23b;
+  --rd-round-2: #e07f42;
+  --rd-round-3: #dc6150;
+  --rd-round-4: #4a4a82;
+  --rd-highlighter: #ffe15a;
+}
+
+.rd-round-pulse {
+  animation: rd-round-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes rd-round-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--rd-pulse, rgba(255, 255, 255, 0.35)); }
+  50%      { box-shadow: 0 0 0 10px transparent; }
+}
+
+/* The highlighter itself; framer-motion sweeps background-size from 0% to 100%. */
+.rd-highlighter {
+  background-image: linear-gradient(var(--rd-highlighter), var(--rd-highlighter));
+  background-repeat: no-repeat;
+  background-position: left center;
+  background-size: 0% 100%;
+  color: inherit;
+  padding: 0 0.15em;
+  border-radius: 0.2em;
+}
+
+/* Embers behind the winner; positions and speeds vary per ember. */
+.rd-podium-ember { width: 6px; height: 6px; animation-duration: 3.2s; }
+.rd-podium-ember:nth-child(1) { left: 38%; }
+.rd-podium-ember:nth-child(2) { left: 46%; width: 4px; height: 4px; animation-duration: 2.6s; animation-delay: 0.4s; }
+.rd-podium-ember:nth-child(3) { left: 52%; width: 8px; height: 8px; animation-duration: 3.8s; animation-delay: 0.9s; }
+.rd-podium-ember:nth-child(4) { left: 58%; width: 4px; height: 4px; animation-duration: 2.9s; animation-delay: 1.3s; }
+.rd-podium-ember:nth-child(5) { left: 63%; animation-duration: 3.4s; animation-delay: 0.2s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rd-podium-ember,
+  .rd-round-pulse {
+    animation: none;
+  }
+}
