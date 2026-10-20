@@ -11,15 +11,15 @@ test("students can open the dashboard, book vote, and enabled leaderboard before
 });
 
 test("competition pages remain locked until the season starts", () => {
-  for (const route of ["/reading/profile", "/reading/quiz"]) {
+  for (const route of ["/reading/profile"]) {
     assert.equal(isSeasonRoute(route), true);
     assert.equal(isReadingRouteLocked(route, false), true);
     assert.equal(isReadingRouteLocked(route, true), false);
   }
 });
 
-test("team setup and rules are available before kickoff", () => {
-  for (const route of ["/reading/team", "/reading/rules", "/reading/settings"]) {
+test("team setup, rules and joining a live quiz are available before kickoff", () => {
+  for (const route of ["/reading/team", "/reading/rules", "/reading/settings", "/reading/quiz"]) {
     assert.equal(isReadingRouteLocked(route, false), false);
   }
 });
