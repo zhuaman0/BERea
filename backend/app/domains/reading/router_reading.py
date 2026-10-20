@@ -10,7 +10,11 @@ from app.domains.reading.schema_reading import (
     ReadingAdminUserResponse,
     ReadingAppSettingsResponse,
     ReadingAppSettingsUpdate,
+    ReadingBookEditorResponse,
     ReadingBookOfMonthResponse,
+    ReadingBookPartAttemptResponse,
+    ReadingBookPartSubmit,
+    ReadingBookPathResponse,
     ReadingBookResponse,
     ReadingBookWrite,
     ReadingLiveAnswerRequest,
@@ -259,6 +263,15 @@ async def list_vote_rounds(user_id: CurrentUserId, db: DbSession) -> list[Readin
     return await list_vote_rounds_for_user(user_id, db)
 
 
+@router.post("/vote-rounds/{round_id}/skip-time", response_model=list[ReadingVoteRoundResponse])
+async def skip_vote_time(
+    round_id: str, user_id: CurrentUserId, db: DbSession
+) -> list[ReadingVoteRoundResponse]:
+    from app.domains.reading.service_reading import skip_vote_time_for_admin
+
+    return await skip_vote_time_for_admin(user_id, round_id, db)
+
+
 @router.post("/vote-rounds/{round_id}/vote", response_model=ReadingVoteRoundResponse)
 async def cast_vote(
     round_id: str, payload: ReadingVoteCastRequest, user_id: CurrentUserId, db: DbSession
@@ -319,6 +332,33 @@ async def get_book(book_id: str, user_id: CurrentUserId, db: DbSession) -> Readi
     from app.domains.reading.service_reading import get_book_for_user
 
     return await get_book_for_user(book_id, db)
+
+
+@router.get("/books/{book_id}/editor", response_model=ReadingBookEditorResponse)
+async def get_book_editor(book_id: str, user_id: CurrentUserId, db: DbSession) -> ReadingBookEditorResponse:
+    from app.domains.reading.service_reading import get_book_for_admin
+
+    return await get_book_for_admin(user_id, book_id, db)
+
+
+@router.get("/books/{book_id}/path", response_model=ReadingBookPathResponse)
+async def get_book_path(book_id: str, user_id: CurrentUserId, db: DbSession) -> ReadingBookPathResponse:
+    from app.domains.reading.service_reading import get_book_path_for_user
+
+    return await get_book_path_for_user(user_id, book_id, db)
+
+
+@router.post("/books/{book_id}/parts/{part_id}/complete", response_model=ReadingBookPartAttemptResponse)
+async def complete_book_part(
+    book_id: str,
+    part_id: str,
+    payload: ReadingBookPartSubmit,
+    user_id: CurrentUserId,
+    db: DbSession,
+) -> ReadingBookPartAttemptResponse:
+    from app.domains.reading.service_reading import complete_book_part_for_captain
+
+    return await complete_book_part_for_captain(user_id, book_id, part_id, payload, db)
 
 
 @router.patch("/books/{book_id}", response_model=ReadingBookResponse)

@@ -1,11 +1,20 @@
 import { API_BASE } from "@berea/core";
 import { readingApiClient } from "./readingApiClient";
-import type { ReadingBook, ReadingBookWrite } from "./bookTypes";
+import type {
+  BookPath,
+  BookPathAnswerSubmit,
+  BookPartAttempt,
+  ReadingBook,
+  ReadingBookEditor,
+  ReadingBookWrite,
+} from "./bookTypes";
 
 export const readingBookApi = {
   list: () => readingApiClient.get<ReadingBook[]>("/v1/reading/books"),
 
   get: (id: string) => readingApiClient.get<ReadingBook>(`/v1/reading/books/${id}`),
+
+  getEditor: (id: string) => readingApiClient.get<ReadingBookEditor>(`/v1/reading/books/${id}/editor`),
 
   create: (body: ReadingBookWrite) => readingApiClient.post<ReadingBook>("/v1/reading/books", body),
 
@@ -21,6 +30,13 @@ export const readingBookApi = {
   },
 
   removeCover: (id: string) => readingApiClient.delete<ReadingBook>(`/v1/reading/books/${id}/cover`),
+};
+
+export const readingBookPathApi = {
+  get: (bookId: string) => readingApiClient.get<BookPath>(`/v1/reading/books/${bookId}/path`),
+
+  complete: (bookId: string, partId: string, answers: BookPathAnswerSubmit[]) =>
+    readingApiClient.post<BookPartAttempt>(`/v1/reading/books/${bookId}/parts/${partId}/complete`, { answers }),
 };
 
 /** Uploaded covers come back as API-relative paths; pasted covers are already absolute URLs. */

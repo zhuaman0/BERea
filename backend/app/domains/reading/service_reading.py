@@ -35,7 +35,18 @@ from app.domains.reading.schema_reading import (
     ReadingAdminUserResponse,
     ReadingAppSettingsResponse,
     ReadingAppSettingsUpdate,
+    ReadingBookEditorResponse,
     ReadingBookOfMonthResponse,
+    ReadingBookPartAnswerEditorResponse,
+    ReadingBookPartAnswerReview,
+    ReadingBookPartAttemptResponse,
+    ReadingBookPartEditorResponse,
+    ReadingBookPartQuestionEditorResponse,
+    ReadingBookPartSubmit,
+    ReadingBookPathAnswer,
+    ReadingBookPathPart,
+    ReadingBookPathQuestion,
+    ReadingBookPathResponse,
     ReadingBookResponse,
     ReadingBookWrite,
     ReadingLiveAnswerOption,
@@ -565,13 +576,11 @@ async def create_vote_round_for_admin(
     if any(round_.closes_at > opens_at for round_ in rounds):
         raise HTTPException(status_code=409, detail="Wait for the current vote to finish")
     selection = _current_vote_selection(rounds)
-    winners: dict[str, str] = {}
     for stage in ("language", "genre"):
         previous = next((round_ for round_ in reversed(selection) if round_.stage == stage), None)
         winner = _vote_winner(previous, await get_vote_tally(previous.id, db)) if previous else None
         if not winner:
             raise HTTPException(status_code=409, detail=f"The {stage} vote needs a winner. Start a new selection.")
-        winners[stage] = winner.label.casefold()
     previous_book = next((round_ for round_ in reversed(selection) if round_.stage == "book"), None)
     if previous_book and _vote_winner(previous_book, await get_vote_tally(previous_book.id, db)):
         raise HTTPException(status_code=409, detail="This selection already has a book. Start a new selection.")
@@ -579,12 +588,6 @@ async def create_vote_round_for_admin(
     books = await get_books_by_ids(unique_ids, db)
     if len(books) != len(unique_ids):
         raise HTTPException(status_code=422, detail="Some of those books no longer exist")
-    if any(
-        (book.language or "").strip().casefold() != winners["language"]
-        or (book.genre or "").strip().casefold() != winners["genre"]
-        for book in books
-    ):
-        raise HTTPException(status_code=422, detail="Books must match the winning language and genre")
     closes_at = opens_at + timedelta(hours=payload.duration_hours)
     books_by_id = {book.id: book for book in books}
     options = [(books_by_id[book_id].title[:120], book_id) for book_id in unique_ids]
@@ -597,6 +600,48 @@ async def list_vote_rounds_for_user(user_id: str, db: AsyncSession) -> list[Read
 
     rounds = await list_vote_rounds(db)
     return [await _to_vote_round_response(round_, user_id, db) for round_ in rounds]
+
+
+async def skip_vote_time_for_admin(
+    user_id: str, round_id: str, db: AsyncSession
+) -> list[ReadingVoteRoundResponse]:
+    from app.domains.reading.repo_reading import (
+        close_vote_rounds,
+        get_vote_round_by_id,
+        list_vote_rounds,
+        lock_vote_creation,
+    )
+
+    await _require_admin(user_id, db)
+    try:
+        round_uuid = uuid.UUID(round_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail="Vote round not found") from exc
+
+    await lock_vote_creation(db)
+    target = await get_vote_round_by_id(round_uuid, db, for_update=True)
+    if not target:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vote round not found")
+
+    now = datetime.now(UTC)
+    if now < target.opens_at:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="This voting round has not opened yet")
+    if now >= target.closes_at:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Voting has already closed")
+
+    affected = [target]
+    if target.stage in {"language", "genre"}:
+        rounds = await list_vote_rounds(db)
+        affected = [
+            round_
+            for round_ in rounds
+            if round_.stage in {"language", "genre"}
+            and round_.opens_at == target.opens_at
+            and round_.closes_at == target.closes_at
+        ]
+
+    await close_vote_rounds(affected, now, db)
+    return [await _to_vote_round_response(round_, None, db) for round_ in affected]
 
 
 async def cast_vote_for_user(
@@ -755,6 +800,34 @@ def _to_book_response(book: ReadingBook) -> ReadingBookResponse:
         language=book.language,
         genre=book.genre,
         page_count=book.page_count,
+        part_count=len(book.parts),
+    )
+
+
+def _to_book_editor_response(book: ReadingBook) -> ReadingBookEditorResponse:
+    return ReadingBookEditorResponse(
+        **_to_book_response(book).model_dump(),
+        parts=[
+            ReadingBookPartEditorResponse(
+                id=part.id,
+                title=part.title,
+                points_reward=part.points_reward,
+                questions=[
+                    ReadingBookPartQuestionEditorResponse(
+                        id=question.id,
+                        text=question.text,
+                        answers=[
+                            ReadingBookPartAnswerEditorResponse(
+                                id=answer.id, text=answer.text, is_correct=answer.is_correct
+                            )
+                            for answer in question.answers
+                        ],
+                    )
+                    for question in part.questions
+                ],
+            )
+            for part in book.parts
+        ],
     )
 
 
@@ -775,6 +848,133 @@ async def list_books_for_user(db: AsyncSession) -> list[ReadingBookResponse]:
 
 async def get_book_for_user(book_id: str, db: AsyncSession) -> ReadingBookResponse:
     return _to_book_response(await _get_book_or_404(book_id, db))
+
+
+async def get_book_for_admin(user_id: str, book_id: str, db: AsyncSession) -> ReadingBookEditorResponse:
+    await _require_admin(user_id, db)
+    return _to_book_editor_response(await _get_book_or_404(book_id, db))
+
+
+async def get_book_path_for_user(user_id: str, book_id: str, db: AsyncSession) -> ReadingBookPathResponse:
+    from app.domains.reading.repo_reading import get_part_completions, get_user_by_id
+
+    user = await get_user_by_id(uuid.UUID(user_id), db)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    book = await _get_book_or_404(book_id, db)
+    if not user.is_captain or not user.team_id:
+        return ReadingBookPathResponse(
+            book=_to_book_response(book), parts=[], completed_parts=0, total_parts=len(book.parts),
+            total_points=0, is_complete=False, is_captain=False,
+        )
+
+    completions = await get_part_completions(book.id, user.team_id, db)
+    completed_count = 0
+    path_parts: list[ReadingBookPathPart] = []
+    for index, part in enumerate(book.parts):
+        completion = completions.get(part.id)
+        previous_complete = index == 0 or book.parts[index - 1].id in completions
+        part_status = "completed" if completion else "available" if previous_complete else "locked"
+        if completion:
+            completed_count += 1
+        path_parts.append(
+            ReadingBookPathPart(
+                id=part.id,
+                position=index + 1,
+                title=part.title,
+                points_reward=part.points_reward,
+                status=part_status,  # type: ignore[arg-type]
+                score=completion.score if completion else None,
+                questions=[] if part_status == "locked" else [
+                    ReadingBookPathQuestion(
+                        id=question.id,
+                        text=question.text,
+                        answers=[ReadingBookPathAnswer(id=answer.id, text=answer.text) for answer in question.answers],
+                    )
+                    for question in part.questions
+                ],
+            )
+        )
+    return ReadingBookPathResponse(
+        book=_to_book_response(book),
+        parts=path_parts,
+        completed_parts=completed_count,
+        total_parts=len(book.parts),
+        total_points=sum(completion.points_awarded for completion in completions.values()),
+        is_complete=bool(book.parts) and completed_count == len(book.parts),
+        is_captain=True,
+    )
+
+
+async def complete_book_part_for_captain(
+    user_id: str, book_id: str, part_id: str, payload: ReadingBookPartSubmit, db: AsyncSession
+) -> ReadingBookPartAttemptResponse:
+    from app.domains.reading.repo_reading import (
+        complete_book_part,
+        get_part,
+        get_part_completions,
+        get_user_by_id,
+    )
+
+    user = await get_user_by_id(uuid.UUID(user_id), db)
+    if not user or not user.is_captain or not user.team_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the team captain can play book parts")
+    book = await _get_book_or_404(book_id, db)
+    part = await get_part(uuid.UUID(part_id), db)
+    if not part or part.book_id != book.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book part not found")
+
+    completions = await get_part_completions(book.id, user.team_id, db)
+    if part.id in completions:
+        return ReadingBookPartAttemptResponse(
+            path=await get_book_path_for_user(user_id, book_id, db),
+            score=100,
+            passed=True,
+            points_awarded=0,
+            review=[],
+        )
+    part_index = next((index for index, item in enumerate(book.parts) if item.id == part.id), -1)
+    if part_index < 0:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book part not found")
+    if part_index > 0 and book.parts[part_index - 1].id not in completions:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Complete the previous part first")
+
+    submitted = {answer.question_id: answer.answer_id for answer in payload.answers}
+    if len(submitted) != len(payload.answers) or set(submitted) != {question.id for question in part.questions}:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Answer every question once")
+    score = 0
+    review: list[ReadingBookPartAnswerReview] = []
+    for question in part.questions:
+        selected = next((answer for answer in question.answers if answer.id == submitted[question.id]), None)
+        if selected is None:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid answer")
+        correct = next(answer for answer in question.answers if answer.is_correct)
+        score += int(selected.is_correct)
+        review.append(
+            ReadingBookPartAnswerReview(
+                question_id=question.id,
+                question_text=question.text,
+                selected_answer_id=selected.id,
+                selected_answer_text=selected.text,
+                correct_answer_id=correct.id,
+                correct_answer_text=correct.text,
+                is_correct=selected.is_correct,
+            )
+        )
+    score_percent = round((score / len(part.questions)) * 100) if part.questions else 0
+    passed = score_percent == 100
+    if passed:
+        try:
+            await complete_book_part(part.id, user.team_id, user.id, score_percent, part.points_reward, db)
+        except IntegrityError:
+            await db.rollback()
+    return ReadingBookPartAttemptResponse(
+        path=await get_book_path_for_user(user_id, book_id, db),
+        score=score_percent,
+        passed=passed,
+        points_awarded=part.points_reward if passed else 0,
+        review=review,
+    )
 
 
 async def create_book_for_admin(user_id: str, payload: ReadingBookWrite, db: AsyncSession) -> ReadingBookResponse:

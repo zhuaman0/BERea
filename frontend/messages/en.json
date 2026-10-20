@@ -558,7 +558,53 @@
       "yourProgress": "Your progress · p. {page}",
       "yourProgressOf": "Your progress · p. {page} of {total}",
       "teamAverage": "Team average",
-      "logPages": "Log pages"
+      "logPages": "Log pages",
+      "openPath": "Book path"
+    },
+    "bookPath": {
+      "back": "Back home",
+      "eyebrow": "Book path",
+      "progress": "{completed} of {total} complete",
+      "points": "{count} points",
+      "retry": "Try again",
+      "empty": "The admin hasn't added parts and quizzes for this book yet.",
+      "part": "Part {number}",
+      "completed": "Complete · {score}% correct",
+      "start": "Start quiz",
+      "locked": "Complete the previous part first",
+      "captainOnly": {
+        "title": "The captain plays this path",
+        "body": "Part quizzes are available only to the team captain. Their result unlocks the next part and earns points for the whole team."
+      },
+      "victory": {
+        "title": "Book complete!",
+        "body": "You completed every part of {title} and earned {points} team points."
+      },
+      "quiz": {
+        "questionProgress": "Question {current} of {total}",
+        "close": "Close quiz",
+        "next": "Next",
+        "finish": "Complete part",
+        "finishing": "Finishing…"
+      },
+      "result": {
+        "eyebrow": "Part complete",
+        "retryEyebrow": "Answer review",
+        "partFinished": "{title} complete",
+        "bookFinished": "You completed the whole book!",
+        "tryAgain": "Not quite — try again",
+        "score": "Correct answers",
+        "points": "Team points",
+        "yourAnswer": "Your answer",
+        "correctAnswer": "Correct answer",
+        "retry": "Try quiz again",
+        "continue": "Unlock next part",
+        "seeVictory": "See victory"
+      },
+      "errors": {
+        "load": "Couldn't load the book path.",
+        "submit": "Couldn't complete this part. Please try again."
+      }
     },
     "quizNight": {
       "title": "Next quiz night",
@@ -979,7 +1025,27 @@
           "titleRequired": "Give the book a title.",
           "pagesInvalid": "Pages must be a whole number above 0.",
           "coverUrlInvalid": "That cover URL doesn't load an image. Paste a direct image link or upload a file.",
+          "partInvalid": "Part {number} needs a title and at least one question.",
+          "questionInvalid": "Check question {question} in part {part}: it needs text, at least 2 answers and one correct answer.",
           "save": "Couldn't save the book. Please try again."
+        },
+        "path": {
+          "eyebrow": "Gamification",
+          "title": "Book path",
+          "description": "Split the book into parts or themes. The captain completes each quiz in order; finishing one unlocks the next and earns team points.",
+          "addPart": "Add part",
+          "emptyTitle": "Add the first part",
+          "emptyBody": "For example: Part 1 → Part 2 → Part 3",
+          "partLabel": "Part {number}",
+          "partPlaceholder": "For example, The Hearth and the Salamander",
+          "reward": "Points for part",
+          "deletePart": "Delete part {number}",
+          "questionPlaceholder": "Enter a quiz question…",
+          "deleteQuestion": "Delete question {number}",
+          "answerHint": "Answer choices — mark one as correct.",
+          "markCorrect": "Mark answer {number} as correct",
+          "answerPlaceholder": "Answer {number}",
+          "addQuestion": "Add question"
         }
       },
       "catalogPicker": {
@@ -1002,7 +1068,8 @@
           "maxHours": "At most 7 days",
           "pickBooks": "Pick between {min} and {max} matching books",
           "startBook": "Couldn't start the book vote.",
-          "refresh": "Couldn't refresh rounds."
+          "refresh": "Couldn't refresh rounds.",
+          "skipTime": "Couldn't finish the vote."
         },
         "selection": {
           "title": "Start language + genre voting",
@@ -1024,13 +1091,16 @@
         },
         "book": {
           "title": "Next: choose the book",
-          "body": "Students chose {language} · {genre}. Offer matching catalog books for the final vote.",
+          "body": "Students chose {language} · {genre}. Select books from the catalog for the final vote.",
           "loadingCatalog": "Loading catalog…",
           "loadError": "Couldn't load books.",
           "durationLabel": "Book vote duration (hours, separate from the 6-hour selection)",
           "submit": "Start book vote"
         },
         "loadingRounds": "Loading rounds…",
+        "skipTime": "Skip time",
+        "skipping": "Finishing…",
+        "skipConfirm": "Finish the current vote now? No more votes will be accepted after this.",
         "open": {
           "book": "Book voting is open",
           "selection": "Language + genre voting is open",

@@ -81,7 +81,7 @@ export default function ReadingHomePage() {
     },
     {
       icon: Zap, label: t("stats.points"),
-      value: "0",
+      value: team ? String(team.points) : "—",
       note: t("stats.pointsNote"),
       accent: true,
     },
