@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { BookOpen, Flame } from "lucide-react";
+import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { readingAuthApi } from "@berea/api";
 import { initials } from "@berea/core";
 import type { ReadingProfileStats, ReadingTeam } from "@berea/api";
@@ -13,10 +14,7 @@ import { ReaderShelf } from "@/features/reading/components/ReaderShelf";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
 import { READING_PAGE_CONTAINER } from "@/features/reading/lib/pageContainer";
 import { ReadingPageHero } from "@/features/reading/components/layout/ReadingPageHero";
-
-function memberSinceLabel(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", { month: "long", year: "numeric" });
-}
+import { formatReadingDate } from "@/features/reading/lib/formatReadingDate";
 
 interface LedgerItemProps {
   value: string;
@@ -35,6 +33,9 @@ function LedgerItem({ value, label, hint }: LedgerItemProps) {
 }
 
 export default function ReadingProfilePage() {
+  const t = useTranslations("reading.profile");
+  const format = useFormatter();
+  const locale = useLocale();
   const { user, updateUser } = useReadingAuthStore();
   const [team, setTeam] = useState<ReadingTeam | null>(null);
   const [stats, setStats] = useState<ReadingProfileStats | null>(null);
@@ -46,22 +47,22 @@ export default function ReadingProfilePage() {
     readingAuthApi
       .myStats()
       .then(setStats)
-      .catch((err) => setLoadError(isApiError(err) ? err.detail : "Couldn't load your reading stats."));
-  }, [updateUser]);
+      .catch((err) => setLoadError(isApiError(err) ? err.detail : t("loadError")));
+  }, [updateUser, t]);
 
   if (!user) {
-    return <div className={READING_PAGE_CONTAINER}><p className="text-sm text-[var(--rd-text-muted)]">Loading profile…</p></div>;
+    return <div className={READING_PAGE_CONTAINER}><p className="text-sm text-[var(--rd-text-muted)]">{t("loading")}</p></div>;
   }
 
   const streak = user.current_streak;
   const accuracy = stats && stats.answers_total > 0
-    ? `${Math.round((stats.answers_correct / stats.answers_total) * 100)}%`
+    ? format.number(stats.answers_correct / stats.answers_total, { style: "percent", maximumFractionDigits: 0 })
     : "—";
 
   return (
     <div className={READING_PAGE_CONTAINER}>
       <ReadingPageHero
-        eyebrow="Reader profile"
+        eyebrow={t("eyebrow")}
         eyebrowIcon={BookOpen}
         leading={
           <span className="rd-accent-gradient flex h-20 w-20 items-center justify-center rounded-full font-display text-2xl font-bold text-black/80">
@@ -69,7 +70,7 @@ export default function ReadingProfilePage() {
           </span>
         }
         title={user.full_name}
-        description={`@${user.email.split("@")[0]}, reading since ${memberSinceLabel(user.created_at)}`}
+        description={t("description", { handle: user.email.split("@")[0], date: formatReadingDate(user.created_at, locale, "monthYear") })}
         aside={
           <div className="flex flex-wrap gap-3">
             <div className="flex items-center gap-3 rounded-xl border border-[var(--rd-border)] bg-black/20 px-4 py-3">
@@ -83,10 +84,10 @@ export default function ReadingProfilePage() {
               />
               <div>
                 <p className="font-display text-[15px] font-semibold leading-tight text-[var(--rd-text)]">
-                  {streak}-day streak
+                  {t("streak", { count: streak })}
                 </p>
                 <p className="text-[11px] text-[var(--rd-text-muted)]">
-                  {streak > 0 ? "Keep it lit: open the app tomorrow" : "Check in daily to start one"}
+                  {streak > 0 ? t("streakActive") : t("streakEmpty")}
                 </p>
               </div>
             </div>
@@ -96,10 +97,10 @@ export default function ReadingProfilePage() {
               className="rounded-xl border border-[var(--rd-border)] bg-black/20 px-4 py-3 transition-colors hover:border-[var(--rd-accent-from)]/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-accent-from)]"
             >
               <p className="font-display text-[15px] font-semibold leading-tight text-[var(--rd-text)]">
-                {user.team_name ?? "No team yet"}
+                {user.team_name ?? t("noTeam")}
               </p>
               <p className="text-[11px] text-[var(--rd-text-muted)]">
-                {team ? `Place ${team.place} of ${team.teams_total}, ${team.points} team points` : "Team standing loading"}
+                {team ? t("teamStanding", { place: team.place, total: team.teams_total, points: team.points }) : t("teamStandingLoading")}
               </p>
             </Link>
           </div>
@@ -107,34 +108,34 @@ export default function ReadingProfilePage() {
       />
 
       {loadError ? (
-        <p className="mt-10 text-sm text-[var(--rd-text-muted)]">{loadError} Refresh the page to try again.</p>
+        <p className="mt-10 text-sm text-[var(--rd-text-muted)]">{t("loadErrorRetry", { error: loadError })}</p>
       ) : (
         <>
           <section
-            aria-label="Season stats"
+            aria-label={t("statsLabel")}
             className="mt-10 grid grid-cols-2 gap-x-6 gap-y-7 divide-[var(--rd-border)] border-y border-[var(--rd-border)] py-6 sm:grid-cols-3 lg:grid-cols-6 lg:gap-x-0 lg:divide-x"
           >
-            <LedgerItem value={stats ? String(stats.quiz_points) : "—"} label="Quiz points" hint="Counts toward your team" />
+            <LedgerItem value={stats ? format.number(stats.quiz_points) : "—"} label={t("quizPoints")} hint={t("quizPointsHint")} />
             <LedgerItem
               value={accuracy}
-              label="Quiz accuracy"
-              hint={stats ? `${stats.answers_correct} of ${stats.answers_total} right` : undefined}
+              label={t("accuracy")}
+              hint={stats ? t("accuracyHint", { correct: stats.answers_correct, total: stats.answers_total }) : undefined}
             />
-            <LedgerItem value={stats ? String(stats.quiz_nights) : "—"} label="Quiz nights played" />
-            <LedgerItem value={stats ? stats.pages_read.toLocaleString("en-US") : "—"} label="Pages read" />
-            <LedgerItem value={stats ? String(stats.books_finished) : "—"} label="Books finished" />
-            <LedgerItem value={stats ? String(stats.votes_cast) : "—"} label="Votes cast" />
+            <LedgerItem value={stats ? format.number(stats.quiz_nights) : "—"} label={t("quizNights")} />
+            <LedgerItem value={stats ? format.number(stats.pages_read) : "—"} label={t("pagesRead")} />
+            <LedgerItem value={stats ? format.number(stats.books_finished) : "—"} label={t("booksFinished")} />
+            <LedgerItem value={stats ? format.number(stats.votes_cast) : "—"} label={t("votesCast")} />
           </section>
 
           <section className="mt-10">
-            <h2 className="font-display text-xl font-semibold text-[var(--rd-text)]">Your shelf</h2>
+            <h2 className="font-display text-xl font-semibold text-[var(--rd-text)]">{t("shelfTitle")}</h2>
             <p className="mb-6 mt-1 text-[13px] text-[var(--rd-text-muted)]">
-              Every book you&apos;ve logged pages on, newest first. The ember shows how far you are.
+              {t("shelfHint")}
             </p>
             {stats ? (
               <ReaderShelf shelf={stats.shelf} />
             ) : (
-              <p className="text-sm text-[var(--rd-text-muted)]">Loading your shelf…</p>
+              <p className="text-sm text-[var(--rd-text-muted)]">{t("shelfLoading")}</p>
             )}
           </section>
         </>

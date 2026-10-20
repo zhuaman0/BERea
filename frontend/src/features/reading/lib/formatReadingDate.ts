@@ -31,3 +31,11 @@ export function formatReadingDate(iso: string, locale: string, style: ReadingDat
   if (locale === "kk") return formatKazakh(date, style);
   return date.toLocaleDateString(locale, INTL_OPTIONS[style]);
 }
+
+export function formatVoteTime(iso: string, locale: string): string {
+  return new Date(iso).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+}
+
+export function formatVoteDateTime(iso: string, locale: string): string {
+  return `${formatReadingDate(iso, locale, "dayMonth")}, ${formatVoteTime(iso, locale)}`;
+}

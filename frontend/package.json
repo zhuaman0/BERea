@@ -8,7 +8,9 @@
     "start": "next start -p 3003",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test tests/*.test.mjs"
+    "test": "node --experimental-strip-types --test tests/*.test.mjs",
+    "translate": "node scripts/translate.mjs",
+    "i18n:check": "node scripts/translate.mjs --check"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
@@ -34,6 +36,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "deepl-node": "^1.28.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",

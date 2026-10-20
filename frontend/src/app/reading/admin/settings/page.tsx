@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { readingSettingsApi } from "@berea/api";
 import type { ReadingAppSettings } from "@berea/api";
 import { isApiError } from "@/features/auth/utils";
@@ -50,13 +51,15 @@ export default function ReadingAdminSettingsPage() {
   const [settings, setSettings] = useState<ReadingAppSettings | null>(null);
   const [savingKey, setSavingKey] = useState<SettingKey | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const t = useTranslations("reading.admin.settings");
+  const tCommon = useTranslations("reading.admin.common");
 
   useEffect(() => {
     readingSettingsApi
       .get()
       .then(setSettings)
-      .catch((err) => setError(isApiError(err) ? err.detail : "Couldn't load settings."));
-  }, []);
+      .catch((err) => setError(isApiError(err) ? err.detail : t("loadError")));
+  }, [t]);
 
   async function handleToggle(key: SettingKey) {
     if (!settings) return;
@@ -68,7 +71,7 @@ export default function ReadingAdminSettingsPage() {
       setSettings(await readingSettingsApi.update({ [key]: !previous[key] }));
     } catch (err) {
       setSettings(previous);
-      setError(isApiError(err) ? err.detail : "Couldn't save that change.");
+      setError(isApiError(err) ? err.detail : t("saveError"));
     } finally {
       setSavingKey(null);
     }
@@ -76,22 +79,27 @@ export default function ReadingAdminSettingsPage() {
 
   return (
     <div className={READING_PAGE_CONTAINER}>
-      <ReadingPageHero eyebrow="Admin" eyebrowIcon={SlidersHorizontal} title="Settings" description="Feature toggles that apply site-wide for every student." />
+      <ReadingPageHero
+        eyebrow={tCommon("eyebrow")}
+        eyebrowIcon={SlidersHorizontal}
+        title={t("title")}
+        description={t("description")}
+      />
 
       {!settings ? (
-        !error && <p className="mt-6 text-sm text-[var(--rd-text-muted)]">Loading settings…</p>
+        !error && <p className="mt-6 text-sm text-[var(--rd-text-muted)]">{t("loading")}</p>
       ) : (
         <div className="mt-6 flex flex-col gap-4">
           <SettingRow
-            title="Season started"
-            description="Off during registration: semester rounds haven't started, and Leaderboard, Profile and Quiz stay locked. Home and Book vote are available so students can choose the first book. Turn on at kickoff."
+            title={t("seasonStarted.title")}
+            description={t("seasonStarted.description")}
             isOn={settings.season_started}
             isSaving={savingKey === "season_started"}
             onToggle={() => handleToggle("season_started")}
           />
           <SettingRow
-            title="Leaderboard"
-            description="When off, students can't see the Leaderboard page or its nav link."
+            title={t("leaderboard.title")}
+            description={t("leaderboard.description")}
             isOn={settings.leaderboard_enabled}
             isSaving={savingKey === "leaderboard_enabled"}
             onToggle={() => handleToggle("leaderboard_enabled")}

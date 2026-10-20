@@ -3,6 +3,7 @@
 import { use, useCallback, useState, useSyncExternalStore } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Crown, Loader2, Lock, PartyPopper, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/shared/lib/utils";
 import { isApiError } from "@/features/auth/utils";
 import { readingLiveQuizApi, type LivePlayerState } from "@berea/api";
@@ -65,6 +66,7 @@ interface JoinFormProps {
 }
 
 function JoinForm({ initialPin, onJoined }: JoinFormProps) {
+  const t = useTranslations("reading.quiz.join");
   const [pin, setPin] = useState(initialPin.replace(/\D/g, "").slice(0, 6));
   const [error, setError] = useState<string | null>(null);
   const [isJoining, setIsJoining] = useState(false);
@@ -72,7 +74,7 @@ function JoinForm({ initialPin, onJoined }: JoinFormProps) {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (pin.length !== 6) {
-      setError("The PIN has 6 digits.");
+      setError(t("pinLength"));
       return;
     }
     setError(null);
@@ -81,7 +83,7 @@ function JoinForm({ initialPin, onJoined }: JoinFormProps) {
       const session = await readingLiveQuizApi.join(pin);
       onJoined(session.id);
     } catch (err) {
-      setError(isApiError(err) ? err.detail : "Couldn't join. Check the PIN and try again.");
+      setError(isApiError(err) ? err.detail : t("joinError"));
       setIsJoining(false);
     }
   }
@@ -93,15 +95,15 @@ function JoinForm({ initialPin, onJoined }: JoinFormProps) {
       animate={{ opacity: 1, y: 0 }}
       className="mt-10 w-full max-w-sm rounded-3xl border border-[var(--rd-border)] bg-[var(--rd-panel)] p-8 text-center"
     >
-      <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--rd-accent-from)]">Quiz night</p>
-      <h1 className="font-display mt-2 text-2xl font-semibold text-[var(--rd-text)]">Enter the game PIN</h1>
-      <p className="mt-1 text-sm text-[var(--rd-text-muted)]">It&apos;s on the big screen.</p>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--rd-accent-from)]">{t("eyebrow")}</p>
+      <h1 className="font-display mt-2 text-2xl font-semibold text-[var(--rd-text)]">{t("title")}</h1>
+      <p className="mt-1 text-sm text-[var(--rd-text-muted)]">{t("hint")}</p>
       <input
         value={pin}
         onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
         inputMode="numeric"
         autoFocus
-        aria-label="Game PIN"
+        aria-label={t("pinLabel")}
         placeholder="000000"
         className="mt-6 h-16 w-full rounded-xl border border-[var(--rd-border)] bg-[var(--rd-ink)] text-center font-display text-3xl font-bold tracking-[0.4em] text-[var(--rd-text)] placeholder:text-[var(--rd-border)] focus:border-[var(--rd-accent-from)] focus:outline-none"
       />
@@ -112,7 +114,7 @@ function JoinForm({ initialPin, onJoined }: JoinFormProps) {
         className="rd-accent-gradient mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl text-base font-semibold text-black/85 disabled:opacity-60"
       >
         {isJoining && <Loader2 size={17} className="animate-spin" />}
-        {isJoining ? "Joining…" : "Join"}
+        {isJoining ? t("joining") : t("submit")}
       </button>
     </motion.form>
   );
@@ -124,6 +126,7 @@ interface PlayerGameProps {
 }
 
 function PlayerGame({ sessionId, onLeave }: PlayerGameProps) {
+  const t = useTranslations("reading.quiz.game");
   const load = useCallback(() => readingLiveQuizApi.playerState(sessionId), [sessionId]);
   const { data: state, error, setData } = usePolling(load, 1000);
   const [pendingAnswerId, setPendingAnswerId] = useState<string | null>(null);
@@ -137,7 +140,7 @@ function PlayerGame({ sessionId, onLeave }: PlayerGameProps) {
     try {
       setData(await readingLiveQuizApi.answer(sessionId, answerId));
     } catch (err) {
-      setAnswerError(isApiError(err) ? err.detail : "Couldn't send your answer.");
+      setAnswerError(isApiError(err) ? err.detail : t("answerError"));
     } finally {
       setPendingAnswerId(null);
     }
@@ -149,13 +152,13 @@ function PlayerGame({ sessionId, onLeave }: PlayerGameProps) {
       <div className="mt-16 text-center text-sm text-[var(--rd-text-muted)]">
         {notJoined ? (
           <>
-            <p>That quiz has ended or you&apos;re not in it.</p>
+            <p>{t("notJoined")}</p>
             <button onClick={onLeave} className="mt-3 font-medium text-[var(--rd-text)] underline">
-              Enter a new PIN
+              {t("newPin")}
             </button>
           </>
         ) : (
-          "Connecting…"
+          t("connecting")
         )}
       </div>
     );
@@ -166,7 +169,7 @@ function PlayerGame({ sessionId, onLeave }: PlayerGameProps) {
       <div className="flex items-center justify-between text-sm text-[var(--rd-text-muted)]">
         <span className="font-display font-semibold text-[var(--rd-text)]">{state.quiz_title}</span>
         <span>
-          {state.your_score} pts · #{state.your_rank} of {state.player_count}
+          {t("scoreLine", { score: state.your_score, rank: state.your_rank, total: state.player_count })}
         </span>
       </div>
 
@@ -180,9 +183,9 @@ function PlayerGame({ sessionId, onLeave }: PlayerGameProps) {
             >
               <Check size={36} className="text-black/80" strokeWidth={3} />
             </motion.div>
-            <h1 className="font-display mt-6 text-3xl font-semibold text-[var(--rd-text)]">You&apos;re in!</h1>
+            <h1 className="font-display mt-6 text-3xl font-semibold text-[var(--rd-text)]">{t("lobbyTitle")}</h1>
             <p className="mt-2 text-[var(--rd-text-muted)]">
-              {state.player_count} {state.player_count === 1 ? "player" : "players"} joined. Waiting for the host to start…
+              {t("lobbyBody", { count: state.player_count })}
             </p>
           </motion.div>
         )}
@@ -204,18 +207,23 @@ function PlayerGame({ sessionId, onLeave }: PlayerGameProps) {
         {state.phase === "finished" && (
           <motion.div key="done" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-16 text-center">
             <PartyPopper size={44} className="mx-auto text-[var(--rd-accent-from)]" />
-            <h1 className="font-display mt-4 text-3xl font-semibold text-[var(--rd-text)]">That&apos;s a wrap!</h1>
+            <h1 className="font-display mt-4 text-3xl font-semibold text-[var(--rd-text)]">{t("finishedTitle")}</h1>
             <p className="mt-2 text-lg text-[var(--rd-text-muted)]">
-              You scored <span className="font-semibold text-[var(--rd-text)]">{state.your_score}</span> points — #{state.your_rank} of {state.player_count}
+              {t.rich("finishedScore", {
+                score: state.your_score,
+                rank: state.your_rank,
+                total: state.player_count,
+                strong: (chunks) => <span className="font-semibold text-[var(--rd-text)]">{chunks}</span>,
+              })}
             </p>
             {state.team_scores[0] && (
               <p className="rd-accent-gradient mx-auto mt-6 inline-flex items-center gap-2 rounded-full px-5 py-2 font-semibold text-black/85">
-                <Crown size={16} /> {state.team_scores[0].team_name} wins with {state.team_scores[0].score}
+                <Crown size={16} /> {t("teamWins", { team: state.team_scores[0].team_name, score: state.team_scores[0].score })}
               </p>
             )}
             <div>
               <button onClick={onLeave} className="mt-8 text-sm font-medium text-[var(--rd-text-muted)] underline">
-                Leave
+                {t("leave")}
               </button>
             </div>
           </motion.div>
@@ -235,6 +243,7 @@ interface QuestionViewProps {
 }
 
 function QuestionView({ state, secondsLeft, pendingAnswerId, onAnswer }: QuestionViewProps) {
+  const t = useTranslations("reading.quiz.question");
   const question = state.question;
   if (!question) return null;
   const locked = Boolean(state.your_answer_id || pendingAnswerId);
@@ -243,7 +252,7 @@ function QuestionView({ state, secondsLeft, pendingAnswerId, onAnswer }: Questio
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="mt-6">
       <div className="flex items-center justify-between gap-4">
         <span className="text-sm text-[var(--rd-text-muted)]">
-          Question {question.index + 1} of {question.total}
+          {t("progress", { index: question.index + 1, total: question.total })}
         </span>
         <motion.span
           key={secondsLeft}
@@ -289,7 +298,7 @@ function QuestionView({ state, secondsLeft, pendingAnswerId, onAnswer }: Questio
 
       {state.your_answer_id && (
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-6 text-center text-[var(--rd-text-muted)]">
-          Answer locked in — waiting for the timer…
+          {t("locked")}
         </motion.p>
       )}
     </motion.div>
@@ -301,6 +310,7 @@ interface RevealViewProps {
 }
 
 function RevealView({ state }: RevealViewProps) {
+  const t = useTranslations("reading.quiz.reveal");
   const question = state.question;
   if (!question) return null;
   const correct = question.answers.find((a) => a.is_correct);
@@ -321,7 +331,7 @@ function RevealView({ state }: RevealViewProps) {
         {gotIt ? <Check size={48} className="text-white" strokeWidth={3} /> : <X size={48} className="text-white" strokeWidth={3} />}
       </motion.div>
       <h2 className="font-display mt-6 text-3xl font-semibold text-[var(--rd-text)]">
-        {gotIt ? "Correct!" : answered ? "Not quite" : "Time's up"}
+        {gotIt ? t("correct") : answered ? t("wrong") : t("timeUp")}
       </h2>
       {gotIt && (
         <motion.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mt-2 font-display text-2xl font-semibold text-emerald-400">
@@ -330,12 +340,15 @@ function RevealView({ state }: RevealViewProps) {
       )}
       {correct && (
         <p className="mt-3 text-[var(--rd-text-muted)]">
-          The answer was <span className="font-semibold text-[var(--rd-text)]">{correct.text}</span>
+          {t.rich("answerWas", {
+            answer: correct.text,
+            strong: (chunks) => <span className="font-semibold text-[var(--rd-text)]">{chunks}</span>,
+          })}
         </p>
       )}
       <p className="mt-6 text-sm text-[var(--rd-text-muted)]">
-        You&apos;re #{state.your_rank} with {state.your_score} points.{" "}
-        {question.index + 1 < question.total ? "Next question coming up…" : "Final results coming up…"}
+        {t("standing", { rank: state.your_rank, score: state.your_score })}{" "}
+        {question.index + 1 < question.total ? t("nextQuestion") : t("finalResults")}
       </p>
     </motion.div>
   );

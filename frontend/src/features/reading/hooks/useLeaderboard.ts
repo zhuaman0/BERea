@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { readingAuthApi, readingSettingsApi } from "@berea/api";
 import type { ReadingTeamSummary } from "@berea/api";
 import { isApiError } from "@/features/auth/utils";
@@ -15,6 +16,7 @@ interface LeaderboardState {
 }
 
 export function useLeaderboard(): LeaderboardState {
+  const t = useTranslations("reading.leaderboard");
   const [teams, setTeams] = useState<ReadingTeamSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -25,9 +27,9 @@ export function useLeaderboard(): LeaderboardState {
     readingAuthApi
       .listTeams()
       .then(setTeams)
-      .catch((error) => setLoadError(isApiError(error) ? error.detail : "Couldn't load the leaderboard."))
+      .catch((error) => setLoadError(isApiError(error) ? error.detail : t("loadError")))
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [t]);
 
   const reload = useCallback(() => {
     setIsLoading(true);

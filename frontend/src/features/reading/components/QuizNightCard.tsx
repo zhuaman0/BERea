@@ -1,4 +1,6 @@
+import { useLocale, useTranslations } from "next-intl";
 import type { QuizNight } from "@/features/reading/types";
+import { formatVoteDateTime } from "@/features/reading/lib/formatReadingDate";
 
 interface CountdownUnitProps {
   value: number;
@@ -21,23 +23,25 @@ interface QuizNightCardProps {
 }
 
 export function QuizNightCard({ quizNight }: QuizNightCardProps) {
+  const t = useTranslations("reading.quizNight");
+  const locale = useLocale();
   return (
     <div className="flex flex-col rounded-2xl border border-[var(--rd-border)] bg-[var(--rd-panel)] p-7">
-      <p className="text-xs uppercase tracking-[0.15em] text-[var(--rd-text-muted)]">Next quiz night</p>
+      <p className="text-xs uppercase tracking-[0.15em] text-[var(--rd-text-muted)]">{t("title")}</p>
 
       <div className="mt-4 flex items-center justify-center gap-6">
-        <CountdownUnit value={quizNight.daysLeft} label="days" />
-        <CountdownUnit value={quizNight.hoursLeft} label="hrs" />
-        <CountdownUnit value={quizNight.minutesLeft} label="min" />
+        <CountdownUnit value={quizNight.daysLeft} label={t("units.days")} />
+        <CountdownUnit value={quizNight.hoursLeft} label={t("units.hours")} />
+        <CountdownUnit value={quizNight.minutesLeft} label={t("units.minutes")} />
       </div>
 
-      <p className="mt-6 text-center text-base text-[var(--rd-text)]">{quizNight.dateLabel}</p>
-      <p className="text-center text-sm text-[var(--rd-text-muted)]">{quizNight.location}</p>
+      <p className="mt-6 text-center text-base text-[var(--rd-text)]">{formatVoteDateTime(quizNight.startsAt, locale)}</p>
+      <p className="text-center text-sm text-[var(--rd-text-muted)]">{t("location", { location: quizNight.location, count: quizNight.teamsCount })}</p>
 
       <button className="rd-accent-gradient mt-5 rounded-lg py-3 text-sm font-semibold text-black/85">
-        I&apos;m in — reserve seat
+        {t("reserve")}
       </button>
-      <p className="mt-2 text-center text-xs text-[var(--rd-text-muted)]">{quizNight.entryNote}</p>
+      <p className="mt-2 text-center text-xs text-[var(--rd-text-muted)]">{t("entryNote")}</p>
     </div>
   );
 }

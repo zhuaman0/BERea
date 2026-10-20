@@ -1,5 +1,6 @@
 import type { MutableRefObject } from "react";
 import { Search, Users, X } from "lucide-react";
+import { useFormatter, useTranslations } from "next-intl";
 import type { ReadingTeamSummary } from "@berea/api";
 import { TeamBook } from "@/features/reading/components/team/TeamBook";
 
@@ -38,29 +39,32 @@ export function LeaderboardTable({
   onQueryChange,
   onClearQuery,
 }: LeaderboardTableProps) {
+  const t = useTranslations("reading.leaderboard.table");
+  const format = useFormatter();
+
   return (
     <section className="mt-10 overflow-hidden rounded-[24px] border border-white/[0.08] bg-[var(--rd-panel)] shadow-[0_18px_60px_rgba(0,0,0,0.18)]" aria-labelledby="standings-title">
       <div className="flex flex-col gap-4 border-b border-white/[0.07] px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--rd-accent-from)]">Full ranking</p>
-          <h2 id="standings-title" className="font-display mt-1 text-xl font-semibold text-[var(--rd-text)] sm:text-2xl">All teams</h2>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--rd-accent-from)]">{t("eyebrow")}</p>
+          <h2 id="standings-title" className="font-display mt-1 text-xl font-semibold text-[var(--rd-text)] sm:text-2xl">{t("title")}</h2>
         </div>
 
         <label className="relative block w-full sm:w-72">
-          <span className="sr-only">Search teams</span>
+          <span className="sr-only">{t("searchLabel")}</span>
           <Search size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--rd-text-muted)]" aria-hidden="true" />
           <input
             type="search"
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
-            placeholder="Find a team…"
+            placeholder={t("searchPlaceholder")}
             className="h-10 w-full rounded-xl border border-white/[0.08] bg-[var(--rd-ink)] py-2 pl-10 pr-10 text-sm text-[var(--rd-text)] outline-none transition placeholder:text-[var(--rd-text-muted)]/60 focus:border-[var(--rd-accent-from)]/55 focus:ring-2 focus:ring-[var(--rd-accent-from)]/10"
           />
           {query && (
             <button
               type="button"
               onClick={onClearQuery}
-              aria-label="Clear team search"
+              aria-label={t("clearSearchLabel")}
               className="absolute right-2.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-[var(--rd-text-muted)] transition hover:bg-white/[0.06] hover:text-[var(--rd-text)]"
             >
               <X size={14} aria-hidden="true" />
@@ -71,20 +75,20 @@ export function LeaderboardTable({
 
       {teams.length === 0 ? (
         <div className="px-6 py-14 text-center">
-          <p className="font-display text-base font-semibold text-[var(--rd-text)]">No matching teams</p>
-          <p className="mt-1 text-sm text-[var(--rd-text-muted)]">Try a different team name.</p>
-          <button type="button" onClick={onClearQuery} className="mt-4 text-xs font-semibold text-[var(--rd-accent-to)] underline-offset-4 hover:underline">Clear search</button>
+          <p className="font-display text-base font-semibold text-[var(--rd-text)]">{t("noMatchTitle")}</p>
+          <p className="mt-1 text-sm text-[var(--rd-text-muted)]">{t("noMatchBody")}</p>
+          <button type="button" onClick={onClearQuery} className="mt-4 text-xs font-semibold text-[var(--rd-accent-to)] underline-offset-4 hover:underline">{t("clearSearch")}</button>
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <caption className="sr-only">Season leaderboard with team position, roster size, and quiz points.</caption>
+            <caption className="sr-only">{t("caption")}</caption>
             <thead>
               <tr className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--rd-text-muted)]">
-                <th scope="col" className="w-16 px-4 py-3.5 font-semibold sm:w-24 sm:px-6">Rank</th>
-                <th scope="col" className="px-2 py-3.5 font-semibold sm:px-4">Team</th>
-                <th scope="col" className="hidden px-4 py-3.5 text-center font-semibold sm:table-cell">Readers</th>
-                <th scope="col" className="px-4 py-3.5 text-right font-semibold sm:px-6">Points</th>
+                <th scope="col" className="w-16 px-4 py-3.5 font-semibold sm:w-24 sm:px-6">{t("columns.rank")}</th>
+                <th scope="col" className="px-2 py-3.5 font-semibold sm:px-4">{t("columns.team")}</th>
+                <th scope="col" className="hidden px-4 py-3.5 text-center font-semibold sm:table-cell">{t("columns.readers")}</th>
+                <th scope="col" className="px-4 py-3.5 text-right font-semibold sm:px-6">{t("columns.points")}</th>
               </tr>
             </thead>
             <tbody>
@@ -114,10 +118,10 @@ export function LeaderboardTable({
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
                             <span className={`block max-w-[36vw] truncate text-sm sm:max-w-none ${isMine ? "font-semibold text-[var(--rd-text)]" : "font-medium text-[var(--rd-text)]"}`}>{team.name}</span>
-                            {isMine && <span className="hidden rounded-full bg-[var(--rd-accent-from)]/15 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[var(--rd-accent-to)] min-[430px]:inline">Your team</span>}
+                            {isMine && <span className="hidden rounded-full bg-[var(--rd-accent-from)]/15 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[var(--rd-accent-to)] min-[430px]:inline">{t("yourTeam")}</span>}
                           </div>
                           <span className="mt-1 flex items-center gap-1 text-[10px] text-[var(--rd-text-muted)] sm:hidden">
-                            <Users size={10} aria-hidden="true" />{team.member_count} {team.member_count === 1 ? "reader" : "readers"}
+                            <Users size={10} aria-hidden="true" />{t("readers", { count: team.member_count })}
                           </span>
                         </div>
                       </div>
@@ -126,8 +130,8 @@ export function LeaderboardTable({
                       <span className="inline-flex items-center gap-1.5 text-xs tabular-nums text-[var(--rd-text-muted)]"><Users size={13} aria-hidden="true" />{team.member_count}</span>
                     </td>
                     <td className="px-4 py-3 text-right sm:px-6">
-                      <span className="font-display text-base font-semibold tabular-nums text-[var(--rd-text)] sm:text-lg">{team.points.toLocaleString()}</span>
-                      <span className="ml-1 hidden text-[9px] font-semibold uppercase tracking-wider text-[var(--rd-text-muted)] min-[430px]:inline">pts</span>
+                      <span className="font-display text-base font-semibold tabular-nums text-[var(--rd-text)] sm:text-lg">{format.number(team.points)}</span>
+                      <span className="ml-1 hidden text-[9px] font-semibold uppercase tracking-wider text-[var(--rd-text-muted)] min-[430px]:inline">{t("ptsShort")}</span>
                     </td>
                   </tr>
                 );
@@ -138,8 +142,8 @@ export function LeaderboardTable({
       )}
 
       <div className="flex items-center justify-between gap-4 border-t border-white/[0.07] px-4 py-3 text-[10px] uppercase tracking-[0.14em] text-[var(--rd-text-muted)] sm:px-6">
-        <span>{query ? `${teams.length} of ${totalTeams} teams` : `${totalTeams} teams competing`}</span>
-        <span className="hidden sm:inline">Updated from live season data</span>
+        <span>{query ? t("filteredCount", { shown: teams.length, count: totalTeams }) : t("totalCount", { count: totalTeams })}</span>
+        <span className="hidden sm:inline">{t("liveData")}</span>
       </div>
     </section>
   );

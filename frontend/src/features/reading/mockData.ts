@@ -7,16 +7,13 @@ import type { ReadingDashboard } from "./types";
  */
 
 export const MOCK_DASHBOARD: ReadingDashboard = {
-  greetingName: "Alish",
-  greetingNote: "Keep reading — every page you log adds to your team's score.",
   quizNight: {
     daysLeft:    6,
     hoursLeft:   23,
     minutesLeft: 59,
-    dateLabel:   "31 October · 19:00",
-    location:    "Block C, Auditorium 204 · 14 teams",
+    startsAt:    "2026-10-31T19:00:00",
+    location:    "Block C, Auditorium 204",
     teamsCount:  14,
-    entryNote:   "Entry: 1 game token or semester pass",
   },
   bonusTasks: [
     { id: "b1", title: "30s TikTok review",       points: 150, status: "open", note: "×2 points in the next round" },

@@ -1,8 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useLocale, useTranslations } from "next-intl";
 import { cn } from "@/shared/lib/utils";
 import type { SemesterRound } from "@berea/api";
+import { formatReadingDate } from "../lib/formatReadingDate";
 
 interface SemesterMapCardProps {
   rounds: SemesterRound[];
@@ -16,21 +18,20 @@ const GLOW_PULSE = [
   "0 0 0px 0px rgba(255, 138, 61, 0)",
 ];
 
-function formatDateRange(startsAt: string, endsAt: string): string {
-  const start = new Date(startsAt);
-  const end = new Date(endsAt);
-  const fmt = (d: Date) => d.toLocaleDateString("en-US", { day: "numeric", month: "short" });
-  return `${fmt(start)} – ${fmt(end)}`;
+function formatDateRange(startsAt: string, endsAt: string, locale: string): string {
+  return `${formatReadingDate(startsAt, locale, "dayMonthShort")} – ${formatReadingDate(endsAt, locale, "dayMonthShort")}`;
 }
 
 export function SemesterMapCard({ rounds }: SemesterMapCardProps) {
+  const t = useTranslations("reading.semesterMap");
+  const locale = useLocale();
   return (
     <div className="rounded-2xl border border-[var(--rd-border)] bg-[var(--rd-panel)] p-7">
-      <p className="mb-1 text-base font-medium text-[var(--rd-text)]">Semester map</p>
-      <p className="mb-7 text-[12px] text-[var(--rd-text-muted)]">One book a round, shelved as you finish it.</p>
+      <p className="mb-1 text-base font-medium text-[var(--rd-text)]">{t("title")}</p>
+      <p className="mb-7 text-[12px] text-[var(--rd-text-muted)]">{t("subtitle")}</p>
 
       {rounds.length === 0 ? (
-        <p className="text-[13px] text-[var(--rd-text-muted)]">The season schedule isn&apos;t set yet.</p>
+        <p className="text-[13px] text-[var(--rd-text-muted)]">{t("empty")}</p>
       ) : (
         <div className="flex items-end justify-between gap-3 sm:gap-4">
           {rounds.map((round, i) => {
@@ -50,7 +51,7 @@ export function SemesterMapCard({ rounds }: SemesterMapCardProps) {
                   <motion.div
                     animate={isActive ? { boxShadow: GLOW_PULSE } : undefined}
                     transition={isActive ? { duration: 2.6, repeat: Infinity, ease: "easeInOut" } : undefined}
-                    title={formatDateRange(round.starts_at, round.ends_at)}
+                    title={formatDateRange(round.starts_at, round.ends_at, locale)}
                     className={cn(
                       "relative w-full rounded-t-[3px] transition-transform duration-300 ease-out hover:-translate-y-1",
                       isActive ? "h-24" : isDone ? "h-16" : "h-10 border border-dashed border-[var(--rd-border)]"
@@ -87,7 +88,7 @@ export function SemesterMapCard({ rounds }: SemesterMapCardProps) {
                   {round.label}
                 </p>
                 <p className="mt-0.5 text-center text-[10px] text-[var(--rd-text-muted)]">
-                  {isActive ? "in progress" : formatDateRange(round.starts_at, round.ends_at)}
+                  {isActive ? t("inProgress") : formatDateRange(round.starts_at, round.ends_at, locale)}
                 </p>
               </div>
             );

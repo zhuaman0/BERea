@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Modal } from "@berea/ui-kit";
 import { isApiError } from "@/features/auth/utils";
 import { readingBookOfMonthApi, type BookOfMonthResult } from "@berea/api";
@@ -16,13 +17,14 @@ interface LogPagesModalProps {
 }
 
 export function LogPagesModal({ current, onClose, onSaved }: LogPagesModalProps) {
+  const t = useTranslations("reading.logPages");
   const maxPage = current.book.page_count ?? 5000;
   const schema = z.object({
     page: z.coerce
-      .number({ invalid_type_error: "Enter a page number" })
-      .int("Whole pages only")
-      .min(0, "Pages can't be negative")
-      .max(maxPage, `This book has ${maxPage} pages`),
+      .number({ invalid_type_error: t("errors.notANumber") })
+      .int(t("errors.wholePages"))
+      .min(0, t("errors.negative"))
+      .max(maxPage, t("errors.tooMany", { count: maxPage })),
   });
   type Values = z.infer<typeof schema>;
 
@@ -39,16 +41,16 @@ export function LogPagesModal({ current, onClose, onSaved }: LogPagesModalProps)
       onSaved(await readingBookOfMonthApi.logProgress(page));
       onClose();
     } catch (err) {
-      setServerError(isApiError(err) ? err.detail : "Couldn't save your progress.");
+      setServerError(isApiError(err) ? err.detail : t("errors.saveFailed"));
     }
   }
 
   return (
-    <Modal title={`Log pages · ${current.book.title}`} onClose={onClose}>
+    <Modal title={t("title", { title: current.book.title })} onClose={onClose}>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <label htmlFor="log-page" className="text-xs text-[var(--rd-text-muted)]">
-            Which page are you on?
+            {t("label")}
           </label>
           <div className="flex items-center gap-3">
             <input
@@ -60,7 +62,7 @@ export function LogPagesModal({ current, onClose, onSaved }: LogPagesModalProps)
               className="h-12 w-32 rounded-lg border border-[var(--rd-border)] bg-[var(--rd-ink)] px-3 font-display text-xl font-semibold text-[var(--rd-text)] focus:border-[var(--rd-accent-from)] focus:outline-none"
             />
             {current.book.page_count && (
-              <span className="text-sm text-[var(--rd-text-muted)]">of {current.book.page_count}</span>
+              <span className="text-sm text-[var(--rd-text-muted)]">{t("ofTotal", { total: current.book.page_count })}</span>
             )}
           </div>
           {errors.page && <p className="text-[12px] text-red-400">{errors.page.message}</p>}
@@ -74,7 +76,7 @@ export function LogPagesModal({ current, onClose, onSaved }: LogPagesModalProps)
           className="rd-accent-gradient inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-black/85 transition-opacity hover:opacity-90 disabled:opacity-60"
         >
           {isSubmitting && <Loader2 size={15} className="animate-spin" />}
-          {isSubmitting ? "Saving…" : "Save progress"}
+          {isSubmitting ? t("saving") : t("save")}
         </button>
       </form>
     </Modal>
