@@ -6,11 +6,24 @@ import { Check, Crown, Loader2, Lock, PartyPopper, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/shared/lib/utils";
 import { isApiError } from "@/features/auth/utils";
-import { readingLiveQuizApi, type LivePlayerState } from "@berea/api";
+import { readingLiveQuizApi, type LivePlayerState, type QuizFormat } from "@berea/api";
+import { NightPlayerGame } from "@/features/reading/components/quizNight/NightPlayerGame";
 import { ANSWER_TILES } from "@/features/reading/components/quiz/answerTiles";
 import { useCountdownSeconds, usePolling } from "@berea/core";
 
 const SESSION_KEY = "nats-live-quiz-session";
+
+interface JoinedSession {
+  id:     string;
+  format: QuizFormat;
+}
+
+/** Saved as "<format>:<id>"; a bare id is an instant quiz saved before quiz nights existed. */
+function parseSaved(saved: string | null): JoinedSession | null {
+  if (!saved) return null;
+  const [format, id] = saved.includes(":") ? saved.split(":", 2) : ["instant", saved];
+  return { id, format: format === "rounds" ? "rounds" : "instant" };
+}
 
 function readSavedSession(): string | null {
   try {
@@ -37,11 +50,12 @@ export default function LiveQuizPlayerPage({ searchParams }: PageProps) {
   // The saved game survives a refresh; `choice` takes over once the player joins or leaves here.
   const savedSessionId = useSyncExternalStore(subscribeToNothing, readSavedSession, readNothingOnServer);
   const [choice, setChoice] = useState<string | null | undefined>(undefined);
-  const sessionId = choice === undefined ? savedSessionId : choice;
+  const session = parseSaved(choice === undefined ? savedSessionId : choice);
 
-  function handleJoined(id: string) {
-    try { sessionStorage.setItem(SESSION_KEY, id); } catch { /* storage unavailable — stay joined in memory */ }
-    setChoice(id);
+  function handleJoined(joined: JoinedSession) {
+    const saved = `${joined.format}:${joined.id}`;
+    try { sessionStorage.setItem(SESSION_KEY, saved); } catch { /* storage unavailable — stay joined in memory */ }
+    setChoice(saved);
   }
 
   function handleLeave() {
@@ -51,8 +65,10 @@ export default function LiveQuizPlayerPage({ searchParams }: PageProps) {
 
   return (
     <div className="flex min-h-full w-full flex-col items-center px-4 py-8 sm:px-8">
-      {sessionId ? (
-        <PlayerGame sessionId={sessionId} onLeave={handleLeave} />
+      {session?.format === "rounds" ? (
+        <NightPlayerGame sessionId={session.id} onLeave={handleLeave} />
+      ) : session ? (
+        <PlayerGame sessionId={session.id} onLeave={handleLeave} />
       ) : (
         <JoinForm initialPin={pinFromLink ?? ""} onJoined={handleJoined} />
       )}
@@ -62,7 +78,7 @@ export default function LiveQuizPlayerPage({ searchParams }: PageProps) {
 
 interface JoinFormProps {
   initialPin: string;
-  onJoined:   (sessionId: string) => void;
+  onJoined:   (session: JoinedSession) => void;
 }
 
 function JoinForm({ initialPin, onJoined }: JoinFormProps) {
@@ -81,7 +97,7 @@ function JoinForm({ initialPin, onJoined }: JoinFormProps) {
     setIsJoining(true);
     try {
       const session = await readingLiveQuizApi.join(pin);
-      onJoined(session.id);
+      onJoined({ id: session.id, format: session.format });
     } catch (err) {
       setError(isApiError(err) ? err.detail : t("joinError"));
       setIsJoining(false);

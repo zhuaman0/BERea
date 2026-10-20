@@ -876,7 +876,10 @@
         "addQuestionsFirst": "Алдымен сұрақтар қосыңыз",
         "goLive": "Эфирді бастау",
         "edit": "Квизді өңдеу",
-        "delete": "Квизді жою"
+        "delete": "Квизді жою",
+        "createNight": "Жаңа квиз кеші",
+        "formatRounds": "Квиз кеші",
+        "formatInstant": "Kahoot"
       },
       "quizEdit": {
         "loadError": "Квизді жүктеу мүмкін болмады.",
@@ -1135,6 +1138,137 @@
           "title": "Рейтинг",
           "description": "Өшірулі болса, студенттер рейтинг бетін және мәзірдегі сілтемесін көрмейді."
         }
+      },
+      "quizNightBuilder": {
+        "errors": {
+          "titleRequired": "Квиз кешіне атау беріңіз.",
+          "noQuestions": "Кемінде бір сұрақ қосыңыз.",
+          "incomplete": "{round} раунд, {number}-сұрақ: сұрақ та, дұрыс жауап та керек.",
+          "save": "Квизді сақтау мүмкін болмады."
+        },
+        "defaultMonth": "Осы ай",
+        "titlePlaceholder": "Квиз кешінің атауы",
+        "save": "Квизді сақтау",
+        "monthPlaceholder": "Ай (мысалы, қазан)",
+        "roundsLabel": "Раундтар",
+        "removeRound": "{round} раундты жою",
+        "addRound": "Раунд қосу",
+        "emptySlot": "Бос сұрақ",
+        "deleteQuestion": "{number}-сұрақты жою",
+        "addQuestion": "Сұрақ қосу",
+        "questionLabel": "{round} раунд · {number}-сұрақ",
+        "question": "Сұрақ",
+        "questionPlaceholder": "Фогг мырза жер шарын шын мәнінде неше күнде айналып шықты?",
+        "correctAnswer": "Дұрыс жауап",
+        "correctAnswerHint": "Жауап карточкасының тақырыбы болады.",
+        "correctAnswerPlaceholder": "Жетпіс тоғыз күн",
+        "acceptedAnswers": "Сондай-ақ қабылдау",
+        "acceptedAnswersHint": "Дұрыс саналатын басқа жазылулар. Бас әріп, тыныс белгілері және сөзбен жазылған сандар маңызды емес.",
+        "removeAccepted": "{answer} жою",
+        "acceptedPlaceholder": "Жазып, Enter басыңыз, мысалы 79",
+        "quote": "Кітаптан үзінді",
+        "quoteHint": "Курсив үшін сөздерді *жұлдызшаға*, сары белгі үшін ==қос теңдікке== алыңыз.",
+        "quotePlaceholder": "Лондондағы достары оның меридианнан ==*жетпіс тоғыз*== рет өткенін ғана көрді.",
+        "sourceRef": "Тарау немесе бет",
+        "sourceRefPlaceholder": "XXXVII тарау",
+        "timeLimit": "Уақыт",
+        "seconds": "{count} с",
+        "points": "Ұпай",
+        "preview": "Жауап карточкасының алдын ала көрінісі",
+        "previewAnswer": "Дұрыс жауап",
+        "previewNoQuote": "Кітап үзіндісін көрсету үшін дәйексөз қосыңыз."
+      }
+    },
+    "night": {
+      "roundLabel": "{roman} раунд",
+      "answersBanner": "ЖАУАПТАР",
+      "board": {
+        "label": "Кештің раундтары"
+      },
+      "review": {
+        "teamsGotIt": "Дұрыс жауап берген: <num></num> {count, plural, one {команда} other {команда}}"
+      },
+      "answerBox": {
+        "label": "Командаңыздың жауабы",
+        "placeholder": "Жауабыңызды жазыңыз…",
+        "noAnswer": "Жауап жоқ",
+        "locked": "Жауап қабылданды",
+        "saving": "Сақталуда…",
+        "saved": "Сақталды",
+        "saveError": "Жауапты сақтау мүмкін болмады.",
+        "hint": "Командадағы кез келген адам жаза алады. Соңғы нұсқа есептеледі."
+      },
+      "result": {
+        "yourAnswer": "Командаңыздың жауабы",
+        "noAnswer": "Жауап жоқ",
+        "points": "{count, plural, one {# ұпай} other {# ұпай}}"
+      },
+      "lobby": {
+        "youreIn": "Сіз ойындасыз!",
+        "playingFor": "{team} командасы үшін ойнайсыз",
+        "noTeam": "Сіз көрермен ретіндесіз. Жауап беру үшін командаға қосылыңыз.",
+        "waiting": "Жүргізуші бастағанын күтеміз…",
+        "qrLabel": "Квизге қосылуға арналған QR-код",
+        "joinTitle": "Квиз кешіне қосылыңыз",
+        "joinHint": "Кодты сканерлеңіз немесе қолданбаны ашып, PIN енгізіңіз.",
+        "teamsJoined": "{count, plural, =0 {Әзірге команда жоқ} one {# команда қосылды} other {# команда қосылды}}"
+      },
+      "podium": {
+        "title": "Кештің қорытындысы",
+        "yourPlace": "Командаңыз: {place}-орын, {points} ұпай",
+        "points": "{count, plural, one {# ұпай} other {# ұпай}}"
+      },
+      "marking": {
+        "eyebrow": "Жауаптар алдындағы үзіліс",
+        "title": "Раундты тексеріңіз",
+        "hint": "Қабылданған жауаптармен сәйкестері белгіленген. Қалғанын тексеріңіз.",
+        "error": "Бағаны сақтау мүмкін болмады.",
+        "correctAnswer": "Дұрысы: {answer}",
+        "noAnswers": "Ешбір команда жауап бермеді.",
+        "resetToAuto": "Автоматты бағаға қайтару",
+        "correct": "Дұрыс",
+        "wrong": "Қате"
+      },
+      "host": {
+        "advanceError": "Әрі қарай өту мүмкін болмады. Қайта көріңіз.",
+        "loadError": "Квизді жүктеу мүмкін болмады.",
+        "loading": "Жүктелуде",
+        "pin": "PIN {pin}",
+        "teamsAnswered": "{total} команданың {answered} жауап берді",
+        "teamsJoined": "{count, plural, one {# команда} other {# команда}}",
+        "exitFullscreen": "Толық экраннан шығу",
+        "fullscreen": "Толық экран",
+        "next": {
+          "showBoard": "Табло көрсету",
+          "startRound": "{roman} раундты бастау",
+          "finishNight": "Қорытындыны көрсету",
+          "skip": "Өткізіп жіберу",
+          "startAnswers": "Жауаптарды көрсету",
+          "showAnswer": "Жауапты көрсету",
+          "next": "Келесі"
+        }
+      },
+      "phase": {
+        "lobby": "Күту",
+        "board": "Раундтар таблосы",
+        "round_intro": "Раунд басы",
+        "number": "Келесі сұрақ",
+        "question": "Сұрақ",
+        "locked": "Уақыт бітті",
+        "answers_intro": "Жауаптар алдындағы үзіліс",
+        "review_number": "Жауаптарды талдау",
+        "review_question": "Сұрақты талдау",
+        "review_answer": "Жауап",
+        "review_close": "Жауаптарды талдау",
+        "finished": "Аяқталды"
+      },
+      "player": {
+        "notJoined": "Бұл квиз аяқталды немесе сіз оған қатыспайсыз.",
+        "enterNewPin": "Басқа PIN енгізу",
+        "connecting": "Қосылуда…",
+        "roundNext": "Келесі — {roman} раунд",
+        "noTeam": "Квиз сұрақтарына жауап беру үшін командаға қосылыңыз.",
+        "answersComing": "Жауаптар жақында…"
       }
     }
   }

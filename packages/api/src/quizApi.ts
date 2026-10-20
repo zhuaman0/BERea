@@ -1,5 +1,5 @@
 import { readingApiClient } from "./readingApiClient";
-import type { Quiz, QuizStatus } from "./quizTypes";
+import type { Quiz, QuizFormat, QuizQuestionKind, QuizStatus } from "./quizTypes";
 
 interface QuizAnswerDto {
   id:         string;
@@ -12,7 +12,13 @@ interface QuizQuestionDto {
   text:               string;
   time_limit_seconds: number;
   points:             number;
+  kind:               QuizQuestionKind;
   answers:            QuizAnswerDto[];
+  round_number:       number | null;
+  correct_text:       string | null;
+  accepted_answers:   string[];
+  quote:              string | null;
+  source_ref:         string | null;
 }
 
 interface QuizDto {
@@ -21,6 +27,7 @@ interface QuizDto {
   month_label:   string;
   scheduled_for: string | null;
   status:        QuizStatus;
+  format:        QuizFormat;
   questions:     QuizQuestionDto[];
 }
 
@@ -31,12 +38,19 @@ function fromDto(dto: QuizDto): Quiz {
     monthLabel:   dto.month_label,
     scheduledFor: dto.scheduled_for,
     status:       dto.status,
+    format:       dto.format,
     questions: dto.questions.map((q) => ({
       id:               q.id,
       text:             q.text,
       timeLimitSeconds: q.time_limit_seconds,
       points:           q.points,
+      kind:             q.kind,
       answers:          q.answers.map((a) => ({ id: a.id, text: a.text, isCorrect: a.is_correct })),
+      roundNumber:      q.round_number,
+      correctText:      q.correct_text,
+      acceptedAnswers:  q.accepted_answers,
+      quote:            q.quote,
+      sourceRef:        q.source_ref,
     })),
   };
 }
@@ -47,11 +61,18 @@ function toWriteBody(quiz: Omit<Quiz, "id">) {
     month_label:   quiz.monthLabel,
     scheduled_for: quiz.scheduledFor,
     status:        quiz.status,
+    format:        quiz.format,
     questions: quiz.questions.map((q) => ({
       text:               q.text,
       time_limit_seconds: q.timeLimitSeconds,
       points:             q.points,
+      kind:               q.kind,
       answers:            q.answers.map((a) => ({ text: a.text, is_correct: a.isCorrect })),
+      round_number:       q.roundNumber,
+      correct_text:       q.correctText,
+      accepted_answers:   q.acceptedAnswers,
+      quote:              q.quote,
+      source_ref:         q.sourceRef,
     })),
   };
 }
