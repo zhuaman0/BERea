@@ -12,11 +12,13 @@ interface ReadingTopbarProps {
   roundTotal:  number;
   isRegistrationPhase: boolean;
   dayProgress: RoundDayProgress | null;
-  totalPoints: number;
+  /** The team's season points; null while loading, and the pill is hidden when there is no team. */
+  totalPoints: number | null;
+  hasTeam:     boolean;
   userName:    string | null;
 }
 
-export function ReadingTopbar({ semester, roundIndex, roundTotal, isRegistrationPhase, dayProgress, totalPoints, userName }: ReadingTopbarProps) {
+export function ReadingTopbar({ semester, roundIndex, roundTotal, isRegistrationPhase, dayProgress, totalPoints, hasTeam, userName }: ReadingTopbarProps) {
   const t = useTranslations("reading.shell.topbar");
 
   function roundSummary(): string {
@@ -46,12 +48,17 @@ export function ReadingTopbar({ semester, roundIndex, roundTotal, isRegistration
 
       <div className="flex shrink-0 items-center gap-3">
         <ReadingLocaleSwitcher className="hidden sm:flex" />
-        <span
-          title={t("pointsTitle")}
-          className="rd-accent-gradient rounded-full px-3 py-1 text-[12px] font-semibold text-black/80"
-        >
-          {t("points", { count: totalPoints })}
-        </span>
+        {hasTeam && (totalPoints === null ? (
+          <span aria-hidden="true" className="h-[26px] w-16 animate-pulse rounded-full bg-[var(--rd-border)]" />
+        ) : (
+          <Link
+            href={"/reading/leaderboard" as Route}
+            title={t("pointsTitle")}
+            className="rd-accent-gradient rounded-full px-3 py-1 text-[12px] font-semibold tabular-nums text-black/80 transition-opacity hover:opacity-90"
+          >
+            {t("points", { count: totalPoints })}
+          </Link>
+        ))}
         <span
           title={userName ?? undefined}
           className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--rd-border)] bg-[var(--rd-ink)] text-[11px] font-semibold text-[var(--rd-text)]"
