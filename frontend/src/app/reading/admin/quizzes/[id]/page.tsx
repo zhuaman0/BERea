@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { isApiError } from "@/features/auth/utils";
 import { readingQuizApi } from "@berea/api";
 import { QuizBuilder } from "@/features/reading/components/admin/QuizBuilder";
+import { QuizNightBuilder } from "@/features/reading/components/admin/QuizNightBuilder";
 import type { Quiz } from "@berea/api";
 
 interface PageProps {
@@ -42,5 +43,7 @@ export default function ReadingAdminEditQuizPage({ params }: PageProps) {
     return <div className="m-8 h-64 max-w-3xl animate-pulse rounded-2xl bg-[var(--rd-panel)]" aria-label={t("loading")} />;
   }
 
-  return <QuizBuilder key={quiz.id} initialQuiz={quiz} />;
+  return quiz.format === "rounds"
+    ? <QuizNightBuilder key={quiz.id} initialQuiz={quiz} />
+    : <QuizBuilder key={quiz.id} initialQuiz={quiz} />;
 }

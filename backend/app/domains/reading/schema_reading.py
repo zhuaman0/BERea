@@ -369,6 +369,10 @@ class ReadingProfileStatsResponse(BaseModel):
 
 
 QuizStatus = Literal["draft", "scheduled"]
+QuizFormat = Literal["instant", "rounds"]
+QuizQuestionKind = Literal["choice", "open"]
+
+QUIZ_NIGHT_MAX_ROUNDS = 6
 
 
 class ReadingQuizAnswerWrite(BaseModel):
@@ -380,14 +384,24 @@ class ReadingQuizQuestionWrite(BaseModel):
     text: str = Field(min_length=1, max_length=1000)
     time_limit_seconds: int = Field(ge=5, le=300)
     points: int = Field(ge=0, le=5000)
-    answers: list[ReadingQuizAnswerWrite] = Field(min_length=2, max_length=4)
+    kind: QuizQuestionKind = "choice"
+    answers: list[ReadingQuizAnswerWrite] = Field(default_factory=list, max_length=4)
+    round_number: int | None = Field(default=None, ge=1, le=QUIZ_NIGHT_MAX_ROUNDS)
+    correct_text: str | None = Field(default=None, max_length=300)
+    accepted_answers: list[str] = Field(default_factory=list, max_length=20)
+    quote: str | None = Field(default=None, max_length=4000)
+    source_ref: str | None = Field(default=None, max_length=120)
 
-    @field_validator("answers")
-    @classmethod
-    def _one_correct(cls, answers: list[ReadingQuizAnswerWrite]) -> list[ReadingQuizAnswerWrite]:
-        if sum(a.is_correct for a in answers) != 1:
-            raise ValueError("Mark exactly one answer as correct")
-        return answers
+    @model_validator(mode="after")
+    def _answers_match_kind(self) -> ReadingQuizQuestionWrite:
+        if self.kind == "choice":
+            if len(self.answers) < 2:
+                raise ValueError("A multiple-choice question needs at least two answers")
+            if sum(a.is_correct for a in self.answers) != 1:
+                raise ValueError("Mark exactly one answer as correct")
+        elif not (self.correct_text or "").strip():
+            raise ValueError("An open question needs its correct answer")
+        return self
 
 
 class ReadingQuizWrite(BaseModel):
@@ -395,7 +409,20 @@ class ReadingQuizWrite(BaseModel):
     month_label: str = Field(min_length=1, max_length=60)
     scheduled_for: datetime | None = None
     status: QuizStatus = "draft"
+    format: QuizFormat = "instant"
     questions: list[ReadingQuizQuestionWrite] = Field(min_length=1, max_length=100)
+
+    @model_validator(mode="after")
+    def _questions_match_format(self) -> ReadingQuizWrite:
+        if self.format == "rounds":
+            if any(q.kind != "open" or q.round_number is None for q in self.questions):
+                raise ValueError("Quiz-night questions must be open questions with a round number")
+            rounds = sorted({q.round_number for q in self.questions if q.round_number is not None})
+            if rounds != list(range(1, len(rounds) + 1)):
+                raise ValueError("Rounds must be numbered 1, 2, 3… without gaps")
+        elif any(q.kind != "choice" for q in self.questions):
+            raise ValueError("Instant quizzes only take multiple-choice questions")
+        return self
 
 
 class ReadingQuizAnswerResponse(BaseModel):
@@ -409,7 +436,13 @@ class ReadingQuizQuestionResponse(BaseModel):
     text: str
     time_limit_seconds: int
     points: int
+    kind: QuizQuestionKind
     answers: list[ReadingQuizAnswerResponse]
+    round_number: int | None
+    correct_text: str | None
+    accepted_answers: list[str]
+    quote: str | None
+    source_ref: str | None
 
 
 class ReadingQuizResponse(BaseModel):
@@ -418,6 +451,7 @@ class ReadingQuizResponse(BaseModel):
     month_label: str
     scheduled_for: datetime | None
     status: QuizStatus
+    format: QuizFormat
     questions: list[ReadingQuizQuestionResponse]
 
 
@@ -470,7 +504,9 @@ class ReadingLiveSummary(BaseModel):
     id: uuid.UUID
     pin: str
     quiz_title: str
-    phase: LiveQuizPhase
+    # A quiz-night session reports its own phase names (see QuizNightPhase).
+    phase: LiveQuizPhase | QuizNightPhase
+    format: QuizFormat
 
 
 class ReadingLiveHostState(BaseModel):
@@ -495,3 +531,102 @@ class ReadingLivePlayerState(BaseModel):
     your_score: int
     your_rank: int
     team_scores: list[ReadingLiveTeamScore]
+
+
+QuizNightPhase = Literal[
+    "lobby",
+    "board",
+    "round_intro",
+    "number",
+    "question",
+    "locked",
+    "answers_intro",
+    "review_number",
+    "review_question",
+    "review_answer",
+    "review_close",
+    "finished",
+]
+QuizNightRoundStatus = Literal["done", "current", "upcoming"]
+QuizNightGrade = Literal["correct", "wrong"]
+
+
+class ReadingNightTeamAnswerWrite(BaseModel):
+    question_id: uuid.UUID
+    text: str = Field(max_length=300)
+
+
+class ReadingNightGradeWrite(BaseModel):
+    # None clears the host's override and falls back to the automatic match.
+    grade: QuizNightGrade | None
+
+
+class ReadingNightRound(BaseModel):
+    number: int
+    question_count: int
+    status: QuizNightRoundStatus
+
+
+class ReadingNightQuestion(BaseModel):
+    id: uuid.UUID
+    text: str
+    time_limit_seconds: int
+    points: int
+
+
+class ReadingNightReveal(BaseModel):
+    correct_text: str
+    quote: str | None
+    source_ref: str | None
+    correct_team_count: int
+
+
+class ReadingNightYourAnswer(BaseModel):
+    text: str
+    updated_at: datetime | None
+    # Only set once this question's answer has been revealed.
+    grade: QuizNightGrade | None
+    points: int | None
+
+
+class ReadingNightTeamScore(BaseModel):
+    team_name: str
+    score: int
+
+
+class ReadingNightMarkingAnswer(BaseModel):
+    id: uuid.UUID
+    team_name: str
+    text: str
+    auto_grade: QuizNightGrade
+    grade: QuizNightGrade
+    overridden: bool
+
+
+class ReadingNightMarkingQuestion(BaseModel):
+    question_number: int
+    question: ReadingNightQuestion
+    correct_text: str
+    answers: list[ReadingNightMarkingAnswer]
+
+
+class ReadingNightState(BaseModel):
+    id: uuid.UUID
+    pin: str
+    quiz_title: str
+    phase: QuizNightPhase
+    rounds: list[ReadingNightRound]
+    round_number: int
+    question_number: int
+    # Time left in a timed phase, so every screen can run the same countdown.
+    phase_time_left_ms: int
+    question: ReadingNightQuestion | None
+    reveal: ReadingNightReveal | None
+    team_scores: list[ReadingNightTeamScore]
+    teams_joined: int
+    teams_answered: int
+    # Player-only.
+    your_team_name: str | None
+    your_answer: ReadingNightYourAnswer | None
+    # Host-only, during "answers_intro".
+    marking: list[ReadingNightMarkingQuestion] | None

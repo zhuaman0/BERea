@@ -8,6 +8,7 @@ export * from "./bookApi";
 export * from "./bookTypes";
 export * from "./liveQuizApi";
 export * from "./quizApi";
+export * from "./quizNightApi";
 export * from "./quizTypes";
 export * from "./registrationApi";
 export * from "./semesterApi";

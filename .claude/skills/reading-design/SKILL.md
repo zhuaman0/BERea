@@ -26,6 +26,8 @@ All colors come from the CSS variables in `frontend/src/app/reading/reading.css`
 | `--rd-accent-from` | `#ff6b2c` | Accent: eyebrows, active borders, icons |
 | `--rd-accent-to` | `#ffc24d` | End of the gradient, highlighted numbers |
 | `--rd-mate-1..4` | blue/green/pink/violet | Only for telling teammates apart in charts |
+| `--rd-round-1..4` | amber/orange/coral/indigo | Quiz-night rounds only, via `roundTheme()` in `components/quizNight/roundTheme.ts` |
+| `--rd-highlighter` | `#ffe15a` | The yellow highlight on book quotes (`.rd-highlighter`) |
 
 Gradient accent:
 - Filled: the `rd-accent-gradient` class, with **dark text** on it (`text-black/80` or `text-black/85`), never white.

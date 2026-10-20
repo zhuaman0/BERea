@@ -7,18 +7,16 @@ import { useTranslations } from "next-intl";
 import { cn } from "@/shared/lib/utils";
 import { isApiError } from "@/features/auth/utils";
 import { readingLiveQuizApi, type LivePlayerState } from "@berea/api";
+import { NightPlayerGame } from "@/features/reading/components/quizNight/NightPlayerGame";
 import { ANSWER_TILES } from "@/features/reading/components/quiz/answerTiles";
 import { useCountdownSeconds, usePolling } from "@berea/core";
-
-const SESSION_KEY = "nats-live-quiz-session";
-
-function readSavedSession(): string | null {
-  try {
-    return sessionStorage.getItem(SESSION_KEY);
-  } catch {
-    return null;
-  }
-}
+import {
+  parseJoinedSession,
+  readJoinedSession,
+  saveJoinedSession,
+  serializeJoinedSession,
+  type JoinedSession,
+} from "@/features/reading/lib/liveQuizSession";
 
 function subscribeToNothing(): () => void {
   return () => {};
@@ -35,24 +33,26 @@ interface PageProps {
 export default function LiveQuizPlayerPage({ searchParams }: PageProps) {
   const { pin: pinFromLink } = use(searchParams);
   // The saved game survives a refresh; `choice` takes over once the player joins or leaves here.
-  const savedSessionId = useSyncExternalStore(subscribeToNothing, readSavedSession, readNothingOnServer);
+  const savedSession = useSyncExternalStore(subscribeToNothing, readJoinedSession, readNothingOnServer);
   const [choice, setChoice] = useState<string | null | undefined>(undefined);
-  const sessionId = choice === undefined ? savedSessionId : choice;
+  const session = parseJoinedSession(choice === undefined ? savedSession : choice);
 
-  function handleJoined(id: string) {
-    try { sessionStorage.setItem(SESSION_KEY, id); } catch { /* storage unavailable — stay joined in memory */ }
-    setChoice(id);
+  function handleJoined(joined: JoinedSession) {
+    saveJoinedSession(joined);
+    setChoice(serializeJoinedSession(joined));
   }
 
   function handleLeave() {
-    try { sessionStorage.removeItem(SESSION_KEY); } catch { /* storage unavailable */ }
+    saveJoinedSession(null);
     setChoice(null);
   }
 
   return (
     <div className="flex min-h-full w-full flex-col items-center px-4 py-8 sm:px-8">
-      {sessionId ? (
-        <PlayerGame sessionId={sessionId} onLeave={handleLeave} />
+      {session?.format === "rounds" ? (
+        <NightPlayerGame sessionId={session.id} onLeave={handleLeave} />
+      ) : session ? (
+        <PlayerGame sessionId={session.id} onLeave={handleLeave} />
       ) : (
         <JoinForm initialPin={pinFromLink ?? ""} onJoined={handleJoined} />
       )}
@@ -62,7 +62,7 @@ export default function LiveQuizPlayerPage({ searchParams }: PageProps) {
 
 interface JoinFormProps {
   initialPin: string;
-  onJoined:   (sessionId: string) => void;
+  onJoined:   (session: JoinedSession) => void;
 }
 
 function JoinForm({ initialPin, onJoined }: JoinFormProps) {
@@ -81,7 +81,7 @@ function JoinForm({ initialPin, onJoined }: JoinFormProps) {
     setIsJoining(true);
     try {
       const session = await readingLiveQuizApi.join(pin);
-      onJoined(session.id);
+      onJoined({ id: session.id, format: session.format });
     } catch (err) {
       setError(isApiError(err) ? err.detail : t("joinError"));
       setIsJoining(false);

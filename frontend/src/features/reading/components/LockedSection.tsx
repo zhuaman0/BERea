@@ -6,12 +6,11 @@ import { motion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { ArrowRight, BookOpen, Lock, Users } from "lucide-react";
 
-type SectionKey = "leaderboard" | "profile" | "quiz" | "fallback";
+type SectionKey = "leaderboard" | "profile" | "fallback";
 
 const SECTION_KEYS: Record<string, SectionKey> = {
   "/reading/leaderboard": "leaderboard",
   "/reading/profile":     "profile",
-  "/reading/quiz":        "quiz",
 };
 
 const EASE = [0.16, 1, 0.3, 1] as const;

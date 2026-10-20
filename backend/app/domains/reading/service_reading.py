@@ -977,13 +977,20 @@ def _to_quiz_response(quiz: ReadingQuiz) -> ReadingQuizResponse:
         month_label=quiz.month_label,
         scheduled_for=quiz.scheduled_for,
         status=quiz.status,  # type: ignore[arg-type]
+        format=quiz.format,  # type: ignore[arg-type]
         questions=[
             ReadingQuizQuestionResponse(
                 id=q.id,
                 text=q.text,
                 time_limit_seconds=q.time_limit_seconds,
                 points=q.points,
+                kind=q.kind,  # type: ignore[arg-type]
                 answers=[ReadingQuizAnswerResponse(id=a.id, text=a.text, is_correct=a.is_correct) for a in q.answers],
+                round_number=q.round_number,
+                correct_text=q.correct_text,
+                accepted_answers=q.accepted_answers or [],
+                quote=q.quote,
+                source_ref=q.source_ref,
             )
             for q in quiz.questions
         ],
@@ -1193,12 +1200,29 @@ async def _live_question(
 
 
 async def _get_session_or_404(session_id: str, db: AsyncSession) -> ReadingQuizSession:
+    """An instant (Kahoot-style) session; quiz nights have their own endpoints."""
     from app.domains.reading.repo_reading import get_quiz_session
 
     session = await get_quiz_session(uuid.UUID(session_id), db)
     if not session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quiz session not found")
+    if session.quiz.format != "instant":
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="This live quiz is a quiz night")
     return session
+
+
+def _live_summary(session: ReadingQuizSession) -> ReadingLiveSummary:
+    from app.domains.reading.service_quiz_night import current_phase
+
+    now = datetime.now(UTC)
+    phase = current_phase(session, now) if session.quiz.format == "rounds" else _live_phase(session, now)
+    return ReadingLiveSummary(
+        id=session.id,
+        pin=session.pin,
+        quiz_title=session.quiz.title,
+        phase=phase,  # type: ignore[arg-type]
+        format=session.quiz.format,  # type: ignore[arg-type]
+    )
 
 
 async def start_live_session_for_admin(
@@ -1217,7 +1241,7 @@ async def start_live_session_for_admin(
     session_id = await create_quiz_session(quiz.id, pin, db)
     session = await get_quiz_session(session_id, db)
     assert session is not None
-    return ReadingLiveSummary(id=session.id, pin=session.pin, quiz_title=quiz.title, phase="lobby")
+    return _live_summary(session)
 
 
 async def advance_live_session_for_admin(user_id: str, session_id: str, db: AsyncSession) -> ReadingLiveHostState:
@@ -1271,12 +1295,7 @@ async def get_active_live_session(db: AsyncSession) -> ReadingLiveSummary | None
     session = await get_active_quiz_session(db)
     if not session:
         return None
-    return ReadingLiveSummary(
-        id=session.id,
-        pin=session.pin,
-        quiz_title=session.quiz.title,
-        phase=_live_phase(session, datetime.now(UTC)),  # type: ignore[arg-type]
-    )
+    return _live_summary(session)
 
 
 async def join_live_session(user_id: str, payload: ReadingLiveJoinRequest, db: AsyncSession) -> ReadingLiveSummary:
@@ -1294,12 +1313,7 @@ async def join_live_session(user_id: str, payload: ReadingLiveJoinRequest, db: A
             await add_quiz_participant(session.id, user.id, user.team_id, db)
         except IntegrityError:
             await db.rollback()  # joined twice at the same moment — already in, carry on
-    return ReadingLiveSummary(
-        id=session.id,
-        pin=session.pin,
-        quiz_title=session.quiz.title,
-        phase=_live_phase(session, datetime.now(UTC)),  # type: ignore[arg-type]
-    )
+    return _live_summary(session)
 
 
 def _find_participant(session: ReadingQuizSession, user_id: str) -> ReadingQuizParticipant:

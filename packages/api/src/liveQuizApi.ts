@@ -1,4 +1,6 @@
 import { readingApiClient } from "./readingApiClient";
+import type { QuizFormat } from "./quizTypes";
+import type { NightPhase } from "./quizNightApi";
 
 export type LivePhase = "lobby" | "question" | "reveal" | "finished";
 
@@ -34,7 +36,8 @@ export interface LiveSummary {
   id:         string;
   pin:        string;
   quiz_title: string;
-  phase:      LivePhase;
+  phase:      LivePhase | NightPhase;
+  format:     QuizFormat;
 }
 
 export interface LiveHostState {

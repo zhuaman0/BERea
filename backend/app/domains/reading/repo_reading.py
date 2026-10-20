@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, date, datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Select, case, delete, func, select, update
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, undefer
 
@@ -17,6 +19,7 @@ from app.domains.reading.model_reading import (
     ReadingQuizQuestion,
     ReadingQuizSession,
     ReadingQuizSubmission,
+    ReadingQuizTeamAnswer,
     ReadingRefreshToken,
     ReadingSemesterRound,
     ReadingTeam,
@@ -27,6 +30,9 @@ from app.domains.reading.model_reading import (
     ReadingVoteRound,
 )
 from app.domains.reading.schema_reading import ReadingBookWrite, ReadingQuizQuestionWrite, ReadingQuizWrite
+
+if TYPE_CHECKING:
+    from app.domains.reading.service_quiz_night import NightCursor
 
 APP_SETTINGS_ROW_ID = 1
 
@@ -145,9 +151,13 @@ async def list_teams_ranked(db: AsyncSession) -> list[tuple[ReadingTeam, int, in
         .group_by(ReadingUser.team_id)
         .subquery()
     )
+    # Instant quizzes score players; quiz nights score team answers (written when the night ends).
+    point_sources = select(
+        ReadingQuizParticipant.team_id.label("team_id"), ReadingQuizParticipant.score.label("points")
+    ).union_all(select(ReadingQuizTeamAnswer.team_id, ReadingQuizTeamAnswer.points)).subquery()
     team_points = (
-        select(ReadingQuizParticipant.team_id, func.sum(ReadingQuizParticipant.score).label("points"))
-        .group_by(ReadingQuizParticipant.team_id)
+        select(point_sources.c.team_id, func.sum(point_sources.c.points).label("points"))
+        .group_by(point_sources.c.team_id)
         .subquery()
     )
     member_count = func.coalesce(member_counts.c.member_count, 0)
@@ -586,6 +596,12 @@ def _build_questions(questions: list[ReadingQuizQuestionWrite]) -> list[ReadingQ
             text=q.text,
             time_limit_seconds=q.time_limit_seconds,
             points=q.points,
+            kind=q.kind,
+            round_number=q.round_number,
+            correct_text=q.correct_text.strip() if q.correct_text else None,
+            accepted_answers=[a.strip() for a in q.accepted_answers if a.strip()],
+            quote=q.quote.strip() if q.quote else None,
+            source_ref=q.source_ref.strip() if q.source_ref else None,
             answers=[
                 ReadingQuizAnswer(position=j, text=a.text, is_correct=a.is_correct) for j, a in enumerate(q.answers)
             ],
@@ -603,6 +619,7 @@ async def save_quiz(quiz: ReadingQuiz | None, payload: ReadingQuizWrite, db: Asy
     quiz.month_label = payload.month_label
     quiz.scheduled_for = payload.scheduled_for
     quiz.status = payload.status
+    quiz.format = payload.format
     quiz.questions = _build_questions(payload.questions)
     await db.commit()
     return quiz.id
@@ -769,4 +786,68 @@ async def record_quiz_response(
         )
     )
     participant.score += points
+    await db.commit()
+
+
+async def set_night_cursor(session: ReadingQuizSession, cursor: NightCursor, db: AsyncSession) -> None:
+    session.status = cursor.phase
+    session.round_number = cursor.round_number
+    session.question_number = cursor.question_number
+    session.phase_started_at = cursor.started_at
+    await db.commit()
+
+
+async def list_team_answers(session_id: uuid.UUID, db: AsyncSession) -> list[ReadingQuizTeamAnswer]:
+    result = await db.execute(
+        select(ReadingQuizTeamAnswer)
+        .where(ReadingQuizTeamAnswer.session_id == session_id)
+        .options(selectinload(ReadingQuizTeamAnswer.team))
+    )
+    return list(result.scalars().all())
+
+
+async def get_team_answer(answer_id: uuid.UUID, db: AsyncSession) -> ReadingQuizTeamAnswer | None:
+    return await db.get(ReadingQuizTeamAnswer, answer_id)
+
+
+async def upsert_team_answer(
+    session_id: uuid.UUID,
+    question_id: uuid.UUID,
+    team_id: uuid.UUID,
+    user_id: uuid.UUID,
+    text: str,
+    db: AsyncSession,
+) -> None:
+    """Teammates type into one shared answer: the latest save wins."""
+    now = datetime.now(UTC)
+    statement = (
+        pg_insert(ReadingQuizTeamAnswer)
+        .values(
+            id=uuid.uuid4(),
+            session_id=session_id,
+            question_id=question_id,
+            team_id=team_id,
+            text=text,
+            last_edited_by=user_id,
+            updated_at=now,
+        )
+        .on_conflict_do_update(
+            constraint="uq_quiz_team_answer",
+            set_={"text": text, "last_edited_by": user_id, "updated_at": now},
+        )
+    )
+    await db.execute(statement)
+    await db.commit()
+
+
+async def set_team_answer_grade(answer: ReadingQuizTeamAnswer, grade: str | None, db: AsyncSession) -> None:
+    answer.grade = grade
+    await db.commit()
+
+
+async def set_team_answer_points(points: dict[uuid.UUID, int], db: AsyncSession) -> None:
+    for answer_id, value in points.items():
+        answer = await db.get(ReadingQuizTeamAnswer, answer_id)
+        if answer:
+            answer.points = value
     await db.commit()

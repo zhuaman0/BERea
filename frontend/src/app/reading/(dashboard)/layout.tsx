@@ -61,7 +61,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         totalPoints={team?.points ?? 0}
         userName={userName}
       />
-      {seasonStarted && <LiveQuizBanner />}
+      <LiveQuizBanner />
 
       <div className="flex min-h-0 flex-1">
         <ReadingSidebar

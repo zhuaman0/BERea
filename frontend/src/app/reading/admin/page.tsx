@@ -55,6 +55,9 @@ function QuizCard({ quiz, onDelete, onGoLive, isStarting }: QuizCardProps) {
         <p className="mt-1 text-xs text-[var(--rd-text-muted)]">
           {quiz.monthLabel} · {t("questionCount", { count: quiz.questions.length })}
         </p>
+        <span className="mt-2 inline-flex rounded-full border border-[var(--rd-border)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--rd-text-muted)]">
+          {quiz.format === "rounds" ? t("formatRounds") : t("formatInstant")}
+        </span>
       </div>
 
       <div className="mt-8">
@@ -116,7 +119,7 @@ export default function ReadingAdminOverviewPage() {
     setError(null);
     try {
       const session = await readingLiveQuizApi.start(id);
-      router.push(`/reading/admin/live/${session.id}` as Route);
+      router.push(`/reading/admin/${session.format === "rounds" ? "night" : "live"}/${session.id}` as Route);
     } catch (err) {
       setError(isApiError(err) ? err.detail : t("startError"));
       setStartingId(null);
@@ -142,13 +145,22 @@ export default function ReadingAdminOverviewPage() {
         title={t("title")}
         description={t("description")}
         aside={
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href={"/reading/admin/quizzes/new?format=rounds" as Route}
+              className="rd-accent-gradient inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-black/85 transition-opacity hover:opacity-90"
+            >
+              <Plus size={15} />
+              {t("createNight")}
+            </Link>
             <Link
               href={"/reading/admin/quizzes/new" as Route}
-              className="rd-accent-gradient inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-black/85 transition-opacity hover:opacity-90"
+              className="inline-flex items-center gap-2 rounded-lg border border-[var(--rd-border)] px-4 py-2 text-sm font-semibold text-[var(--rd-text)] transition-colors hover:border-[var(--rd-accent-from)]/55"
             >
               <Plus size={15} />
               {t("create")}
             </Link>
+          </div>
         }
       />
 

@@ -121,6 +121,7 @@
       "nav": {
         "home": "Home",
         "vote": "Book vote",
+        "quiz": "Join quiz",
         "leaderboard": "Leaderboard",
         "team": "My team",
         "rules": "Rules",
@@ -144,7 +145,17 @@
       },
       "liveQuiz": {
         "banner": "Quiz night is live: {title} — tap to join",
-        "pin": "PIN {pin}"
+        "pin": "PIN {pin}",
+        "backToGame": "You're in {title} — tap to go back to the game",
+        "joinError": "Couldn't join the quiz. Try again.",
+        "invite": {
+          "eyebrow": "Live now",
+          "body": "The quiz has started. Join with your team before the first question.",
+          "pinLabel": "Game PIN",
+          "join": "Join now",
+          "joining": "Joining…",
+          "later": "Not now"
+        }
       }
     },
     "locked": {
@@ -159,10 +170,6 @@
         "profile": {
           "title": "Your profile is on its way",
           "body": "Reading stats, streaks and badges show up here once the season begins."
-        },
-        "quiz": {
-          "title": "Quiz nights start with the season",
-          "body": "The first live quiz runs at the end of month one, on the book your league votes for."
         },
         "fallback": {
           "title": "Opens when the season starts",
@@ -876,7 +883,10 @@
         "addQuestionsFirst": "Add questions first",
         "goLive": "Go live",
         "edit": "Edit quiz",
-        "delete": "Delete quiz"
+        "delete": "Delete quiz",
+        "createNight": "New quiz night",
+        "formatRounds": "Quiz night",
+        "formatInstant": "Kahoot"
       },
       "quizEdit": {
         "loadError": "Couldn't load that quiz.",
@@ -1135,6 +1145,137 @@
           "title": "Leaderboard",
           "description": "When off, students can't see the Leaderboard page or its nav link."
         }
+      },
+      "quizNightBuilder": {
+        "errors": {
+          "titleRequired": "Give the quiz night a title.",
+          "noQuestions": "Add at least one question.",
+          "incomplete": "Round {round}, question {number} needs both the question and its correct answer.",
+          "save": "Couldn't save the quiz night."
+        },
+        "defaultMonth": "This month",
+        "titlePlaceholder": "Quiz night title",
+        "save": "Save quiz night",
+        "monthPlaceholder": "Month (e.g. October)",
+        "roundsLabel": "Rounds",
+        "removeRound": "Remove round {round}",
+        "addRound": "Add round",
+        "emptySlot": "Empty slot",
+        "deleteQuestion": "Delete question {number}",
+        "addQuestion": "Add question",
+        "questionLabel": "Round {round} · question {number}",
+        "question": "Question",
+        "questionPlaceholder": "In how many days did Mr. Fogg actually travel around the world?",
+        "correctAnswer": "Correct answer",
+        "correctAnswerHint": "Shown as the title of the answer card.",
+        "correctAnswerPlaceholder": "Seventy-nine days",
+        "acceptedAnswers": "Also accept",
+        "acceptedAnswersHint": "Other spellings that count as right. Capitals, punctuation and number words don't matter.",
+        "removeAccepted": "Remove {answer}",
+        "acceptedPlaceholder": "Type and press Enter, e.g. 79",
+        "quote": "Book quote",
+        "quoteHint": "Wrap words in *stars* for italics and ==double equals== for the yellow highlight.",
+        "quotePlaceholder": "his friends in London only saw it pass the meridian ==*seventy-nine*== times.",
+        "sourceRef": "Chapter or page",
+        "sourceRefPlaceholder": "Chapter XXXVII",
+        "timeLimit": "Time limit",
+        "seconds": "{count} s",
+        "points": "Points",
+        "preview": "Answer card preview",
+        "previewAnswer": "The correct answer",
+        "previewNoQuote": "Add a quote to show the book clipping."
+      }
+    },
+    "night": {
+      "roundLabel": "Round {roman}",
+      "answersBanner": "ANSWERS",
+      "board": {
+        "label": "Rounds of the night"
+      },
+      "review": {
+        "teamsGotIt": "<num></num> {count, plural, one {team} other {teams}} got it right"
+      },
+      "answerBox": {
+        "label": "Your team's answer",
+        "placeholder": "Type your answer…",
+        "noAnswer": "No answer",
+        "locked": "Answer locked",
+        "saving": "Saving…",
+        "saved": "Saved",
+        "saveError": "Couldn't save your answer.",
+        "hint": "Anyone on your team can type. The latest version counts."
+      },
+      "result": {
+        "yourAnswer": "Your team answered",
+        "noAnswer": "No answer",
+        "points": "{count, plural, one {# point} other {# points}}"
+      },
+      "lobby": {
+        "youreIn": "You're in!",
+        "playingFor": "Playing for {team}",
+        "noTeam": "You're watching. Join a team to answer.",
+        "waiting": "Waiting for the host to start…",
+        "qrLabel": "QR code to join the quiz",
+        "joinTitle": "Join the quiz night",
+        "joinHint": "Scan the code, or open the app and enter the PIN.",
+        "teamsJoined": "{count, plural, =0 {No teams yet} one {# team joined} other {# teams joined}}"
+      },
+      "podium": {
+        "title": "Final standings",
+        "yourPlace": "Your team: place {place} with {points} points",
+        "points": "{count, plural, one {# point} other {# points}}"
+      },
+      "marking": {
+        "eyebrow": "Answers break",
+        "title": "Mark this round",
+        "hint": "Matches with the accepted answers are already ticked. Check the rest.",
+        "error": "Couldn't save that mark.",
+        "correctAnswer": "Correct: {answer}",
+        "noAnswers": "No team answered.",
+        "resetToAuto": "Back to the automatic mark",
+        "correct": "Correct",
+        "wrong": "Wrong"
+      },
+      "host": {
+        "advanceError": "Couldn't move on. Try again.",
+        "loadError": "Couldn't load the quiz night.",
+        "loading": "Loading",
+        "pin": "PIN {pin}",
+        "teamsAnswered": "{answered} of {total} teams answered",
+        "teamsJoined": "{count, plural, one {# team} other {# teams}}",
+        "exitFullscreen": "Exit full screen",
+        "fullscreen": "Full screen",
+        "next": {
+          "showBoard": "Show the board",
+          "startRound": "Start round {roman}",
+          "finishNight": "Show final standings",
+          "skip": "Skip",
+          "startAnswers": "Start answers",
+          "showAnswer": "Show answer",
+          "next": "Next"
+        }
+      },
+      "phase": {
+        "lobby": "Lobby",
+        "board": "Round board",
+        "round_intro": "Round intro",
+        "number": "Next question",
+        "question": "Question",
+        "locked": "Time's up",
+        "answers_intro": "Answers break",
+        "review_number": "Answer review",
+        "review_question": "Question review",
+        "review_answer": "Answer",
+        "review_close": "Answer review",
+        "finished": "Finished"
+      },
+      "player": {
+        "notJoined": "That quiz has ended or you're not in it.",
+        "enterNewPin": "Enter a new PIN",
+        "connecting": "Connecting…",
+        "roundNext": "Round {roman} is next",
+        "noTeam": "Join a team to answer quiz-night questions.",
+        "answersComing": "Answers coming up…"
       }
     }
   }
