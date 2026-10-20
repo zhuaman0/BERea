@@ -1,7 +1,7 @@
 # Quiz Night: new game format (spec)
 
-Status: **approved to build**. Section 6 lists the defaults used where a rule wasn't decided
-yet; change any of them and the build follows.
+Status: **built** (backend `service_quiz_night.py`, frontend `components/quizNight/`). Section 6
+lists the defaults used where a rule wasn't decided yet; change any of them and the build follows.
 
 This copies the Keynote deck the organisers use today and turns it into a live, multi-screen
 game in the app. One device acts as the **host / projector**; every team plays on its phones.
@@ -106,11 +106,14 @@ Code today:
 | `review_close` | Number card *i* | Same | Auto after 1.5 s → next `review_number`, or `board` |
 | `finished` | **Final podium** | Team place and points | n/a |
 
-The host can always press **Next** to skip an auto-advance, and can **pause** the timer.
+The host can always press **Next** to skip an auto-advance. Pausing a running timer isn't built
+yet.
 
 ### 3.2 Team answers
 
-- **One answer per team per question.** Any member can type, and the latest text counts.
+- **One answer per team per question.** Any member can type, and the latest text counts. A save
+  that arrives up to 1.5 s after the timer hits 0 still counts, so the last debounced keystrokes
+  of a slow phone aren't lost.
   - It saves 400 ms after the last keystroke.
   - The box shows "Saved ✓", and teammates see the latest text within about a second.
 - The box locks when the timer reaches 0. The server ignores later writes.
