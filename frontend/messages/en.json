@@ -121,6 +121,7 @@
       "nav": {
         "home": "Home",
         "vote": "Book vote",
+        "quiz": "Join quiz",
         "leaderboard": "Leaderboard",
         "team": "My team",
         "rules": "Rules",
@@ -144,7 +145,17 @@
       },
       "liveQuiz": {
         "banner": "Quiz night is live: {title} — tap to join",
-        "pin": "PIN {pin}"
+        "pin": "PIN {pin}",
+        "backToGame": "You're in {title} — tap to go back to the game",
+        "joinError": "Couldn't join the quiz. Try again.",
+        "invite": {
+          "eyebrow": "Live now",
+          "body": "The quiz has started. Join with your team before the first question.",
+          "pinLabel": "Game PIN",
+          "join": "Join now",
+          "joining": "Joining…",
+          "later": "Not now"
+        }
       }
     },
     "locked": {
@@ -159,10 +170,6 @@
         "profile": {
           "title": "Your profile is on its way",
           "body": "Reading stats, streaks and badges show up here once the season begins."
-        },
-        "quiz": {
-          "title": "Quiz nights start with the season",
-          "body": "The first live quiz runs at the end of month one, on the book your league votes for."
         },
         "fallback": {
           "title": "Opens when the season starts",

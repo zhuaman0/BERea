@@ -14,6 +14,7 @@ import {
   Settings,
   LogOut,
   Lock,
+  Radio,
   type LucideIcon,
 } from "lucide-react";
 import { initials } from "@berea/core";
@@ -21,7 +22,7 @@ import { isReadingRouteLocked } from "@/features/reading/lib/launchSections";
 import type { ReadingTeam } from "@berea/api";
 import { useReadingLogout } from "../hooks/useReadingLogout";
 
-type NavKey = "home" | "vote" | "leaderboard" | "team" | "rules" | "profile";
+type NavKey = "home" | "vote" | "quiz" | "leaderboard" | "team" | "rules" | "profile";
 
 interface NavItem {
   href:   string;
@@ -32,6 +33,7 @@ interface NavItem {
 const BASE_NAV_ITEMS: NavItem[] = [
   { href: "/reading",             navKey: "home",        icon: Home },
   { href: "/reading/games",       navKey: "vote",        icon: Vote },
+  { href: "/reading/quiz",        navKey: "quiz",        icon: Radio },
   { href: "/reading/leaderboard", navKey: "leaderboard", icon: Trophy },
   { href: "/reading/team",        navKey: "team",        icon: Users },
   { href: "/reading/rules",       navKey: "rules",       icon: BookOpen },
