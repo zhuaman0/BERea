@@ -91,6 +91,14 @@ RECEIPT_TYPES = {
 }
 
 
+AVATAR_MIME_TYPES = {"image/jpeg", "image/png", "image/webp"}
+AVATAR_MAX_BYTES = 1024 * 1024
+
+
+def _avatar_version(user: ReadingUser) -> int | None:
+    return int(user.avatar_updated_at.timestamp()) if user.avatar_updated_at else None
+
+
 def _to_user_response(user: ReadingUser, payment_status: str | None = None) -> ReadingUserResponse:
     return ReadingUserResponse(
         id=user.id,
@@ -104,6 +112,7 @@ def _to_user_response(user: ReadingUser, payment_status: str | None = None) -> R
         is_tester=user.is_tester,
         is_captain=user.is_captain,
         created_at=user.created_at,
+        avatar_version=_avatar_version(user),
     )
 
 
@@ -312,6 +321,7 @@ async def get_team_member_profile(
         current_streak=_effective_streak(member, _today()),
         token_balance=member.token_balance,
         created_at=member.created_at,
+        avatar_version=_avatar_version(member),
     )
 
 
@@ -394,6 +404,7 @@ async def _build_team_response(
                 active_today=m.last_active_date == today,
                 is_captain=m.is_captain,
                 created_at=m.created_at,
+                avatar_version=_avatar_version(m),
             )
             for m in members
         ],
@@ -1372,3 +1383,40 @@ async def answer_live_question(
         await db.rollback()
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="You already answered this question") from exc
     return await get_live_player_state(user_id, session_id, db)
+
+
+async def upload_my_avatar(user_id: str, avatar: UploadFile, db: AsyncSession) -> ReadingUserResponse:
+    from app.domains.reading.repo_reading import get_user_by_id, set_user_avatar
+
+    if avatar.content_type not in AVATAR_MIME_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Photo must be a JPEG, PNG or WebP image"
+        )
+    contents = await avatar.read()
+    if len(contents) > AVATAR_MAX_BYTES:
+        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Photo must be under 1MB")
+
+    user = await get_user_by_id(uuid.UUID(user_id), db)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    await set_user_avatar(user, contents, avatar.content_type, db)
+    return await get_current_reading_user(user_id, db)
+
+
+async def remove_my_avatar(user_id: str, db: AsyncSession) -> ReadingUserResponse:
+    from app.domains.reading.repo_reading import get_user_by_id, set_user_avatar
+
+    user = await get_user_by_id(uuid.UUID(user_id), db)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    await set_user_avatar(user, None, None, db)
+    return await get_current_reading_user(user_id, db)
+
+
+async def get_user_avatar_image(target_user_id: str, db: AsyncSession) -> tuple[bytes, str]:
+    from app.domains.reading.repo_reading import get_user_with_avatar
+
+    user = await get_user_with_avatar(uuid.UUID(target_user_id), db)
+    if not user or not user.avatar_image or not user.avatar_mime:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Photo not found")
+    return user.avatar_image, user.avatar_mime

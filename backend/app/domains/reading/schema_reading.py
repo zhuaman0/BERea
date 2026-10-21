@@ -74,6 +74,8 @@ class ReadingUserResponse(BaseModel):
     is_tester: bool
     is_captain: bool
     created_at: datetime
+    # Changes whenever the photo does, so clients can cache the image per version. None = no photo.
+    avatar_version: int | None
 
 
 TEAM_MAX_MEMBERS = 3
@@ -89,6 +91,7 @@ class ReadingTeamMemberResponse(BaseModel):
     active_today: bool
     is_captain: bool
     created_at: datetime
+    avatar_version: int | None
 
 
 CoverColor = Literal["ember", "crimson", "ocean", "forest", "plum", "midnight", "parchment"]
@@ -151,6 +154,7 @@ class ReadingTeamMemberProfileResponse(BaseModel):
     current_streak: int
     token_balance: int
     created_at: datetime
+    avatar_version: int | None
 
 
 class ReadingTeamRegistrationResponse(BaseModel):
