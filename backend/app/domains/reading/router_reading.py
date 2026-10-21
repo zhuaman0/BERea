@@ -88,6 +88,30 @@ async def get_me(user_id: CurrentUserId, db: DbSession) -> ReadingUserResponse:
     return await get_current_reading_user(user_id, db)
 
 
+@router.put("/users/me/avatar", response_model=ReadingUserResponse)
+async def upload_my_avatar(user_id: CurrentUserId, db: DbSession, avatar: UploadFile = File(...)) -> ReadingUserResponse:
+    from app.domains.reading.service_reading import upload_my_avatar as upload_my_avatar_service
+
+    return await upload_my_avatar_service(user_id, avatar, db)
+
+
+@router.delete("/users/me/avatar", response_model=ReadingUserResponse)
+async def remove_my_avatar(user_id: CurrentUserId, db: DbSession) -> ReadingUserResponse:
+    from app.domains.reading.service_reading import remove_my_avatar as remove_my_avatar_service
+
+    return await remove_my_avatar_service(user_id, db)
+
+
+# Signed-in members only: profile photos are personal, so the browser fetches them with its token.
+@router.get("/users/{target_user_id}/avatar")
+async def get_user_avatar(target_user_id: str, user_id: CurrentUserId, db: DbSession) -> Response:
+    from app.domains.reading.service_reading import get_user_avatar_image
+
+    image, mime = await get_user_avatar_image(target_user_id, db)
+    # The URL carries the photo's version, so a private cache can keep it until it changes.
+    return Response(content=image, media_type=mime, headers={"Cache-Control": "private, max-age=86400"})
+
+
 @router.get("/users/me/stats", response_model=ReadingProfileStatsResponse)
 async def get_my_profile_stats(user_id: CurrentUserId, db: DbSession) -> ReadingProfileStatsResponse:
     from app.domains.reading.service_reading import get_my_profile_stats as get_my_profile_stats_service

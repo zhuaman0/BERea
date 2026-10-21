@@ -4,8 +4,8 @@ import Link from "next/link";
 import type { Route } from "next";
 import { ChevronRight, Crown, Flame, UserPlus } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { initials } from "@berea/core";
 import type { ReadingTeam } from "@berea/api";
+import { ReaderAvatar } from "@/features/reading/components/ReaderAvatar";
 
 interface TeamRosterProps {
   team:      ReadingTeam;
@@ -40,9 +40,12 @@ export function TeamRoster({ team, meId, isCaptain, onInvite }: TeamRosterProps)
                 href={`/reading/team/${member.id}` as Route}
                 className="group flex items-center gap-4 rounded-xl border border-transparent bg-[var(--rd-ink)] px-4 py-3.5 transition-colors hover:border-[var(--rd-border)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-accent-from)]"
               >
-                <span className="rd-accent-gradient flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-bold text-black/80">
-                  {initials(member.full_name)}
-                </span>
+                <ReaderAvatar
+                  userId={member.id}
+                  name={member.full_name}
+                  version={member.avatar_version}
+                  className="rd-accent-gradient h-11 w-11 text-sm font-bold text-black/80"
+                />
 
                 <div className="min-w-0 flex-1">
                   <p className="flex flex-wrap items-center gap-x-2 gap-y-1">

@@ -55,6 +55,11 @@ class ReadingUser(TimestampMixin, Base):
     is_tester: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False)
     last_active_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     is_captain: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false(), nullable=False)
+    # Profile photo, already resized by the browser. Deferred so user lists never load the bytes.
+    avatar_image: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True, deferred=True)
+    # Explicit None defaults: a just-inserted user must not need a lazy (async-unsafe) reload to read them.
+    avatar_mime: Mapped[str | None] = mapped_column(String(32), default=None, nullable=True)
+    avatar_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None, nullable=True)
 
     team: Mapped[ReadingTeam | None] = relationship(back_populates="members")
     refresh_tokens: Mapped[list[ReadingRefreshToken]] = relationship(

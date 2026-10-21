@@ -12,6 +12,8 @@ export interface ReadingUser {
   is_tester:      boolean;
   is_captain:     boolean;
   created_at:     string;
+  /** Bumps whenever the profile photo changes; null when there is no photo. */
+  avatar_version: number | null;
 }
 
 export interface ReadingShelfEntry {
@@ -60,6 +62,7 @@ export interface ReadingTeamMember {
   active_today:   boolean;
   is_captain:     boolean;
   created_at:     string;
+  avatar_version: number | null;
 }
 
 export type CoverColor = "ember" | "crimson" | "ocean" | "forest" | "plum" | "midnight" | "parchment";
@@ -115,4 +118,5 @@ export interface ReadingTeamMemberProfile {
   current_streak:  number;
   token_balance:   number;
   created_at:      string;
+  avatar_version:  number | null;
 }

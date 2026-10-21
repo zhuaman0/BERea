@@ -851,3 +851,17 @@ async def set_team_answer_points(points: dict[uuid.UUID, int], db: AsyncSession)
         if answer:
             answer.points = value
     await db.commit()
+
+
+async def set_user_avatar(user: ReadingUser, image: bytes | None, mime: str | None, db: AsyncSession) -> None:
+    user.avatar_image = image
+    user.avatar_mime = mime
+    user.avatar_updated_at = datetime.now(UTC) if image else None
+    await db.commit()
+
+
+async def get_user_with_avatar(user_id: uuid.UUID, db: AsyncSession) -> ReadingUser | None:
+    result = await db.execute(
+        select(ReadingUser).where(ReadingUser.id == user_id).options(undefer(ReadingUser.avatar_image))
+    )
+    return result.scalar_one_or_none()

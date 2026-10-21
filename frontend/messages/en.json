@@ -331,7 +331,9 @@
       "signedIn": "Signed in",
       "noTeam": "No team yet",
       "logout": "Log out",
-      "loggingOut": "Logging out…"
+      "loggingOut": "Logging out…",
+      "photoTitle": "Profile photo",
+      "photoHint": "Tap the circle to upload a photo. Your teammates see it on the team page and next to your name."
     },
     "member": {
       "backToTeam": "Back to team",
@@ -718,7 +720,15 @@
       "votesCast": "Votes cast",
       "shelfTitle": "Your shelf",
       "shelfHint": "Every book you've logged pages on, newest first. The ember shows how far you are.",
-      "shelfLoading": "Loading your shelf…"
+      "shelfLoading": "Loading your shelf…",
+      "photo": {
+        "upload": "Add a profile photo",
+        "change": "Change profile photo",
+        "remove": "Remove photo",
+        "wrongType": "Choose a JPEG, PNG or WebP image.",
+        "uploadError": "Couldn't upload the photo. Try again.",
+        "removeError": "Couldn't remove the photo. Try again."
+      }
     },
     "leaderboard": {
       "loadError": "Couldn't load the leaderboard.",

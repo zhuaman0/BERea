@@ -23,7 +23,9 @@ const TEAM_REFRESH_MS = 15_000;
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const userId = useReadingAuthStore((s) => s.user?.id || null);
   const userName = useReadingAuthStore((s) => s.user?.full_name ?? null);
+  const avatarVersion = useReadingAuthStore((s) => s.user?.avatar_version ?? null);
   const canPreviewSeason = useReadingAuthStore((s) => Boolean(s.user?.is_admin || s.user?.is_tester));
   // Polled so the points pill and sidebar pick up quiz results without a page reload.
   const loadTeam = useCallback(() => readingAuthApi.myTeam(), []);
@@ -67,7 +69,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         dayProgress={dayProgress}
         totalPoints={team?.points ?? null}
         hasTeam={hasTeam}
+        userId={userId}
         userName={userName}
+        avatarVersion={avatarVersion}
       />
       <LiveQuizBanner />
 

@@ -6,11 +6,11 @@ import type { Route } from "next";
 import { ArrowLeft, Flame } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { readingAuthApi } from "@berea/api";
-import { initials } from "@berea/core";
 import { isApiError } from "@/features/auth/utils";
 import type { ReadingTeamMemberProfile } from "@berea/api";
 import { READING_PAGE_CONTAINER } from "@/features/reading/lib/pageContainer";
 import { formatReadingDate } from "@/features/reading/lib/formatReadingDate";
+import { ReaderAvatar } from "@/features/reading/components/ReaderAvatar";
 
 function memberSinceLabel(iso: string, locale: string): string {
   if (!iso) return "";
@@ -56,9 +56,12 @@ export default function TeammateProfilePage({ params }: PageProps) {
         <div className="mt-6 rounded-2xl border border-[var(--rd-border)] bg-[var(--rd-panel)] p-7">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-5">
-              <span className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-[var(--rd-border)] text-xl font-semibold text-[var(--rd-text)]">
-                {initials(profile.full_name)}
-              </span>
+              <ReaderAvatar
+                userId={profile.id}
+                name={profile.full_name}
+                version={profile.avatar_version}
+                className="h-20 w-20 bg-[var(--rd-border)] text-xl font-semibold text-[var(--rd-text)]"
+              />
               <div>
                 <h1 className="font-display text-2xl font-semibold text-[var(--rd-text)]">{profile.full_name}</h1>
                 <p className="mt-1 text-sm text-[var(--rd-text-muted)]">@{profile.email.split("@")[0]}</p>
