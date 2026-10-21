@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { isApiError } from "@/features/auth/utils";
 import { readingBookApi } from "@berea/api";
 import { BookForm } from "@/features/reading/components/admin/BookForm";
-import type { ReadingBook } from "@berea/api";
+import type { ReadingBookEditor } from "@berea/api";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -14,13 +14,13 @@ interface PageProps {
 
 export default function ReadingAdminEditBookPage({ params }: PageProps) {
   const { id } = use(params);
-  const [book, setBook] = useState<ReadingBook | null>(null);
+  const [book, setBook] = useState<ReadingBookEditor | null>(null);
   const [error, setError] = useState<string | null>(null);
   const t = useTranslations("reading.admin.bookEdit");
 
   useEffect(() => {
     readingBookApi
-      .get(id)
+      .getEditor(id)
       .then(setBook)
       .catch((err) => setError(isApiError(err) ? err.detail : t("loadError")));
   }, [id, t]);

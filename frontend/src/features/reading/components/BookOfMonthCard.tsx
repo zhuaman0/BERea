@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import type { Route } from "next";
-import { BookOpen, PenLine, Vote } from "lucide-react";
+import { BookOpen, Map, PenLine, Vote } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { ProgressBar } from "@berea/ui-kit";
 import { bookCoverSrc, type BookOfMonthResult } from "@berea/api";
+import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
 
 interface BookOfMonthCardProps {
   result:     BookOfMonthResult | null;
@@ -15,6 +16,7 @@ interface BookOfMonthCardProps {
 
 export function BookOfMonthCard({ result, isLoading, onLogPages }: BookOfMonthCardProps) {
   const t = useTranslations("reading.bookOfMonth");
+  const user = useReadingAuthStore((state) => state.user);
   if (isLoading) {
     return <div className="h-60 animate-pulse rounded-2xl border border-[var(--rd-border)] bg-[var(--rd-panel)]" />;
   }
@@ -87,14 +89,25 @@ export function BookOfMonthCard({ result, isLoading, onLogPages }: BookOfMonthCa
           <ProgressBar percent={team_average_percent} tone="muted" />
         </div>
 
-        <button
-          type="button"
-          onClick={onLogPages}
-          className="mt-5 inline-flex items-center gap-2 rounded-lg border border-[var(--rd-border)] px-4 py-2 text-sm font-medium text-[var(--rd-text)] transition-colors hover:border-[var(--rd-accent-from)]"
-        >
-          <PenLine size={14} />
-          {t("logPages")}
-        </button>
+        <div className="mt-5 flex flex-wrap gap-2">
+          {user?.is_captain && (
+            <Link
+              href={`/reading/books/${book.id}` as Route}
+              className="rd-accent-gradient inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-black/85 transition-opacity hover:opacity-90"
+            >
+              <Map size={14} />
+              {t("openPath")}
+            </Link>
+          )}
+          <button
+            type="button"
+            onClick={onLogPages}
+            className="inline-flex items-center gap-2 rounded-lg border border-[var(--rd-border)] px-4 py-2 text-sm font-medium text-[var(--rd-text)] transition-colors hover:border-[var(--rd-accent-from)]"
+          >
+            <PenLine size={14} />
+            {t("logPages")}
+          </button>
+        </div>
       </div>
     </div>
   );

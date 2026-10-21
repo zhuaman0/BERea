@@ -22,6 +22,9 @@ export const readingVoteApi = {
   createRound: (body: VoteRoundCreateInput) =>
     readingApiClient.post<VoteRound>("/v1/reading/vote-rounds", body),
 
+  skipTime: (roundId: string) =>
+    readingApiClient.post<VoteRound[]>(`/v1/reading/vote-rounds/${roundId}/skip-time`, {}),
+
   castVote: (roundId: string, optionId: string) =>
     readingApiClient.post<VoteRound>(`/v1/reading/vote-rounds/${roundId}/vote`, { option_id: optionId }),
 };

@@ -12,6 +12,10 @@ from sqlalchemy.orm import selectinload, undefer
 from app.domains.reading.model_reading import (
     ReadingAppSettings,
     ReadingBook,
+    ReadingBookPart,
+    ReadingBookPartAnswer,
+    ReadingBookPartCompletion,
+    ReadingBookPartQuestion,
     ReadingProgress,
     ReadingQuiz,
     ReadingQuizAnswer,
@@ -144,17 +148,22 @@ async def get_team_members(team_id: uuid.UUID, db: AsyncSession) -> list[Reading
 
 
 async def list_teams_ranked(db: AsyncSession) -> list[tuple[ReadingTeam, int, int]]:
-    """Every team with its member count and season points (sum of its quiz-night scores),
+    """Every team with its member count and season points (live quizzes plus book-path rewards),
     best first: points, then roster size, then name."""
     member_counts = (
         select(ReadingUser.team_id, func.count(ReadingUser.id).label("member_count"))
         .group_by(ReadingUser.team_id)
         .subquery()
     )
-    # Instant quizzes score players; quiz nights score team answers (written when the night ends).
+    # Instant quizzes score players; quiz nights and book parts award points directly to teams.
     point_sources = select(
         ReadingQuizParticipant.team_id.label("team_id"), ReadingQuizParticipant.score.label("points")
-    ).union_all(select(ReadingQuizTeamAnswer.team_id, ReadingQuizTeamAnswer.points)).subquery()
+    ).union_all(
+        select(ReadingQuizTeamAnswer.team_id, ReadingQuizTeamAnswer.points),
+        select(ReadingBookPartCompletion.team_id, ReadingBookPartCompletion.points_awarded).where(
+            ReadingBookPartCompletion.score == 100
+        ),
+    ).subquery()
     team_points = (
         select(point_sources.c.team_id, func.sum(point_sources.c.points).label("points"))
         .group_by(point_sources.c.team_id)
@@ -412,6 +421,15 @@ async def get_vote_round_by_id(
     return result.scalar_one_or_none()
 
 
+async def close_vote_rounds(
+    rounds: list[ReadingVoteRound], closed_at: datetime, db: AsyncSession
+) -> None:
+    for round_ in rounds:
+        if round_.closes_at > closed_at:
+            round_.closes_at = closed_at
+    await db.commit()
+
+
 async def get_vote_tally(round_id: uuid.UUID, db: AsyncSession) -> dict[uuid.UUID, int]:
     result = await db.execute(
         select(ReadingVote.option_id, func.count())
@@ -503,13 +521,21 @@ async def update_app_settings(
     return settings_row
 
 
+def _book_query() -> Select[tuple[ReadingBook]]:
+    return select(ReadingBook).options(
+        selectinload(ReadingBook.parts)
+        .selectinload(ReadingBookPart.questions)
+        .selectinload(ReadingBookPartQuestion.answers)
+    )
+
+
 async def list_books(db: AsyncSession) -> list[ReadingBook]:
-    result = await db.execute(select(ReadingBook).order_by(ReadingBook.created_at.desc()))
+    result = await db.execute(_book_query().order_by(ReadingBook.created_at.desc()))
     return list(result.scalars().all())
 
 
 async def get_book(book_id: uuid.UUID, db: AsyncSession) -> ReadingBook | None:
-    result = await db.execute(select(ReadingBook).where(ReadingBook.id == book_id))
+    result = await db.execute(_book_query().where(ReadingBook.id == book_id))
     return result.scalar_one_or_none()
 
 
@@ -528,6 +554,7 @@ async def create_book(payload: ReadingBookWrite, db: AsyncSession) -> ReadingBoo
         language=payload.language,
         genre=payload.genre,
         page_count=payload.page_count,
+        parts=_build_book_parts(payload),
     )
     db.add(book)
     await db.commit()
@@ -541,6 +568,7 @@ async def update_book(book: ReadingBook, payload: ReadingBookWrite, db: AsyncSes
     book.language = payload.language
     book.genre = payload.genre
     book.page_count = payload.page_count
+    book.parts = _build_book_parts(payload)
     if payload.cover_url is not None:
         book.cover_url = payload.cover_url
         book.cover_image = None
@@ -548,6 +576,90 @@ async def update_book(book: ReadingBook, payload: ReadingBookWrite, db: AsyncSes
     await db.commit()
     await db.refresh(book)
     return book
+
+
+def _build_book_parts(payload: ReadingBookWrite) -> list[ReadingBookPart]:
+    return [
+        ReadingBookPart(
+            position=part_index,
+            title=part.title.strip(),
+            points_reward=part.points_reward,
+            questions=[
+                ReadingBookPartQuestion(
+                    position=question_index,
+                    text=question.text.strip(),
+                    answers=[
+                        ReadingBookPartAnswer(
+                            position=answer_index,
+                            text=answer.text.strip(),
+                            is_correct=answer.is_correct,
+                        )
+                        for answer_index, answer in enumerate(question.answers)
+                    ],
+                )
+                for question_index, question in enumerate(part.questions)
+            ],
+        )
+        for part_index, part in enumerate(payload.parts)
+    ]
+
+
+async def get_part(part_id: uuid.UUID, db: AsyncSession) -> ReadingBookPart | None:
+    result = await db.execute(
+        select(ReadingBookPart)
+        .where(ReadingBookPart.id == part_id)
+        .options(selectinload(ReadingBookPart.questions).selectinload(ReadingBookPartQuestion.answers))
+    )
+    return result.scalar_one_or_none()
+
+
+async def get_part_completions(
+    book_id: uuid.UUID, team_id: uuid.UUID, db: AsyncSession
+) -> dict[uuid.UUID, ReadingBookPartCompletion]:
+    result = await db.execute(
+        select(ReadingBookPartCompletion)
+        .join(ReadingBookPart, ReadingBookPart.id == ReadingBookPartCompletion.part_id)
+        .where(
+            ReadingBookPart.book_id == book_id,
+            ReadingBookPartCompletion.team_id == team_id,
+            ReadingBookPartCompletion.score == 100,
+        )
+    )
+    return {completion.part_id: completion for completion in result.scalars().all()}
+
+
+async def complete_book_part(
+    part_id: uuid.UUID,
+    team_id: uuid.UUID,
+    user_id: uuid.UUID,
+    score: int,
+    points_awarded: int,
+    db: AsyncSession,
+) -> None:
+    result = await db.execute(
+        select(ReadingBookPartCompletion).where(
+            ReadingBookPartCompletion.part_id == part_id,
+            ReadingBookPartCompletion.team_id == team_id,
+        )
+    )
+    completion = result.scalar_one_or_none()
+    if completion:
+        completion.completed_by_user_id = user_id
+        completion.score = score
+        completion.points_awarded = points_awarded
+        completion.completed_at = datetime.now(UTC)
+    else:
+        db.add(
+            ReadingBookPartCompletion(
+                part_id=part_id,
+                team_id=team_id,
+                completed_by_user_id=user_id,
+                score=score,
+                points_awarded=points_awarded,
+                completed_at=datetime.now(UTC),
+            )
+        )
+    await db.commit()
 
 
 async def set_book_cover_image(book: ReadingBook, image: bytes, mime: str, db: AsyncSession) -> ReadingBook:

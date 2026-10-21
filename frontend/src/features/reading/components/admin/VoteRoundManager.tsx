@@ -6,7 +6,7 @@ import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
-import { Plus, Trash2, Crown, Clock } from "lucide-react";
+import { Plus, Trash2, Crown, Clock, FastForward } from "lucide-react";
 import { readingVoteApi, readingBookApi } from "@berea/api";
 import { CatalogBookPicker } from "./CatalogBookPicker";
 import { isApiError } from "@/features/auth/utils";
@@ -159,6 +159,8 @@ function BookVoteForm({ language, genre, onCreated }: BookVoteFormProps) {
 
 export function VoteRoundManager() {
   const { rounds, selection, currentRound, now, isPending, error, refetch } = useVoteRounds();
+  const [isSkipping, setIsSkipping] = useState(false);
+  const [skipError, setSkipError] = useState<string | null>(null);
   const hasPendingRound = rounds.some((round) => voteStatus(round, now) !== "closed");
   const language = voteWinner(selection.findLast((round) => round.stage === "language"));
   const genre = voteWinner(selection.findLast((round) => round.stage === "genre"));
@@ -174,14 +176,32 @@ export function VoteRoundManager() {
     return format.dateTime(new Date(iso), { dateStyle: "medium", timeStyle: "short" });
   }
 
+  async function skipTime() {
+    if (!currentRound || isSkipping || !window.confirm(t("skipConfirm"))) return;
+    setIsSkipping(true);
+    setSkipError(null);
+    try {
+      await readingVoteApi.skipTime(currentRound.id);
+      await refetch();
+    } catch (err: unknown) {
+      setSkipError(isApiError(err) ? err.detail : t("errors.skipTime"));
+    } finally {
+      setIsSkipping(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <VoteSelectionSteps rounds={selection} now={now} showPersonalProgress={false} />
       {error && <p role="alert" className="text-sm text-red-400">{isApiError(error) ? error.detail : t("errors.refresh")} <button type="button" className="underline" onClick={() => void refetch()}>{tCommon("retry")}</button></p>}
+      {skipError && <p role="alert" className="text-sm text-red-400">{skipError}</p>}
       {isPending && <p role="status" className="text-sm text-[var(--rd-text-muted)]">{t("loadingRounds")}</p>}
       {currentRound && voteStatus(currentRound, now) === "open" && <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--rd-accent-from)]/30 bg-[var(--rd-panel)] p-4 text-sm text-[var(--rd-text)]">
         <Clock size={16} /> {currentRound.stage === "book" ? t("open.book") : t("open.selection")} <span className="font-semibold tabular-nums">{t("open.timeLeft", { time: formatVoteCountdown(currentRound.closes_at, now) })}</span>
         <span className="text-[var(--rd-text-muted)]">{currentRound.stage === "book" ? t("votes", { count: currentRound.total_votes }) : selection.filter((round) => round.stage !== "book").map((round) => t("stageVotes", { stage: tStages(round.stage), count: round.total_votes })).join(" · ")}</span>
+        <button type="button" disabled={isSkipping} onClick={() => void skipTime()} className="ml-auto inline-flex items-center gap-2 rounded-lg border border-[var(--rd-accent-from)]/40 px-3 py-2 text-xs font-semibold text-[var(--rd-accent-from)] transition-colors hover:bg-[var(--rd-accent-from)]/10 disabled:cursor-not-allowed disabled:opacity-50">
+          <FastForward size={14} /> {isSkipping ? t("skipping") : t("skipTime")}
+        </button>
       </div>}
       {unresolved && !hasPendingRound && <p className="rounded-xl border border-amber-400/30 p-4 text-sm text-amber-300">
         {t("noWinner")}

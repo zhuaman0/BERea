@@ -118,6 +118,35 @@ async def test_permissions_overlap_and_foreign_options(db: AsyncSession, voters:
 
 
 @pytest.mark.asyncio
+async def test_admin_can_skip_shared_selection_time(
+    db: AsyncSession, voters: tuple[ReadingUser, ReadingUser]
+) -> None:
+    admin, student = voters
+    language, genre = await service.create_vote_selection_for_admin(str(admin.id), selection_payload(), db)
+    await service.cast_vote_for_user(
+        str(language.id), str(student.id), ReadingVoteCastRequest(option_id=language.options[0].id), db
+    )
+    await service.cast_vote_for_user(
+        str(genre.id), str(student.id), ReadingVoteCastRequest(option_id=genre.options[0].id), db
+    )
+
+    with pytest.raises(HTTPException) as rejected:
+        await service.skip_vote_time_for_admin(str(student.id), str(language.id), db)
+    assert rejected.value.status_code == 403
+
+    closed = await service.skip_vote_time_for_admin(str(admin.id), str(language.id), db)
+    assert {round_.id for round_ in closed} == {language.id, genre.id}
+    assert all(round_.status == "closed" for round_ in closed)
+    assert all(round_.winner_option_id is not None for round_ in closed)
+
+    with pytest.raises(HTTPException) as rejected:
+        await service.cast_vote_for_user(
+            str(language.id), str(student.id), ReadingVoteCastRequest(option_id=language.options[1].id), db
+        )
+    assert rejected.value.status_code == 409
+
+
+@pytest.mark.asyncio
 async def test_change_vote_ties_and_no_votes(
     db: AsyncSession, voters: tuple[ReadingUser, ReadingUser], monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -150,7 +179,33 @@ async def complete_preferences(
 
 
 @pytest.mark.asyncio
-async def test_book_filter_winner_dashboard_and_new_cycle(
+async def test_admin_can_skip_book_vote_time(
+    db: AsyncSession, voters: tuple[ReadingUser, ReadingUser], monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    admin, student = voters
+    await complete_preferences(db, admin, student, monkeypatch)
+    books = [
+        ReadingBook(title=f"Skip Book {index}", description="", language="Kazakh", genre="Fiction", page_count=100)
+        for index in range(2)
+    ]
+    db.add_all(books)
+    await db.commit()
+    book_round = await service.create_vote_round_for_admin(
+        str(admin.id), ReadingVoteRoundCreate(stage="book", book_ids=[book.id for book in books]), db
+    )
+    await service.cast_vote_for_user(
+        str(book_round.id), str(student.id), ReadingVoteCastRequest(option_id=book_round.options[0].id), db
+    )
+
+    closed = await service.skip_vote_time_for_admin(str(admin.id), str(book_round.id), db)
+    assert len(closed) == 1
+    assert closed[0].id == book_round.id
+    assert closed[0].status == "closed"
+    assert closed[0].winner_option_id == book_round.options[0].id
+
+
+@pytest.mark.asyncio
+async def test_book_selection_winner_dashboard_and_new_cycle(
     db: AsyncSession, voters: tuple[ReadingUser, ReadingUser], monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     admin, student = voters
@@ -160,12 +215,9 @@ async def test_book_filter_winner_dashboard_and_new_cycle(
     db.add_all(books)
     await db.commit()
     with pytest.raises(HTTPException) as rejected:
-        await service.create_vote_round_for_admin(str(admin.id), ReadingVoteRoundCreate(stage="book", book_ids=[books[0].id, books[2].id]), db)
-    assert rejected.value.status_code == 422
-    with pytest.raises(HTTPException) as rejected:
         await service.create_vote_round_for_admin(str(admin.id), ReadingVoteRoundCreate(stage="book", book_ids=[books[0].id, uuid.uuid4()]), db)
     assert rejected.value.status_code == 422
-    book_round = await service.create_vote_round_for_admin(str(admin.id), ReadingVoteRoundCreate(stage="book", book_ids=[books[0].id, books[1].id]), db)
+    book_round = await service.create_vote_round_for_admin(str(admin.id), ReadingVoteRoundCreate(stage="book", book_ids=[books[0].id, books[2].id]), db)
     choice = next(option for option in book_round.options if option.book_id == books[0].id)
     await service.cast_vote_for_user(str(book_round.id), str(student.id), ReadingVoteCastRequest(option_id=choice.id), db)
     assert await service.get_book_of_month_for_user(str(student.id), db) is None
@@ -173,12 +225,12 @@ async def test_book_filter_winner_dashboard_and_new_cycle(
     result = await service.get_book_of_month_for_user(str(student.id), db)
     assert result is not None and result.book.id == books[0].id and result.chosen_by_percent == 100
     with pytest.raises(HTTPException) as rejected:
-        await service.create_vote_round_for_admin(str(admin.id), ReadingVoteRoundCreate(stage="book", book_ids=[books[0].id, books[1].id]), db)
+        await service.create_vote_round_for_admin(str(admin.id), ReadingVoteRoundCreate(stage="book", book_ids=[books[0].id, books[2].id]), db)
     assert rejected.value.status_code == 409
     _, new_genre = await service.create_vote_selection_for_admin(str(admin.id), selection_payload(), db)
     freeze(monkeypatch, new_genre.closes_at)
     with pytest.raises(HTTPException) as rejected:
-        await service.create_vote_round_for_admin(str(admin.id), ReadingVoteRoundCreate(stage="book", book_ids=[books[0].id, books[1].id]), db)
+        await service.create_vote_round_for_admin(str(admin.id), ReadingVoteRoundCreate(stage="book", book_ids=[books[0].id, books[2].id]), db)
     assert rejected.value.status_code == 409
     assert (await service.get_book_of_month_for_user(str(student.id), db)).book.id == books[0].id
 

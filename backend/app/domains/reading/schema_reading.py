@@ -303,6 +303,28 @@ class ReadingAppSettingsUpdate(BaseModel):
     season_started: bool | None = None
 
 
+class ReadingBookPartAnswerWrite(BaseModel):
+    text: str = Field(min_length=1, max_length=300)
+    is_correct: bool
+
+
+class ReadingBookPartQuestionWrite(BaseModel):
+    text: str = Field(min_length=1, max_length=1000)
+    answers: list[ReadingBookPartAnswerWrite] = Field(min_length=2, max_length=4)
+
+    @model_validator(mode="after")
+    def _one_correct_answer(self) -> ReadingBookPartQuestionWrite:
+        if sum(answer.is_correct for answer in self.answers) != 1:
+            raise ValueError("Mark exactly one answer as correct")
+        return self
+
+
+class ReadingBookPartWrite(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+    points_reward: int = Field(default=100, ge=1, le=5000)
+    questions: list[ReadingBookPartQuestionWrite] = Field(min_length=1, max_length=50)
+
+
 class ReadingBookWrite(BaseModel):
     title: str = Field(min_length=1, max_length=200)
     description: str = Field(default="", max_length=4000)
@@ -310,6 +332,7 @@ class ReadingBookWrite(BaseModel):
     language: str | None = Field(default=None, max_length=40)
     genre: str | None = Field(default=None, max_length=60)
     page_count: int | None = Field(default=None, ge=1, le=5000)
+    parts: list[ReadingBookPartWrite] = Field(default_factory=list, max_length=30)
 
     @field_validator("language", "genre")
     @classmethod
@@ -342,6 +365,91 @@ class ReadingBookResponse(BaseModel):
     language: str | None
     genre: str | None
     page_count: int | None
+    part_count: int
+
+
+class ReadingBookPartAnswerEditorResponse(BaseModel):
+    id: uuid.UUID
+    text: str
+    is_correct: bool
+
+
+class ReadingBookPartQuestionEditorResponse(BaseModel):
+    id: uuid.UUID
+    text: str
+    answers: list[ReadingBookPartAnswerEditorResponse]
+
+
+class ReadingBookPartEditorResponse(BaseModel):
+    id: uuid.UUID
+    title: str
+    points_reward: int
+    questions: list[ReadingBookPartQuestionEditorResponse]
+
+
+class ReadingBookEditorResponse(ReadingBookResponse):
+    parts: list[ReadingBookPartEditorResponse]
+
+
+class ReadingBookPathAnswer(BaseModel):
+    id: uuid.UUID
+    text: str
+
+
+class ReadingBookPathQuestion(BaseModel):
+    id: uuid.UUID
+    text: str
+    answers: list[ReadingBookPathAnswer]
+
+
+BookPartStatus = Literal["locked", "available", "completed"]
+
+
+class ReadingBookPathPart(BaseModel):
+    id: uuid.UUID
+    position: int
+    title: str
+    points_reward: int
+    status: BookPartStatus
+    score: int | None
+    questions: list[ReadingBookPathQuestion]
+
+
+class ReadingBookPathResponse(BaseModel):
+    book: ReadingBookResponse
+    parts: list[ReadingBookPathPart]
+    completed_parts: int
+    total_parts: int
+    total_points: int
+    is_complete: bool
+    is_captain: bool
+
+
+class ReadingBookPathAnswerSubmit(BaseModel):
+    question_id: uuid.UUID
+    answer_id: uuid.UUID
+
+
+class ReadingBookPartSubmit(BaseModel):
+    answers: list[ReadingBookPathAnswerSubmit] = Field(min_length=1, max_length=50)
+
+
+class ReadingBookPartAnswerReview(BaseModel):
+    question_id: uuid.UUID
+    question_text: str
+    selected_answer_id: uuid.UUID
+    selected_answer_text: str
+    correct_answer_id: uuid.UUID
+    correct_answer_text: str
+    is_correct: bool
+
+
+class ReadingBookPartAttemptResponse(BaseModel):
+    path: ReadingBookPathResponse
+    score: int
+    passed: bool
+    points_awarded: int
+    review: list[ReadingBookPartAnswerReview]
 
 
 class ReadingBookOfMonthResponse(BaseModel):

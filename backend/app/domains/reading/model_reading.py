@@ -164,6 +164,87 @@ class ReadingBook(TimestampMixin, Base):
     genre: Mapped[str | None] = mapped_column(String(60), nullable=True)
     page_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
+    parts: Mapped[list[ReadingBookPart]] = relationship(
+        back_populates="book",
+        cascade="all, delete-orphan",
+        order_by="ReadingBookPart.position",
+        lazy="selectin",
+    )
+
+
+class ReadingBookPart(Base):
+    __tablename__ = "reading_book_parts"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    book_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("reading_books.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    points_reward: Mapped[int] = mapped_column(Integer, default=100, server_default="100", nullable=False)
+
+    book: Mapped[ReadingBook] = relationship(back_populates="parts")
+    questions: Mapped[list[ReadingBookPartQuestion]] = relationship(
+        back_populates="part", cascade="all, delete-orphan", order_by="ReadingBookPartQuestion.position"
+    )
+    completions: Mapped[list[ReadingBookPartCompletion]] = relationship(
+        back_populates="part", cascade="all, delete-orphan"
+    )
+
+
+class ReadingBookPartQuestion(Base):
+    __tablename__ = "reading_book_part_questions"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    part_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("reading_book_parts.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+
+    part: Mapped[ReadingBookPart] = relationship(back_populates="questions")
+    answers: Mapped[list[ReadingBookPartAnswer]] = relationship(
+        back_populates="question", cascade="all, delete-orphan", order_by="ReadingBookPartAnswer.position"
+    )
+
+
+class ReadingBookPartAnswer(Base):
+    __tablename__ = "reading_book_part_answers"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    question_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("reading_book_part_questions.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+    text: Mapped[str] = mapped_column(String(300), nullable=False)
+    is_correct: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    question: Mapped[ReadingBookPartQuestion] = relationship(back_populates="answers")
+
+
+class ReadingBookPartCompletion(Base):
+    __tablename__ = "reading_book_part_completions"
+    __table_args__ = (UniqueConstraint("part_id", "team_id", name="uq_reading_book_part_completion_team"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    part_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("reading_book_parts.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    team_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("reading_teams.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    completed_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("reading_users.id", ondelete="SET NULL"), nullable=True
+    )
+    score: Mapped[int] = mapped_column(Integer, nullable=False)
+    points_awarded: Mapped[int] = mapped_column(Integer, nullable=False)
+    completed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    part: Mapped[ReadingBookPart] = relationship(back_populates="completions")
+
 
 class ReadingProgress(TimestampMixin, Base):
     """The page a student has reached in a given book — one row per (user, book)."""

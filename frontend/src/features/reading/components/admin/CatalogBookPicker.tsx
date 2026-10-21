@@ -9,10 +9,6 @@ import type { ReadingBook } from "@berea/api";
 
 const MAX_BOOKS = 12;
 
-function matches(value: string | null, winner: string | null): boolean {
-  return !winner || value?.trim().toLowerCase() === winner.trim().toLowerCase();
-}
-
 interface CatalogBookPickerProps {
   books:          ReadingBook[];
   languageWinner: string | null;
@@ -29,7 +25,6 @@ export function CatalogBookPicker({
   onToggle,
 }: CatalogBookPickerProps) {
   const t = useTranslations("reading.admin.catalogPicker");
-  const visible = books.filter((b) => matches(b.language, languageWinner) && matches(b.genre, genreWinner));
 
   return (
     <div className="flex flex-col gap-3">
@@ -50,15 +45,9 @@ export function CatalogBookPicker({
             ),
           })}
         </p>
-      ) : visible.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-[var(--rd-border)] p-4 text-[13px] text-[var(--rd-text-muted)]">
-          {t.rich("noMatch", {
-            link: (chunks) => <Link href="/reading/admin/books/new" className="underline">{chunks}</Link>,
-          })}
-        </p>
       ) : (
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {visible.map((book) => {
+          {books.map((book) => {
             const isSelected = selectedIds.includes(book.id);
             const cover = bookCoverSrc(book.cover_url);
             return (
