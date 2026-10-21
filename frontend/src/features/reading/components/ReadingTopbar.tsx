@@ -2,9 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Route } from "next";
 import { useTranslations } from "next-intl";
-import { initials } from "@berea/core";
 import type { RoundDayProgress, Semester } from "@/features/reading/lib/roundCalendar";
 import { ReadingLocaleSwitcher } from "@/features/reading/components/ReadingLocaleSwitcher";
+import { ReaderAvatar } from "@/features/reading/components/ReaderAvatar";
 
 interface ReadingTopbarProps {
   semester:    Semester | null;
@@ -15,10 +15,12 @@ interface ReadingTopbarProps {
   /** The team's season points; null while loading, and the pill is hidden when there is no team. */
   totalPoints: number | null;
   hasTeam:     boolean;
+  userId:      string | null;
   userName:    string | null;
+  avatarVersion: number | null;
 }
 
-export function ReadingTopbar({ semester, roundIndex, roundTotal, isRegistrationPhase, dayProgress, totalPoints, hasTeam, userName }: ReadingTopbarProps) {
+export function ReadingTopbar({ semester, roundIndex, roundTotal, isRegistrationPhase, dayProgress, totalPoints, hasTeam, userId, userName, avatarVersion }: ReadingTopbarProps) {
   const t = useTranslations("reading.shell.topbar");
 
   function roundSummary(): string {
@@ -59,12 +61,14 @@ export function ReadingTopbar({ semester, roundIndex, roundTotal, isRegistration
             {t("points", { count: totalPoints })}
           </Link>
         ))}
-        <span
-          title={userName ?? undefined}
-          className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--rd-border)] bg-[var(--rd-ink)] text-[11px] font-semibold text-[var(--rd-text)]"
-        >
-          {userName ? initials(userName) : ""}
-        </span>
+        <Link href={"/reading/profile" as Route} title={userName ?? undefined} className="rounded-full">
+          <ReaderAvatar
+            userId={userId}
+            name={userName}
+            version={avatarVersion}
+            className="h-8 w-8 border border-[var(--rd-border)] bg-[var(--rd-ink)] text-[11px] font-semibold text-[var(--rd-text)]"
+          />
+        </Link>
       </div>
     </header>
   );

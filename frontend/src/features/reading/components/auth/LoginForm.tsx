@@ -69,7 +69,7 @@ export function ReadingLoginForm() {
       const placeholder: ReadingUser = {
         id: "", email: result.data.email, full_name: "",
         team_name: null, payment_status: null, token_balance: 0, current_streak: 0, is_admin: false, is_tester: false,
-        is_captain: false, created_at: new Date().toISOString(),
+        is_captain: false, created_at: new Date().toISOString(), avatar_version: null,
       };
       setSession(placeholder, access_token, refresh_token);
 

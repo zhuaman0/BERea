@@ -26,6 +26,18 @@ export const readingAuthApi = {
 
   me: () => readingApiClient.get<ReadingUser>("/v1/reading/users/me"),
 
+  uploadAvatar: (image: Blob) => {
+    const form = new FormData();
+    form.append("avatar", image, "avatar.jpg");
+    return readingApiClient.putForm<ReadingUser>("/v1/reading/users/me/avatar", form);
+  },
+
+  removeAvatar: () => readingApiClient.delete<ReadingUser>("/v1/reading/users/me/avatar"),
+
+  /** Photos are private, so they're fetched with the session token rather than used as an <img> URL. */
+  avatar: (userId: string, version: number) =>
+    readingApiClient.getBlob(`/v1/reading/users/${userId}/avatar?v=${version}`),
+
   myStats: () => readingApiClient.get<ReadingProfileStats>("/v1/reading/users/me/stats"),
 
   createTeam: (body: ReadingTeamJoinRequest) =>

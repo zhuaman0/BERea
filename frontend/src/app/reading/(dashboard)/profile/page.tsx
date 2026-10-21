@@ -6,7 +6,6 @@ import type { Route } from "next";
 import { BookOpen, Flame } from "lucide-react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { readingAuthApi } from "@berea/api";
-import { initials } from "@berea/core";
 import type { ReadingProfileStats, ReadingTeam } from "@berea/api";
 import { cn } from "@/shared/lib/utils";
 import { isApiError } from "@/features/auth/utils";
@@ -15,6 +14,7 @@ import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStor
 import { READING_PAGE_CONTAINER } from "@/features/reading/lib/pageContainer";
 import { ReadingPageHero } from "@/features/reading/components/layout/ReadingPageHero";
 import { formatReadingDate } from "@/features/reading/lib/formatReadingDate";
+import { AvatarUploader } from "@/features/reading/components/AvatarUploader";
 
 interface LedgerItemProps {
   value: string;
@@ -64,11 +64,7 @@ export default function ReadingProfilePage() {
       <ReadingPageHero
         eyebrow={t("eyebrow")}
         eyebrowIcon={BookOpen}
-        leading={
-          <span className="rd-accent-gradient flex h-20 w-20 items-center justify-center rounded-full font-display text-2xl font-bold text-black/80">
-            {initials(user.full_name)}
-          </span>
-        }
+        leading={<AvatarUploader user={user} onChange={updateUser} />}
         title={user.full_name}
         description={t("description", { handle: user.email.split("@")[0], date: formatReadingDate(user.created_at, locale, "monthYear") })}
         aside={
