@@ -73,7 +73,7 @@ packages/       Shared workspace packages
   ui-kit/       Reusable UI components (@berea/ui-kit)
 docker/         Per-service Dockerfiles
 nginx/          Reverse proxy config
-scripts/        Dev automation (setup, DB reset)
+scripts/        Dev automation (setup, DB reset, dev accounts)
 ```
 
 ---
@@ -121,7 +121,8 @@ The frontend intentionally runs on the host (not in Docker) for fast refresh; Ng
 1. Register an account at `/reading/register`.
 2. Create or join a team (2–3 students) at `/reading/join-team`.
 3. From the dashboard: log reading pages, vote on the next book once a vote round opens, check the leaderboard, and join quiz nights.
-4. Admins manage books, quizzes, and vote rounds from `/reading/admin` (requires an admin account).
+4. Admins manage books, quizzes, and vote rounds from `/reading/admin` (requires an admin account — run
+   `./scripts/seed-dev-accounts.sh` with the stack up to get a local one).
 
 Book voting starts at **Admin → Book vote**. Configure language and genre options and start a
 single six-hour selection with one shared deadline. Each student chooses a language first,
@@ -162,6 +163,7 @@ CI runs these tests against a disposable PostgreSQL service.
 | `docker compose logs -f backend` | Tail logs for a service |
 | `docker compose run --rm backend alembic revision --autogenerate -m "..."` | Create a new DB migration |
 | `./scripts/reset-db.sh` | **Destructive.** Wipes and recreates the local database from scratch |
+| `./scripts/seed-dev-accounts.sh` | Creates a local 451° admin and a tester student in a team (credentials at the top of the script) |
 
 ## Configuration
 
