@@ -61,6 +61,7 @@ export default function ProfilePage() {
             <div className="flex items-center gap-7">
               {/* Avatar */}
               {user?.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element -- Google profile picture on a host we don't allow-list for next/image
                 <img
                   src={user.avatar_url}
                   alt={displayName}
