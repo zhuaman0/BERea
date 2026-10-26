@@ -84,6 +84,7 @@ from app.domains.reading.schema_reading import (
     ReadingTeamResponse,
     ReadingTeamSummaryResponse,
     ReadingTokenResponse,
+    ReadingUpcomingQuizResponse,
     ReadingUserResponse,
     ReadingVoteCastRequest,
     ReadingVoteOptionResult,
@@ -1497,6 +1498,24 @@ async def get_live_host_state_for_admin(user_id: str, session_id: str, db: Async
         question=question,
         answered_count=len(responses),
         team_scores=_team_scores(session, scores),
+    )
+
+
+UPCOMING_QUIZ_GRACE = timedelta(hours=1)
+
+
+async def get_upcoming_quiz(db: AsyncSession) -> ReadingUpcomingQuizResponse | None:
+    from app.domains.reading.repo_reading import get_next_scheduled_quiz
+
+    # Keep a quiz listed for a while past its start so students see "starting soon" until the host opens it.
+    quiz = await get_next_scheduled_quiz(datetime.now(UTC) - UPCOMING_QUIZ_GRACE, db)
+    if not quiz or quiz.scheduled_for is None:
+        return None
+    return ReadingUpcomingQuizResponse(
+        title=quiz.title,
+        month_label=quiz.month_label,
+        scheduled_for=quiz.scheduled_for,
+        format=quiz.format,  # type: ignore[arg-type]
     )
 
 

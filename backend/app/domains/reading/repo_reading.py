@@ -696,6 +696,16 @@ async def list_quizzes(db: AsyncSession) -> list[ReadingQuiz]:
     return list(result.scalars().all())
 
 
+async def get_next_scheduled_quiz(now: datetime, db: AsyncSession) -> ReadingQuiz | None:
+    result = await db.execute(
+        select(ReadingQuiz)
+        .where(ReadingQuiz.status == "scheduled", ReadingQuiz.scheduled_for >= now)
+        .order_by(ReadingQuiz.scheduled_for.asc())
+        .limit(1)
+    )
+    return result.scalar_one_or_none()
+
+
 async def get_quiz(quiz_id: uuid.UUID, db: AsyncSession) -> ReadingQuiz | None:
     result = await db.execute(_quiz_query().where(ReadingQuiz.id == quiz_id))
     return result.scalar_one_or_none()
