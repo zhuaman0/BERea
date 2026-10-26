@@ -36,3 +36,11 @@ export interface Quiz {
   format:       QuizFormat;
   questions:    QuizQuestion[];
 }
+
+/** What a student may see about the next scheduled quiz — no questions or answers. */
+export interface UpcomingQuiz {
+  title:        string;
+  monthLabel:   string;
+  scheduledFor: string;
+  format:       QuizFormat;
+}

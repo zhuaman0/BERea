@@ -11,7 +11,6 @@ import { LogPagesModal } from "@/features/reading/components/LogPagesModal";
 import { readingBookOfMonthApi } from "@berea/api";
 import { QuizNightCard } from "@/features/reading/components/QuizNightCard";
 import { StatStrip, type StatStripItem } from "@berea/ui-kit";
-import { MOCK_DASHBOARD } from "@/features/reading/mockData";
 import { readingAuthApi } from "@berea/api";
 import { readingSemesterApi } from "@berea/api";
 import { useReadingAuthStore } from "@/features/reading/store/useReadingAuthStore";
@@ -152,7 +151,7 @@ export default function ReadingHomePage() {
           <BookOfMonthCard result={bookOfMonth} isLoading={bookQuery.isPending} onLogPages={() => setIsLogOpen(true)} />
         </motion.div>
         <motion.div {...fadeUp(0.14)} whileHover={HOVER_LIFT}>
-          <QuizNightCard quizNight={MOCK_DASHBOARD.quizNight} />
+          <QuizNightCard />
         </motion.div>
       </div>
 

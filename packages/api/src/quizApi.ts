@@ -1,5 +1,5 @@
 import { readingApiClient } from "./readingApiClient";
-import type { Quiz, QuizFormat, QuizQuestionKind, QuizStatus } from "./quizTypes";
+import type { Quiz, QuizFormat, QuizQuestionKind, QuizStatus, UpcomingQuiz } from "./quizTypes";
 
 interface QuizAnswerDto {
   id:         string;
@@ -29,6 +29,13 @@ interface QuizDto {
   status:        QuizStatus;
   format:        QuizFormat;
   questions:     QuizQuestionDto[];
+}
+
+interface UpcomingQuizDto {
+  title:         string;
+  month_label:   string;
+  scheduled_for: string;
+  format:        QuizFormat;
 }
 
 function fromDto(dto: QuizDto): Quiz {
@@ -89,4 +96,9 @@ export const readingQuizApi = {
     fromDto(await readingApiClient.put<QuizDto>(`/v1/reading/quizzes/${id}`, toWriteBody(quiz))),
 
   remove: (id: string) => readingApiClient.delete(`/v1/reading/quizzes/${id}`),
+
+  upcoming: async (): Promise<UpcomingQuiz | null> => {
+    const dto = await readingApiClient.get<UpcomingQuizDto | null>("/v1/reading/upcoming-quiz");
+    return dto && { title: dto.title, monthLabel: dto.month_label, scheduledFor: dto.scheduled_for, format: dto.format };
+  },
 };
