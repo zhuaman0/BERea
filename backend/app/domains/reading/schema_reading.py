@@ -612,6 +612,13 @@ class ReadingLiveTeamScore(BaseModel):
     score: int
 
 
+class ReadingUpcomingQuizResponse(BaseModel):
+    title: str
+    month_label: str
+    scheduled_for: datetime
+    format: QuizFormat
+
+
 class ReadingLiveSummary(BaseModel):
     id: uuid.UUID
     pin: str

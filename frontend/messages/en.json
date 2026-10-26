@@ -615,9 +615,15 @@
         "hours": "hrs",
         "minutes": "min"
       },
-      "location": "{location} · {count, plural, one {# team} other {# teams}}",
-      "reserve": "I'm in — reserve seat",
-      "entryNote": "Entry: 1 game token or semester pass"
+      "startingSoon": "Starting soon",
+      "pinNote": "The host shares a PIN when the quiz starts — join it on the Quiz page.",
+      "tbaTitle": "Date to be announced",
+      "tbaBody": "The next quiz night will appear here as soon as it's scheduled.",
+      "loadError": "Couldn't load the schedule",
+      "loadErrorBody": "Check your connection — we'll try again in a minute.",
+      "liveTitle": "Quiz night is live",
+      "liveBody": "The room is open. Join with your team now.",
+      "join": "Join the quiz"
     },
     "bonus": {
       "title": "Bonus tasks open",

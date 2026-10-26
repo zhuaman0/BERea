@@ -47,6 +47,7 @@ from app.domains.reading.schema_reading import (
     ReadingTeamResponse,
     ReadingTeamSummaryResponse,
     ReadingTokenResponse,
+    ReadingUpcomingQuizResponse,
     ReadingUserResponse,
     ReadingVoteCastRequest,
     ReadingVoteRoundCreate,
@@ -477,6 +478,13 @@ async def update_reading_progress(
     from app.domains.reading.service_reading import update_progress_for_user
 
     return await update_progress_for_user(user_id, payload, db)
+
+
+@router.get("/upcoming-quiz", response_model=ReadingUpcomingQuizResponse | None)
+async def get_upcoming_quiz(user_id: CurrentUserId, db: DbSession) -> ReadingUpcomingQuizResponse | None:
+    from app.domains.reading.service_reading import get_upcoming_quiz as get_upcoming_quiz_service
+
+    return await get_upcoming_quiz_service(db)
 
 
 @router.post("/quiz-sessions", response_model=ReadingLiveSummary, status_code=201)
