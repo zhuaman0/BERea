@@ -625,12 +625,6 @@
       "liveBody": "The room is open. Join with your team now.",
       "join": "Join the quiz"
     },
-    "bonus": {
-      "title": "Bonus tasks open",
-      "left": "{open} of {total} left",
-      "done": "done",
-      "points": "{count, plural, one {# pt} other {# pts}}"
-    },
     "semesterMap": {
       "title": "Semester map",
       "subtitle": "One book a round, shelved as you finish it.",
