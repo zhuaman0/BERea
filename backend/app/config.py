@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     refresh_token_expire_days: int = 7
 
     # ─── CORS ────────────────────────────────────────────────────────────────
-    backend_cors_origins: list[str] = ["http://localhost:5173", "http://localhost"]
+    backend_cors_origins: list[str] = ["http://localhost", "http://localhost:80", "http://localhost:3003"]
 
     # ─── OAuth ───────────────────────────────────────────────────────────────
     google_client_id: str = ""
